@@ -1,55 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/order_repository.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
-import 'orders_page.dart';
+import 'checkout_page.dart';
+import 'sign_in_page.dart';
 
-class CartPage extends ConsumerStatefulWidget {
+class CartPage extends ConsumerWidget {
   const CartPage({super.key});
 
-  @override
-  ConsumerState<CartPage> createState() => _CartPageState();
-}
-
-class _CartPageState extends ConsumerState<CartPage> {
-  bool _placing = false;
-
-  Future<void> _placeOrder() async {
-    final user = ref.read(authStateProvider).valueOrNull;
-    if (user == null) return;
-    setState(() => _placing = true);
-    final messenger = ScaffoldMessenger.of(context);
+  Future<void> _checkout(BuildContext context, WidgetRef ref) async {
     final navigator = Navigator.of(context);
-    try {
-      await ref.read(orderRepositoryProvider).placeOrder(
-            userId: user.uid,
-            cart: ref.read(cartProvider),
-          );
-      ref.read(cartProvider.notifier).clear();
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Order placed — awaiting confirmation.')),
-      );
-      navigator.pushReplacement(
-        MaterialPageRoute(builder: (_) => const OrdersPage()),
-      );
-    } on OrderException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message)));
-    } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Could not place order: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _placing = false);
-    }
+    if (!await ensureSignedIn(context, ref)) return;
+    navigator.push(MaterialPageRoute(builder: (_) => const CheckoutPage()));
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartProvider);
     final notifier = ref.read(cartProvider.notifier);
-    final total = cart.fold<int>(0, (sum, i) => sum + i.subtotalCents);
+    final total = cart.fold<int>(0, (sum, i) => sum + i.subtotal);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Cart')),
@@ -62,7 +32,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                 final item = cart[i];
                 return ListTile(
                   title: Text(item.product.name),
-                  subtitle: Text(formatCents(item.subtotalCents)),
+                  subtitle: Text(formatMmk(item.subtotal)),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -96,23 +66,17 @@ class _CartPageState extends ConsumerState<CartPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Estimated total: ${formatCents(total)}',
+                      'Estimated total: ${formatMmk(total)}',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const Text(
-                      'Final price is confirmed by the shop.',
+                      'Final price and any delivery fee are confirmed by the shop.',
                       style: TextStyle(fontSize: 12),
                     ),
                     const SizedBox(height: 12),
                     FilledButton(
-                      onPressed: _placing ? null : _placeOrder,
-                      child: _placing
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Place order'),
+                      onPressed: () => _checkout(context, ref),
+                      child: const Text('Checkout'),
                     ),
                   ],
                 ),

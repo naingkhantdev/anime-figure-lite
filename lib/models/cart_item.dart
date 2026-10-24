@@ -6,7 +6,7 @@ class CartItem {
   final Product product;
   final int quantity;
 
-  int get subtotalCents => product.priceCents * quantity;
+  int get subtotal => product.price * quantity;
 
   CartItem copyWith({int? quantity}) =>
       CartItem(product: product, quantity: quantity ?? this.quantity);

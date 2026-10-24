@@ -7,6 +7,7 @@ import '../../utils/money.dart';
 import 'cart_page.dart';
 import 'orders_page.dart';
 import 'product_detail_page.dart';
+import 'sign_in_page.dart';
 
 class ProductListPage extends ConsumerWidget {
   const ProductListPage({super.key});
@@ -15,6 +16,7 @@ class ProductListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final products = ref.watch(productsProvider);
     final cartCount = ref.watch(cartCountProvider);
+    final signedIn = ref.watch(authStateProvider).valueOrNull != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -23,9 +25,13 @@ class ProductListPage extends ConsumerWidget {
           IconButton(
             tooltip: 'My orders',
             icon: const Icon(Icons.receipt_long),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const OrdersPage()),
-            ),
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              if (!await ensureSignedIn(context, ref)) return;
+              navigator.push(
+                MaterialPageRoute(builder: (_) => const OrdersPage()),
+              );
+            },
           ),
           IconButton(
             tooltip: 'Cart',
@@ -38,11 +44,18 @@ class ProductListPage extends ConsumerWidget {
               MaterialPageRoute(builder: (_) => const CartPage()),
             ),
           ),
-          IconButton(
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authRepositoryProvider).signOut(),
-          ),
+          if (signedIn)
+            IconButton(
+              tooltip: 'Sign out',
+              icon: const Icon(Icons.logout),
+              onPressed: () => ref.read(authRepositoryProvider).signOut(),
+            )
+          else
+            IconButton(
+              tooltip: 'Sign in',
+              icon: const Icon(Icons.login),
+              onPressed: () => ensureSignedIn(context, ref),
+            ),
         ],
       ),
       body: products.when(
@@ -98,7 +111,7 @@ class _ProductCard extends StatelessWidget {
                     style: theme.textTheme.titleSmall,
                   ),
                   const SizedBox(height: 4),
-                  Text(formatCents(product.priceCents),
+                  Text(formatMmk(product.price),
                       style: theme.textTheme.titleMedium),
                   if (!product.inStock)
                     Text('Out of stock',

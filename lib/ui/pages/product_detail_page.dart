@@ -35,7 +35,7 @@ class ProductDetailPage extends ConsumerWidget {
                     children: [
                       Text(p.name, style: theme.textTheme.headlineSmall),
                       const SizedBox(height: 8),
-                      Text(formatCents(p.priceCents),
+                      Text(formatMmk(p.price),
                           style: theme.textTheme.titleLarge),
                       const SizedBox(height: 4),
                       Text(

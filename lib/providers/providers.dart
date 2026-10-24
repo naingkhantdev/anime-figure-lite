@@ -36,8 +36,13 @@ final myOrdersProvider = StreamProvider<List<ShopOrder>>((ref) {
 class CartNotifier extends Notifier<List<CartItem>> {
   @override
   List<CartItem> build() {
-    // Reset whenever the signed-in user changes.
-    ref.watch(authStateProvider.select((s) => s.valueOrNull?.uid));
+    // Guests can fill a cart and sign in at checkout, so keep the cart when
+    // going from signed-out to signed-in. Clear it on sign-out or when a
+    // different account signs in.
+    ref.listen(authStateProvider.select((s) => s.valueOrNull?.uid),
+        (previous, next) {
+      if (previous != null && previous != next) state = const [];
+    });
     return const [];
   }
 

@@ -17,11 +17,16 @@ large project. The data shapes use the same snake_case names, so moving is easy.
 
 ## Features (v1)
 
-- Email/password sign-in and sign-up (Firebase Auth)
-- Product list and detail, live from Firestore
-- Cart (in memory, cleared on sign-out)
+- Prices in Myanmar kyat (MMK), shown as `25,000 Ks`
+- Browse products without an account; sign in (email/password) only to
+  check out or see "My orders"
+- Cart (in memory; kept when a guest signs in, cleared on sign-out)
+- Checkout: phone, **Delivery** or **Pick up at shop**, address (delivery
+  only), optional note. Pre-filled from the customer's last order.
 - Place an order. It is created as `pending`.
-- "My orders" list with status
+- "My orders" with status and details; customers can cancel while `pending`
+- Payment happens outside the app (cash on delivery, bank transfer, mobile
+  wallet)
 
 ## Setup
 
@@ -47,7 +52,7 @@ large project. The data shapes use the same snake_case names, so moving is easy.
 |---|---|---|
 | name | string | |
 | description | string | |
-| price_cents | number (integer) | 1999 = 19.99. Never use decimals or floats for money. |
+| price | number (integer) | Whole kyats: 25000 = 25,000 Ks. Never use decimals or floats for money. |
 | stock_quantity | number (integer) | |
 | image_url | string | public image URL (optional) |
 | is_active | boolean | only `true` products are shown |
@@ -56,10 +61,29 @@ large project. The data shapes use the same snake_case names, so moving is easy.
 | field | type |
 |---|---|
 | user_id | string (Firebase Auth uid) |
-| status | string: `pending` → staff change to `confirmed` / `shipped` / `cancelled` |
-| items | array of `{product_id, name, price_cents, quantity}` |
-| total_cents | number (integer) |
+| status | string: `pending` → staff change to `confirmed` / `shipped` / `cancelled`. The customer may set `cancelled` while `pending`. |
+| items | array of `{product_id, name, price, quantity}` (price in whole kyats) |
+| total | number (integer, whole kyats; excludes any delivery fee) |
+| phone | string, e.g. `09123456789` |
+| delivery_method | string: `delivery` or `pickup` |
+| address | string (empty for `pickup`) |
+| note | string (may be empty) |
 | created_at | timestamp (server time) |
+
+## Daily routine for staff
+
+There are no notifications on the free plan, so check a few times a day:
+
+1. Firebase console → Firestore → `orders` → filter `status == pending`.
+2. For each order, check every line's `price` against the product's current
+   `price`, and that `total` adds up (see limits below).
+3. Contact the customer on `phone` with the final price, delivery fee and
+   payment details.
+4. When paid (or agreed for cash on delivery), set `status` to `confirmed`
+   and lower each product's `stock_quantity` by hand.
+5. Set `status` to `shipped` once it has been delivered or picked up.
+
+Orders the customer cancelled show `cancelled`; nothing to do for those.
 
 ## Limits of the small tier (read this)
 
@@ -74,7 +98,10 @@ That means:
   `stock_quantity` by hand in the console. The app does block orders larger
   than the current stock.
 - **No payments.** Collect payment outside the app (cash on delivery, bank
-  transfer) and then confirm the order.
+  transfer, mobile wallet) and then confirm the order.
+- **No notifications.** Staff must check for new orders themselves (see the
+  daily routine above).
+- **Delivery fee is not in the app.** Tell the customer when confirming.
 - **Images:** Cloud Storage for Firebase needs the Blaze plan for new
   projects, so use public image URLs (for example Cloudflare R2 or any image
   host).

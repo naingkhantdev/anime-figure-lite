@@ -4,6 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
 
+/// Returns true if a user is signed in, opening [SignInPage] first when
+/// nobody is. Returns false if the user backs out without signing in.
+Future<bool> ensureSignedIn(BuildContext context, WidgetRef ref) async {
+  if (ref.read(authRepositoryProvider).currentUser != null) return true;
+  final signedIn = await Navigator.of(context).push<bool>(
+    MaterialPageRoute(builder: (_) => const SignInPage()),
+  );
+  return signedIn ?? false;
+}
+
 class SignInPage extends ConsumerStatefulWidget {
   const SignInPage({super.key});
 
@@ -38,6 +48,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       } else {
         await auth.signIn(email, _password.text);
       }
+      if (mounted) Navigator.of(context).pop(true);
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message ?? e.code);
     } finally {
@@ -48,6 +59,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
