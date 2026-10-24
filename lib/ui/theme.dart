@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Minimal and monochrome: white space, near-black ink, hairline rules.
-/// Colour appears only where it carries meaning (in/out, low, expired), so
-/// the palette never fights whatever logo the shop uses.
+/// Minimal: white space, near-black ink, hairline rules. Pink is the one
+/// accent, kept for main actions, prices, the cart badge and focus. Other
+/// colour appears only where it carries meaning (in/out, low, expired).
 ///
 /// **Light only.**
 abstract final class AppColors {
@@ -14,12 +14,18 @@ abstract final class AppColors {
   static const line = Color(0xFFECECEE);
   static const lineStrong = Color(0xFFD9D9DE);
 
-  // Ink, which is also the accent: buttons, selection and focus are ink.
+  // Ink, for text and for selection (chips, segments, tabs).
   // All three clear WCAG AA on white: ink 19.6:1, inkMuted 6.3:1,
   // inkSubtle 4.8:1.
   static const ink = Color(0xFF0A0A0B);
   static const inkMuted = Color(0xFF5F5F67);
   static const inkSubtle = Color(0xFF74747C);
+
+  // The accent. The logo's own pink (#FF2E7E, used for the launcher icon) is
+  // too light for text on white, so the UI uses this deeper pink, which
+  // passes WCAG AA (5.1:1) for normal text and white text on it.
+  static const accent = Color(0xFFE0115F);
+  static const accentSoft = Color(0xFFFFE3EC);
 
   // Semantics: soft = tint background, line = its border, ink = text on the
   // tint. Every pair is at least 5.7:1.
@@ -56,10 +62,10 @@ abstract final class AppFonts {
 
 ThemeData buildAppTheme() {
   const scheme = ColorScheme.light(
-    primary: AppColors.ink,
+    primary: AppColors.accent,
     onPrimary: Colors.white,
-    primaryContainer: AppColors.surfaceSunken,
-    onPrimaryContainer: AppColors.ink,
+    primaryContainer: AppColors.accentSoft,
+    onPrimaryContainer: Color(0xFF5C0026),
     // Selected chips, segments and tonal buttons. Material's default is teal.
     secondary: AppColors.ink,
     onSecondary: Colors.white,
@@ -143,7 +149,7 @@ ThemeData buildAppTheme() {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.ink, width: 1.2),
+        borderSide: const BorderSide(color: AppColors.accent, width: 1.2),
       ),
       labelStyle: const TextStyle(color: AppColors.inkMuted),
       floatingLabelStyle: const TextStyle(color: AppColors.ink),
@@ -152,7 +158,7 @@ ThemeData buildAppTheme() {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(0, 52),
-        backgroundColor: AppColors.ink,
+        backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,
         disabledBackgroundColor: AppColors.surfaceSunken,
         shape: controlShape,
@@ -229,7 +235,7 @@ ThemeData buildAppTheme() {
       ),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: AppColors.ink,
+      backgroundColor: AppColors.accent,
       foregroundColor: Colors.white,
       elevation: 0,
       focusElevation: 0,
@@ -271,6 +277,12 @@ ThemeData buildAppTheme() {
         side: const BorderSide(color: AppColors.line),
       ),
     ),
+    badgeTheme: const BadgeThemeData(
+      backgroundColor: AppColors.accent,
+      textColor: Colors.white,
+    ),
+    progressIndicatorTheme:
+        const ProgressIndicatorThemeData(color: AppColors.accent),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: AppColors.ink,

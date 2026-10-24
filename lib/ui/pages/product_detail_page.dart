@@ -36,7 +36,9 @@ class ProductDetailPage extends ConsumerWidget {
                       Text(p.name, style: theme.textTheme.headlineSmall),
                       const SizedBox(height: 8),
                       Text(formatMmk(p.price),
-                          style: theme.textTheme.titleLarge),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
                       Text(
                         p.inStock

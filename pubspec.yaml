@@ -51,17 +51,19 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^3.0.0
 
-# Launcher icons are generated once and committed, the same way as the anime
-# shop app (D:\anime_figures_shop\mobile). To regenerate:
+# Launcher icon. Source art is assets/brand/icon.svg and icon_foreground.svg;
+# re-render the PNGs from them, then run:
 #   dart pub global activate flutter_launcher_icons
 #   dart pub global run flutter_launcher_icons
 flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
-  image_path: "assets/brand/app_icon.png"
-  adaptive_icon_background: "#131A2B"
-  adaptive_icon_foreground: "assets/brand/app_icon_foreground.png"
+  image_path: "assets/brand/icon.png"
+  adaptive_icon_background: "#FF2E7E"
+  adaptive_icon_foreground: "assets/brand/icon_foreground.png"
+  # The art already keeps to the adaptive-icon safe zone; no extra padding.
+  adaptive_icon_foreground_inset: 0
 
 flutter:
   uses-material-design: true

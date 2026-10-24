@@ -164,7 +164,9 @@ class _ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(formatMmk(product.price),
-                      style: theme.textTheme.titleMedium),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600)),
                   if (!product.inStock)
                     Text('Out of stock',
                         style: TextStyle(color: theme.colorScheme.error)),

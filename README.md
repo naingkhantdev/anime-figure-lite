@@ -67,9 +67,10 @@ Put how shop admins reach you (to be approved or renew) in
 
 ### Look
 
-Minimal and monochrome (`lib/ui/theme.dart`): white, near-black ink, hairline
-rules, DM Sans. Colour only where it means something: low stock, out of
-stock, in/out numbers, expiry.
+Minimal (`lib/ui/theme.dart`): white, near-black ink, hairline rules, DM
+Sans. Pink is the one accent: main buttons, prices, the cart badge, focus.
+Other colour only where it means something: low stock, out of stock, in/out
+numbers, expiry.
 
 The phone shows white with the logo from the first instant (native splash),
 then `lib/ui/widgets/splash_intro.dart` lets the logo settle and the name
@@ -77,7 +78,8 @@ fade in (~1.4 s) while the app loads underneath. A tap skips it.
 
 ### Changing the logo
 
-The logo is the A-under-a-dome mark on its navy plate.
+The logo is the cat-ear figure on its stand, on pink (source art:
+`assets/brand/icon.svg`).
 
 - **In the app and on the splash:** `assets/brand/logo.png` (square PNG,
   transparent outside the logo, at least 1024x1024). After replacing it:
@@ -85,9 +87,10 @@ The logo is the A-under-a-dome mark on its navy plate.
   pip install pillow            # once
   python tool/brand_assets.py   # rebuilds the Android/iOS splash logo
   ```
-- **Launcher icon:** `assets/brand/app_icon.png` (full square) and
-  `app_icon_foreground.png` (Android adaptive layer, transparent), with the
-  adaptive background colour in `pubspec.yaml`. After replacing them:
+- **Launcher icon:** `assets/brand/icon.png` (full square) and
+  `icon_foreground.png` (Android adaptive layer, transparent), rendered from
+  the `.svg` files beside them, with the adaptive background colour in
+  `pubspec.yaml`. After replacing them:
   `dart pub global run flutter_launcher_icons`.
 
 Then stop the app and `flutter run` again; hot restart doesn't pick up

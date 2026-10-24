@@ -10,8 +10,8 @@ the project folder:
 It writes the native splash logo for Android and iOS at 144dp/pt, which
 must match splashLogoSize in lib/ui/widgets/splash_intro.dart.
 
-The launcher icon has its own sources, assets/brand/app_icon.png (full
-square) and app_icon_foreground.png (Android adaptive layer, transparent);
+The launcher icon has its own sources, assets/brand/icon.png (full square)
+and icon_foreground.png (Android adaptive layer, transparent);
 after changing those run `dart pub global run flutter_launcher_icons`.
 """
 
