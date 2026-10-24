@@ -97,9 +97,7 @@ class ItemDetailPage extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                          padding: _tight,
-                          backgroundColor: AppColors.successInk),
+                      style: FilledButton.styleFrom(padding: _tight),
                       onPressed: () => move(MoveType.stockIn),
                       icon: const Icon(Icons.south_west),
                       label: const Text('In'),
@@ -107,10 +105,8 @@ class ItemDetailPage extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                          padding: _tight,
-                          backgroundColor: AppColors.dangerInk),
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(padding: _tight),
                       onPressed:
                           item.isOut ? null : () => move(MoveType.stockOut),
                       icon: const Icon(Icons.north_east),
@@ -176,9 +172,8 @@ class _QuantityCard extends StatelessWidget {
         ? AppColors.dangerInk
         : item.isLow
             ? AppColors.warnInk
-            : AppColors.brand700;
+            : AppColors.ink;
     return Card(
-      color: AppColors.brand50,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Row(

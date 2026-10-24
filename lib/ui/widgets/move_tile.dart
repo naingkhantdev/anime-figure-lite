@@ -26,17 +26,18 @@ class MoveTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, soft, ink) = switch (move.type) {
+      // Neutral tiles; only the signed number below carries colour.
       MoveType.stockIn => (
           Icons.south_west,
-          AppColors.successSoft,
+          AppColors.surfaceSunken,
           AppColors.successInk
         ),
       MoveType.stockOut => (
           Icons.north_east,
-          AppColors.dangerSoft,
+          AppColors.surfaceSunken,
           AppColors.dangerInk
         ),
-      MoveType.adjust => (Icons.tune, AppColors.infoSoft, AppColors.infoInk),
+      MoveType.adjust => (Icons.tune, AppColors.surfaceSunken, AppColors.ink),
     };
     final change = move.change;
     final details = [
@@ -51,10 +52,14 @@ class MoveTile extends StatelessWidget {
         showDay ? formatDateTime(move.createdAt!) : formatTime(move.createdAt!),
     ];
     return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: soft,
-        foregroundColor: ink,
-        child: Icon(icon, size: 20),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: soft,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Icon(icon, size: 18, color: AppColors.inkMuted),
       ),
       title: Text(
         showItem ? move.itemName : details.removeAt(0),

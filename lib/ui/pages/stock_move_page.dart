@@ -131,6 +131,7 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
         padding: const EdgeInsets.all(16),
         children: [
           SegmentedButton<MoveType>(
+            showSelectedIcon: false,
             segments: const [
               ButtonSegment(
                   value: MoveType.stockIn,
@@ -234,13 +235,6 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
           ],
           const SizedBox(height: 20),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: switch (_type) {
-                MoveType.stockIn => AppColors.successInk,
-                MoveType.stockOut => AppColors.dangerInk,
-                MoveType.adjust => AppColors.brand600,
-              },
-            ),
             onPressed: _busy || !previewOk ? null : _save,
             child: Text('Save ${_type.label.toLowerCase()}'),
           ),

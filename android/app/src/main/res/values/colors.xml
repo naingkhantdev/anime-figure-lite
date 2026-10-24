@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#131A2B</color>
-    <!-- Brand navy (AppColors.brand950). The splash, and the window behind
-         Flutter, so the app never flashes white while starting. -->
-    <color name="splash_background">#131A2B</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- AppColors.surface. The splash, and the window behind Flutter, so
+         nothing flashes between the splash and the first frame. -->
+    <color name="splash_background">#FFFFFF</color>
 </resources>

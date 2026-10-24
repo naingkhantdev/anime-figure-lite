@@ -65,16 +65,28 @@ Put how shop admins reach you (to be approved or renew) in
 - **Customers**: records the shop keeps (not app accounts), each with their
   recent purchases.
 
-### Launch
+### Look
 
-The phone shows navy with the logo from the first instant (native splash:
-`android/app/src/main/res/drawable*/launch_background.xml`,
-`values-v31/styles.xml` for Android 12+, and iOS `LaunchScreen.storyboard`).
-Flutter's first frame is the same picture, then `lib/ui/widgets/splash_intro.dart`
-plays a ~2 s intro (logo rises, name appears letter by letter, gold rule,
-drifting petals) while the app loads underneath. A tap skips it; reduce
-motion gets a still frame and a fade. The logo is 144dp everywhere
-(`splashLogoSize`); change it in all those places together.
+Minimal and monochrome (`lib/ui/theme.dart`): white, near-black ink, hairline
+rules, DM Sans. Colour only where it means something: low stock, out of
+stock, in/out numbers, expiry.
+
+The phone shows white with the logo from the first instant (native splash),
+then `lib/ui/widgets/splash_intro.dart` lets the logo settle and the name
+fade in (~1.4 s) while the app loads underneath. A tap skips it.
+
+### Changing the logo
+
+1. Save your logo as `assets/brand/logo.png`: square PNG, transparent
+   background, at least 1024x1024.
+2. From the project folder:
+   ```
+   pip install pillow            # once
+   python tool/brand_assets.py
+   dart pub global run flutter_launcher_icons
+   ```
+   This rebuilds the in-app logo, the Android/iOS splash and the launcher
+   icons from that one file.
 
 ## Setup
 

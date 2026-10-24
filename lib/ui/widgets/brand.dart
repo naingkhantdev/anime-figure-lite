@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../config.dart';
 import '../theme.dart';
 
-/// The carved-wood kimono figure from the anime shop, on its navy plate.
+/// The shop's logo, from the transparent `assets/brand/logo.png`. Replace
+/// that one file to change it everywhere in the app.
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.size = 40});
 
@@ -11,25 +12,23 @@ class AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(size * 0.22),
-      child: Image.asset(
-        'assets/brand/app_icon.png',
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        // The artwork is 1024px; decode near the size it is drawn at.
-        cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round(),
-        semanticLabel: '$appName logo',
-      ),
+    return Image.asset(
+      logoAsset,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      // Decode near the size it is drawn at, not the full source file.
+      cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round(),
+      semanticLabel: '$appName logo',
     );
   }
 }
 
-/// The app name set in the display serif, tracked wide like the anime
-/// shop's wordmark.
+const logoAsset = 'assets/brand/logo.png';
+
+/// The app name, small, uppercase and widely tracked.
 class Wordmark extends StatelessWidget {
-  const Wordmark({super.key, this.size = 24, this.color = AppColors.ink});
+  const Wordmark({super.key, this.size = 14, this.color = AppColors.ink});
 
   final double size;
   final Color color;
@@ -40,18 +39,19 @@ class Wordmark extends StatelessWidget {
       appName.toUpperCase(),
       textAlign: TextAlign.center,
       style: TextStyle(
-        fontFamily: AppFonts.display,
+        fontFamily: AppFonts.sans,
         fontWeight: FontWeight.w600,
         fontSize: size,
-        letterSpacing: size * 0.12,
+        letterSpacing: size * 0.32,
         color: color,
-        height: 1.1,
+        height: 1.2,
       ),
     );
   }
 }
 
-/// The navy panel at the top of the sign-in and status screens.
+/// Logo and name at the top of the sign-in and status screens: just the
+/// mark on white with room around it.
 class BrandHeader extends StatelessWidget {
   const BrandHeader({super.key, this.tagline});
 
@@ -59,24 +59,20 @@ class BrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: AppColors.brand950,
+    return Padding(
       padding: EdgeInsets.fromLTRB(
-          24, MediaQuery.paddingOf(context).top + 32, 24, 32),
+          24, MediaQuery.paddingOf(context).top + 56, 24, 8),
       child: Column(
         children: [
-          const AppLogo(size: 112),
+          const AppLogo(size: 72),
           const SizedBox(height: 20),
-          const Wordmark(size: 30, color: Colors.white),
-          const SizedBox(height: 10),
-          Container(width: 48, height: 1, color: AppColors.gold),
+          const Wordmark(),
           if (tagline != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               tagline!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.gold, fontSize: 14),
+              style: const TextStyle(color: AppColors.inkMuted, fontSize: 14),
             ),
           ],
         ],

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Launch screen before Android 12: brand navy with the logo centred at
+<!-- Launch screen before Android 12: white with the logo centred at
      144dp, the exact size and place the Flutter intro (splash_intro.dart)
      starts from, so the hand-over is invisible. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">

@@ -57,7 +57,7 @@ class _CreateShopPageState extends ConsumerState<CreateShopPage> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.ink,
       ),
       body: SingleChildScrollView(
         child: Column(

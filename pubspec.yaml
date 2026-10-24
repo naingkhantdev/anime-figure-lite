@@ -60,22 +60,21 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   image_path: "assets/brand/app_icon.png"
-  adaptive_icon_background: "#131A2B"
+  adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/brand/app_icon_foreground.png"
 
 flutter:
   uses-material-design: true
 
+  # The logo, transparent PNG, square. Replace this one file to change the
+  # logo in the app (lib/ui/widgets/brand.dart). The launcher icon and the
+  # native splash are generated from it; see README "Changing the logo".
   assets:
-    - assets/brand/app_icon.png
-    # Transparent logo for the launch intro (lib/ui/widgets/splash_intro.dart).
-    - assets/brand/app_icon_foreground.png
+    - assets/brand/logo.png
 
-  # Same faces as the anime shop web app. Both are SIL OFL (licences in
-  # assets/fonts). They are static instances cut from the Google Fonts
-  # variable files, because Flutter 3.22 can't pick a weight from a variable
-  # font. DM Sans for everything people read; Cormorant Garamond for the
-  # wordmark only, it is too thin for small text.
+  # DM Sans, SIL OFL (licence in assets/fonts). Static instances cut from
+  # the Google Fonts variable file, because Flutter 3.22 can't pick a weight
+  # from a variable font.
   fonts:
     - family: DMSans
       fonts:
@@ -87,7 +86,3 @@ flutter:
           weight: 600
         - asset: assets/fonts/DMSans-Bold.ttf
           weight: 700
-    - family: CormorantGaramond
-      fonts:
-        - asset: assets/fonts/CormorantGaramond-SemiBold.ttf
-          weight: 600

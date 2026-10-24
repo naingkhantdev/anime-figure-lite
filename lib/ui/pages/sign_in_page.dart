@@ -81,7 +81,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.ink,
       ),
       body: SingleChildScrollView(
         child: Column(

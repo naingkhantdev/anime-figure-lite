@@ -28,7 +28,7 @@ class PendingPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Icon(Icons.hourglass_top,
-                      size: 40, color: AppColors.goldInk),
+                      size: 40, color: AppColors.inkMuted),
                   const SizedBox(height: 12),
                   Text(
                     '${shop.name} is waiting for approval',

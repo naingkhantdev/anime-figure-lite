@@ -57,8 +57,8 @@ class _CustomersTabState extends ConsumerState<CustomersTab> {
                       if (i > 0) const Divider(indent: 72),
                       ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: AppColors.brand100,
-                          foregroundColor: AppColors.brand700,
+                          backgroundColor: AppColors.surfaceSunken,
+                          foregroundColor: AppColors.ink,
                           child: Text(c.name.characters.first.toUpperCase()),
                         ),
                         title: Text(c.name,

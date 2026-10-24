@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- While the process starts: navy with the logo. Removed when Flutter
+    <!-- While the process starts: white with the logo. Removed when Flutter
          draws its first frame, which is the same picture (splash_intro.dart). -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
-    <!-- Behind Flutter while it runs. Navy rather than white so nothing
+    <!-- Behind Flutter while it runs: the splash colour, so nothing
          flashes between the splash and the first frame. -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">@color/splash_background</item>

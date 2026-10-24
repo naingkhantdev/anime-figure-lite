@@ -30,9 +30,12 @@ Future<void> pumpIntro(
   await tester.pump();
 }
 
-bool introShowing() => find.byType(CustomPaint).evaluate().any((e) =>
-    (e.widget as CustomPaint).painter.runtimeType.toString() ==
-    '_PetalPainter');
+/// The intro overlay is the only full-screen opaque tap target.
+bool introShowing() => find
+    .byWidgetPredicate(
+        (w) => w is GestureDetector && w.behavior == HitTestBehavior.opaque)
+    .evaluate()
+    .isNotEmpty;
 
 void main() {
   testWidgets('plays, then reveals the app once sign-in state is known',
@@ -77,17 +80,15 @@ void main() {
     expect(introShowing(), isFalse);
   });
 
-  testWidgets('reduce motion: no petals, no movement, still leaves',
+  testWidgets('reduce motion: shows the finished frame, then leaves',
       (tester) async {
     await pumpIntro(tester, auth: Stream.value(null), reduceMotion: true);
-    expect(introShowing(), isFalse, reason: 'no drifting petals');
-    expect(find.byType(SplashIntro), findsOneWidget);
+    expect(introShowing(), isTrue);
 
     await tester.pump(const Duration(milliseconds: 800));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump();
-    // Overlay gone: the only text left is the app's.
+    expect(introShowing(), isFalse);
     expect(find.text('APP'), findsOneWidget);
-    expect(find.byType(GestureDetector), findsNothing);
   });
 }

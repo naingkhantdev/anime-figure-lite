@@ -70,14 +70,14 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                       children: [
                         Expanded(
                             child: Stat(
-                                label: 'In',
-                                value: '${sumQty(MoveType.stockIn)}',
-                                color: AppColors.successInk)),
+                          label: 'In',
+                          value: '${sumQty(MoveType.stockIn)}',
+                        )),
                         Expanded(
                             child: Stat(
-                                label: 'Out',
-                                value: '${sumQty(MoveType.stockOut)}',
-                                color: AppColors.dangerInk)),
+                          label: 'Out',
+                          value: '${sumQty(MoveType.stockOut)}',
+                        )),
                         Expanded(
                             flex: 2,
                             child:
