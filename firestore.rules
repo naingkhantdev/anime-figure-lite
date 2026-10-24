@@ -1,10 +1,233 @@
 rules_version = '2';
 
-// Paste into Firebase console → Firestore Database → Rules, then Publish.
-// The Firebase console itself bypasses these rules, so staff manage
-// products and order status there.
+// Paste into Firebase console → Firestore Database → Rules, then Publish
+// (or `firebase deploy --only firestore:rules`).
+//
+// ---- Stock for many shops: super_admins, shops/** ----
+//
+// Who is who:
+// - Super admin: any account with a document at super_admins/{uid}. Create it
+//   by hand in the Firebase console; the app can never create one.
+// - Shop admin: an account that has opened a shop. Their shop is
+//   shops/{their uid}, so each account has at most one shop and can only
+//   ever reach its own.
+// - Customer: any other account. Uses products and orders below.
+//
+// A shop can change its data only while shops/{id}.expires_at is in the
+// future. A new shop has expires_at == null (pending) until the super admin
+// sets a date. Expired shops can still read everything.
+//
+// Numbers here must match lib/logic/stock.dart and lib/data/*.dart.
+//
+// Roles: see lib/ui/pages/role_gate.dart.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
+    }
+
+    function isOwner(shopId) {
+      return signedIn() && request.auth.uid == shopId;
+    }
+
+    function shopIsActive(shopId) {
+      let shop = get(/databases/$(database)/documents/shops/$(shopId)).data;
+      return shop.expires_at != null && shop.expires_at > request.time;
+    }
+
+    function canWrite(shopId) {
+      return isOwner(shopId) && shopIsActive(shopId);
+    }
+
+    function text(value, min, max) {
+      return value is string && value.size() >= min && value.size() <= max;
+    }
+
+    function wholeNumber(value, max) {
+      return value is int && value >= 0 && value <= max;
+    }
+
+    match /super_admins/{uid} {
+      // Lets the app ask "am I the super admin?" and nothing more.
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /shops/{shopId} {
+      allow read: if isOwner(shopId) || isSuperAdmin();
+
+      // A new shop always starts pending.
+      allow create: if isOwner(shopId)
+        && request.resource.data.keys().hasOnly(
+             ['name', 'phone', 'owner_email', 'expires_at', 'created_at'])
+        && request.resource.data.keys().hasAll(
+             ['name', 'phone', 'owner_email', 'expires_at', 'created_at'])
+        && text(request.resource.data.name, 1, 80)
+        && text(request.resource.data.phone, 0, 20)
+        && request.resource.data.owner_email == request.auth.token.email
+        && request.resource.data.expires_at == null
+        && request.resource.data.created_at == request.time;
+
+      // The owner may rename their shop and change its phone, even when
+      // expired. Only the super admin may touch expires_at.
+      allow update: if (
+          isOwner(shopId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['name', 'phone'])
+          && text(request.resource.data.name, 1, 80)
+          && text(request.resource.data.phone, 0, 20)
+        ) || (
+          isSuperAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['expires_at'])
+          && (request.resource.data.expires_at == null
+              || request.resource.data.expires_at is timestamp)
+        );
+
+      allow delete: if false; // console only
+
+      match /items/{itemId} {
+        allow read: if isOwner(shopId) || isSuperAdmin();
+
+        // Any change to `quantity` must come with a new movement in the same
+        // write (see the moves rule), so history always explains the count.
+        allow create: if canWrite(shopId)
+          && validItem(request.resource.data)
+          && request.resource.data.created_at == request.time
+          && (request.resource.data.quantity == 0
+              || newMoveSets(shopId, itemId, request.resource.data));
+
+        allow update: if canWrite(shopId)
+          && validItem(request.resource.data)
+          && request.resource.data.created_at == resource.data.created_at
+          && (request.resource.data.quantity == resource.data.quantity
+              || newMoveSets(shopId, itemId, request.resource.data));
+
+        // Items are hidden with is_active = false instead, so old movements
+        // still point at something.
+        allow delete: if false;
+
+        function validItem(d) {
+          return d.keys().hasOnly(
+                   ['name', 'code', 'unit', 'price', 'cost', 'quantity',
+                    'low_stock_at', 'is_active', 'last_move_id',
+                    'created_at', 'updated_at'])
+            && d.keys().hasAll(
+                   ['name', 'code', 'unit', 'price', 'cost', 'quantity',
+                    'low_stock_at', 'is_active', 'last_move_id',
+                    'created_at', 'updated_at'])
+            && text(d.name, 1, 100)
+            && text(d.code, 0, 40)
+            && text(d.unit, 0, 20)
+            && wholeNumber(d.price, 1000000000)
+            && wholeNumber(d.cost, 1000000000)
+            && wholeNumber(d.quantity, 1000000)
+            && wholeNumber(d.low_stock_at, 1000000)
+            && d.is_active is bool
+            && d.last_move_id is string
+            && d.updated_at == request.time;
+        }
+
+        // The movement named by last_move_id is being created in this very
+        // write and ends at the item's new quantity.
+        function newMoveSets(shopId, itemId, d) {
+          let path = /databases/$(database)/documents/shops/$(shopId)/moves/$(d.last_move_id);
+          return d.last_move_id.size() > 0
+            && !exists(path)
+            && getAfter(path).data.item_id == itemId
+            && getAfter(path).data.quantity_after == d.quantity;
+        }
+      }
+
+      match /moves/{moveId} {
+        allow read: if isOwner(shopId) || isSuperAdmin();
+
+        // Written together with the item it changes. quantity_before is the
+        // item's real stored quantity (0 for a brand-new item), and the
+        // arithmetic matches lib/logic/stock.dart quantityAfter().
+        allow create: if canWrite(shopId)
+          && request.resource.data.keys().hasOnly(
+               ['type', 'item_id', 'item_name', 'quantity', 'quantity_before',
+                'quantity_after', 'unit_price', 'customer_id', 'customer_name',
+                'note', 'created_by', 'created_at'])
+          && request.resource.data.keys().hasAll(
+               ['type', 'item_id', 'item_name', 'quantity', 'quantity_before',
+                'quantity_after', 'unit_price', 'customer_id', 'customer_name',
+                'note', 'created_by', 'created_at'])
+          && request.resource.data.type in ['in', 'out', 'adjust']
+          && text(request.resource.data.item_id, 1, 100)
+          && text(request.resource.data.item_name, 1, 100)
+          && wholeNumber(request.resource.data.quantity, 1000000)
+          && wholeNumber(request.resource.data.quantity_before, 1000000)
+          && wholeNumber(request.resource.data.quantity_after, 1000000)
+          && wholeNumber(request.resource.data.unit_price, 1000000000)
+          && text(request.resource.data.customer_id, 0, 100)
+          && text(request.resource.data.customer_name, 0, 100)
+          && text(request.resource.data.note, 0, 500)
+          && request.resource.data.created_by == request.auth.uid
+          && request.resource.data.created_at == request.time
+          && quantityBeforeIsReal(shopId, request.resource.data)
+          && arithmeticAddsUp(request.resource.data)
+          && itemPointsHere(shopId, moveId, request.resource.data);
+
+        // History is permanent. Fix mistakes with a new movement.
+        allow update, delete: if false;
+
+        function itemPath(shopId, d) {
+          return /databases/$(database)/documents/shops/$(shopId)/items/$(d.item_id);
+        }
+
+        function quantityBeforeIsReal(shopId, d) {
+          return exists(itemPath(shopId, d))
+            ? get(itemPath(shopId, d)).data.quantity == d.quantity_before
+            : d.quantity_before == 0;
+        }
+
+        function arithmeticAddsUp(d) {
+          return (d.type == 'in'
+                  && d.quantity > 0
+                  && d.quantity_after == d.quantity_before + d.quantity)
+            || (d.type == 'out'
+                  && d.quantity > 0
+                  && d.quantity_after == d.quantity_before - d.quantity)
+            || (d.type == 'adjust'
+                  && d.quantity_after == d.quantity);
+        }
+
+        function itemPointsHere(shopId, moveId, d) {
+          let item = getAfter(itemPath(shopId, d)).data;
+          return item.last_move_id == moveId
+            && item.quantity == d.quantity_after;
+        }
+      }
+
+      match /customers/{customerId} {
+        allow read: if isOwner(shopId) || isSuperAdmin();
+        allow create, update: if canWrite(shopId)
+          && request.resource.data.keys().hasOnly(
+               ['name', 'phone', 'address', 'note', 'created_at', 'updated_at'])
+          && request.resource.data.keys().hasAll(
+               ['name', 'phone', 'address', 'note', 'created_at', 'updated_at'])
+          && text(request.resource.data.name, 1, 100)
+          && text(request.resource.data.phone, 0, 20)
+          && text(request.resource.data.address, 0, 500)
+          && text(request.resource.data.note, 0, 500)
+          && request.resource.data.created_at is timestamp
+          && request.resource.data.updated_at == request.time;
+        // Movements keep a copy of the customer's name, so deleting is safe.
+        allow delete: if canWrite(shopId);
+      }
+    }
+
+    // ---- The figure shop: products, orders ----
+    // The Firebase console bypasses these rules, so staff manage products
+    // and order status there.
 
     // Anyone may browse, signed in or not.
     match /products/{productId} {

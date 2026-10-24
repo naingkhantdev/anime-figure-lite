@@ -28,6 +28,43 @@ large project. The data shapes use the same snake_case names, so moving is easy.
 - Payment happens outside the app (cash on delivery, bank transfer, mobile
   wallet)
 
+## Roles: one app, three kinds of people
+
+The first screen depends on who is signed in (`lib/ui/pages/role_gate.dart`):
+
+| Role | How they get it | What they see |
+|---|---|---|
+| Guest / customer | Nothing, or any account | The figure shop: browse, cart, checkout, My orders |
+| **Shop admin** | Account menu → **Open a shop**, then you approve it | Their own stock: items, In / Out / Count, history, customers |
+| **Super admin** (you) | A document at `super_admins/{your uid}`, made by hand in the Firebase console | Every shop: turn on, add 1/3/6/12 months, pick an end date, or stop now |
+
+A shop's life: **Waiting** (just opened, `expires_at` empty, can't change
+anything) → you add time → **Active** → yellow banner 7 days before the end →
+**Expired** (read-only, nothing deleted) → you add time again.
+
+### Make yourself super admin
+
+1. Sign in to the app with your own account.
+2. Firebase console → **Authentication** → copy your **User UID**.
+3. **Firestore** → Start collection `super_admins` → Document ID = your UID →
+   add any field (e.g. `note: "me"`) → Save.
+4. Reopen the app. You now see the shop list instead of the figure shop.
+
+Put how shop admins reach you (to be approved or renew) in
+`lib/config.dart`, `supportContact`, e.g. `'Viber 09xxxxxxxxx'`.
+
+### Stock features (shop admins)
+
+- **Stock**: list with search, Low/Out/Hidden filters, counts and stock value
+  at cost. Items have selling price, cost price, unit, code, and a "warn when
+  at or below" level.
+- **In / Out / Count** on each item. Out can name a customer and a price.
+  Count sets the quantity to what is really on the shelf.
+- **History**: every movement, grouped by day, with today's in, out and sales.
+  It can never be edited or deleted; fix mistakes with a new movement.
+- **Customers**: records the shop keeps (not app accounts), each with their
+  recent purchases.
+
 ## Setup
 
 1. Create a project at https://console.firebase.google.com and stay on the
@@ -35,6 +72,8 @@ large project. The data shapes use the same snake_case names, so moving is easy.
 2. **Authentication → Sign-in method** → enable **Email/Password**.
 3. **Firestore Database** → create a database (production mode).
 4. **Firestore → Rules** → paste `firestore.rules` from this repo → Publish.
+   It holds the rules for the figure shop and for the shops' stock; publish
+   the whole file.
 5. Generate `lib/firebase_options.dart` (the app won't compile without it):
    ```
    dart pub global activate flutterfire_cli
@@ -70,6 +109,53 @@ large project. The data shapes use the same snake_case names, so moving is easy.
 | note | string (may be empty) |
 | created_at | timestamp (server time) |
 
+### Stock data (one shop per account)
+
+`super_admins/{uid}`: any fields; only its existence matters.
+
+`shops/{owner uid}`
+| field | type | note |
+|---|---|---|
+| name | string | |
+| phone | string | may be empty |
+| owner_email | string | |
+| expires_at | timestamp or null | null = waiting. Only the super admin can change it. |
+| created_at | timestamp | |
+
+`shops/{shopId}/items/{id}`: name, code, unit, price, cost, quantity,
+low_stock_at (ints), is_active (bool), last_move_id, created_at, updated_at.
+Items are hidden, not deleted.
+
+`shops/{shopId}/moves/{id}`: type (`in` / `out` / `adjust`), item_id,
+item_name, quantity, quantity_before, quantity_after, unit_price, customer_id,
+customer_name, note, created_by, created_at. Write-once.
+
+`shops/{shopId}/customers/{id}`: name, phone, address, note, created_at,
+updated_at.
+
+### How the rules keep stock honest (no server code)
+
+The Spark plan has no Cloud Functions, so `firestore.rules` does the work:
+
+- A shop can only reach `shops/{its own uid}/…`.
+- Writes are refused unless `expires_at` is in the future, so an expired shop
+  can't keep working with a modified app.
+- An item's `quantity` can only change in the same write as a new movement,
+  and the movement's numbers must add up (before ± quantity = after, and
+  "before" must be the real stored quantity). The history always explains the
+  count, and stock can't go below zero.
+- Only the super admin can change `expires_at`, and the super admin can't
+  touch a shop's stock.
+
+Tests for the rules (both the figure shop and stock) run on the local
+emulator and need Java 11+:
+
+```
+cd rules_test
+npm install
+npm test
+```
+
 ## Daily routine for staff
 
 There are no notifications on the free plan, so check a few times a day:
@@ -86,6 +172,17 @@ There are no notifications on the free plan, so check a few times a day:
 Orders the customer cancelled show `cancelled`; nothing to do for those.
 
 ## Limits of the small tier (read this)
+
+Stock (shop admins):
+
+- **Stock in/out needs internet** (it runs as a transaction so two phones
+  can't overwrite each other). Browsing works offline from the cache.
+- **One login per shop.** Staff share the owner's account.
+- The figure shop's `products` and the shop admins' stock are separate: an
+  order here does not change anyone's stock.
+
+The figure shop:
+
 
 The Spark plan has **no Cloud Functions**, so there is no trusted server code.
 That means:

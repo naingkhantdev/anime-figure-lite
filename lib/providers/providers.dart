@@ -3,11 +3,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/auth_repository.dart';
+import '../data/inventory_repository.dart';
 import '../data/order_repository.dart';
 import '../data/product_repository.dart';
+import '../data/shop_repository.dart';
 import '../models/cart_item.dart';
+import '../models/customer.dart';
+import '../models/item.dart';
 import '../models/product.dart';
+import '../models/shop.dart';
 import '../models/shop_order.dart';
+import '../models/stock_move.dart';
 
 final authRepositoryProvider =
     Provider((ref) => AuthRepository(FirebaseAuth.instance));
@@ -83,4 +89,63 @@ final cartProvider =
 
 final cartCountProvider = Provider<int>(
   (ref) => ref.watch(cartProvider).fold(0, (total, i) => total + i.quantity),
+);
+
+// ------------------------------------------------------------------ roles
+// Who someone is decides what they see; see ui/pages/role_gate.dart.
+
+final shopRepositoryProvider =
+    Provider((ref) => ShopRepository(FirebaseFirestore.instance));
+
+final isSuperAdminProvider = StreamProvider<bool>((ref) {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user == null) return Stream.value(false);
+  return ref.watch(shopRepositoryProvider).watchIsSuperAdmin(user.uid);
+});
+
+/// The signed-in owner's shop, or null before they have created it.
+final myShopProvider = StreamProvider<Shop?>((ref) {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user == null) return Stream.value(null);
+  return ref.watch(shopRepositoryProvider).watchShop(user.uid);
+});
+
+/// Super admin only.
+final allShopsProvider = StreamProvider<List<Shop>>(
+  (ref) => ref.watch(shopRepositoryProvider).watchAllShops(),
+);
+
+/// Whether the signed-in owner's shop may be changed right now. Pages use it
+/// to disable buttons; firestore.rules are what actually enforce it.
+final canWriteProvider = Provider<bool>((ref) {
+  final shop = ref.watch(myShopProvider).valueOrNull;
+  return shop?.statusAt(DateTime.now()).canWrite ?? false;
+});
+
+/// Only read inside a shop, where somebody is always signed in.
+final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user == null) throw StateError('No shop without a signed-in owner.');
+  return InventoryRepository(FirebaseFirestore.instance, shopId: user.uid);
+});
+
+final itemsProvider = StreamProvider<List<Item>>(
+  (ref) => ref.watch(inventoryRepositoryProvider).watchItems(),
+);
+
+final itemProvider = StreamProvider.family<Item?, String>(
+  (ref, itemId) => ref.watch(inventoryRepositoryProvider).watchItem(itemId),
+);
+
+final recentMovesProvider = StreamProvider<List<StockMove>>(
+  (ref) => ref.watch(inventoryRepositoryProvider).watchRecentMoves(),
+);
+
+final itemMovesProvider = StreamProvider.family<List<StockMove>, String>(
+  (ref, itemId) =>
+      ref.watch(inventoryRepositoryProvider).watchItemMoves(itemId),
+);
+
+final customersProvider = StreamProvider<List<Customer>>(
+  (ref) => ref.watch(inventoryRepositoryProvider).watchCustomers(),
 );

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/cart_item.dart';
 import '../models/shop_order.dart';
+import '../utils/phone.dart';
 
 // These must match firestore.rules.
 const maxOrderLines = 20;
@@ -13,14 +14,6 @@ class OrderException implements Exception {
   final String message;
   @override
   String toString() => message;
-}
-
-/// Removes spaces and dashes, then accepts Myanmar mobile numbers written as
-/// `09…` or `+959…`. Deliberately loose so real numbers are never rejected.
-/// Returns the cleaned number, or null if it doesn't look like a phone.
-String? normalizePhone(String input) {
-  final phone = input.replaceAll(RegExp(r'[\s-]'), '');
-  return RegExp(r'^(09|\+959)\d{7,9}$').hasMatch(phone) ? phone : null;
 }
 
 class OrderRepository {
@@ -48,7 +41,8 @@ class OrderRepository {
   }) async {
     if (cart.isEmpty) throw OrderException('Your cart is empty.');
     if (cart.length > maxOrderLines) {
-      throw OrderException('An order can have at most $maxOrderLines products.');
+      throw OrderException(
+          'An order can have at most $maxOrderLines products.');
     }
     final cleanPhone = normalizePhone(phone);
     if (cleanPhone == null) {

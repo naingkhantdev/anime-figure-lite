@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:anime_figure_shop_lite/data/order_repository.dart';
+import 'package:anime_figure_shop_lite/utils/phone.dart';
 
 void main() {
   group('normalizePhone', () {
