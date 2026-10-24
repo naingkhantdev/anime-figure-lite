@@ -96,6 +96,33 @@ The logo is the cat-ear figure on its stand, on pink (source art:
 Then stop the app and `flutter run` again; hot restart doesn't pick up
 images.
 
+### Demo accounts (seed)
+
+`tool/seed/seed_users.js` creates one account per role, all with password
+`Password123!` (or `SEED_PASSWORD`):
+
+| Role | Email |
+|---|---|
+| Super admin | `admin@animefigureshop.test` |
+| Shop admin ("Sakura Figures", active 1 month) | `shop@animefigureshop.test` |
+| Customer | `customer@animefigureshop.test` |
+
+It needs an admin key for the real project:
+
+1. Firebase console → Project settings → **Service accounts** → **Generate
+   new private key**. Save it as `tool/seed/service-account.json`. It is in
+   `.gitignore`; never commit or share it.
+2. In PowerShell:
+   ```
+   cd tool\seed
+   npm install
+   $env:GOOGLE_APPLICATION_CREDENTIALS="service-account.json"
+   npm run seed
+   ```
+
+Running it again is safe: it reuses the accounts and resets their passwords.
+To try it on the local emulators instead (needs Java): `npm run seed:emulator`.
+
 ## Setup
 
 1. Create a project at https://console.firebase.google.com and stay on the

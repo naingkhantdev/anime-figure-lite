@@ -45,3 +45,7 @@ app.*.map.json
 # Rules tests
 /rules_test/node_modules/
 *-debug.log
+
+# Seed script: dependencies, and NEVER the admin key
+/tool/seed/node_modules/
+service-account*.json
