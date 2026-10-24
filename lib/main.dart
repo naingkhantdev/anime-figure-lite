@@ -7,6 +7,7 @@ import 'config.dart';
 import 'firebase_options.dart';
 import 'ui/pages/role_gate.dart';
 import 'ui/theme.dart';
+import 'ui/widgets/splash_intro.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +27,7 @@ class ShopLiteApp extends StatelessWidget {
       // Browsing is open to everyone; sign-in is asked for only at checkout,
       // for "My orders" and to open a shop (see ensureSignedIn). Signed-in
       // shop admins and the super admin get their own screens instead.
-      home: const RoleGate(),
+      home: const SplashIntro(child: RoleGate()),
     );
   }
 }

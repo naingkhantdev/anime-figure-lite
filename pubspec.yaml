@@ -68,6 +68,8 @@ flutter:
 
   assets:
     - assets/brand/app_icon.png
+    # Transparent logo for the launch intro (lib/ui/widgets/splash_intro.dart).
+    - assets/brand/app_icon_foreground.png
 
   # Same faces as the anime shop web app. Both are SIL OFL (licences in
   # assets/fonts). They are static instances cut from the Google Fonts

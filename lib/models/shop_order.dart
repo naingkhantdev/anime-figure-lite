@@ -52,7 +52,8 @@ class ShopOrder {
           .map((m) => OrderLine.fromMap(Map<String, dynamic>.from(m)))
           .toList(),
       phone: data['phone'] as String? ?? '',
-      deliveryMethod: DeliveryMethod.fromName(data['delivery_method'] as String?),
+      deliveryMethod:
+          DeliveryMethod.fromName(data['delivery_method'] as String?),
       address: data['address'] as String? ?? '',
       note: data['note'] as String? ?? '',
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),

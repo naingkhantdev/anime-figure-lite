@@ -65,6 +65,17 @@ Put how shop admins reach you (to be approved or renew) in
 - **Customers**: records the shop keeps (not app accounts), each with their
   recent purchases.
 
+### Launch
+
+The phone shows navy with the logo from the first instant (native splash:
+`android/app/src/main/res/drawable*/launch_background.xml`,
+`values-v31/styles.xml` for Android 12+, and iOS `LaunchScreen.storyboard`).
+Flutter's first frame is the same picture, then `lib/ui/widgets/splash_intro.dart`
+plays a ~2 s intro (logo rises, name appears letter by letter, gold rule,
+drifting petals) while the app loads underneath. A tap skips it; reduce
+motion gets a still frame and a fade. The logo is 144dp everywhere
+(`splashLogoSize`); change it in all those places together.
+
 ## Setup
 
 1. Create a project at https://console.firebase.google.com and stay on the
