@@ -77,16 +77,21 @@ fade in (~1.4 s) while the app loads underneath. A tap skips it.
 
 ### Changing the logo
 
-1. Save your logo as `assets/brand/logo.png`: square PNG, transparent
-   background, at least 1024x1024.
-2. From the project folder:
-   ```
-   pip install pillow            # once
-   python tool/brand_assets.py
-   dart pub global run flutter_launcher_icons
-   ```
-   This rebuilds the in-app logo, the Android/iOS splash and the launcher
-   icons from that one file.
+The logo is the A-under-a-dome mark on its navy plate.
+
+- **In the app and on the splash:** `assets/brand/logo.png` (square PNG,
+  transparent outside the logo, at least 1024x1024). After replacing it:
+  ```
+  pip install pillow            # once
+  python tool/brand_assets.py   # rebuilds the Android/iOS splash logo
+  ```
+- **Launcher icon:** `assets/brand/app_icon.png` (full square) and
+  `app_icon_foreground.png` (Android adaptive layer, transparent), with the
+  adaptive background colour in `pubspec.yaml`. After replacing them:
+  `dart pub global run flutter_launcher_icons`.
+
+Then stop the app and `flutter run` again; hot restart doesn't pick up
+images.
 
 ## Setup
 

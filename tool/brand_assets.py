@@ -1,17 +1,18 @@
-"""Rebuild every logo image from assets/brand/logo.png.
+"""Rebuild the native splash logo from assets/brand/logo.png.
 
-Put your logo at assets/brand/logo.png (square PNG, transparent background,
-at least 1024x1024), then from the project folder run:
+assets/brand/logo.png is the logo the app shows (square PNG, transparent
+where there is no logo, at least 1024x1024). After replacing it, run from
+the project folder:
 
     pip install pillow                      # once
     python tool/brand_assets.py
-    dart pub global run flutter_launcher_icons
 
-It writes:
-  - the native splash logo for Android and iOS, 144dp/pt (must match
-    splashLogoSize in lib/ui/widgets/splash_intro.dart)
-  - assets/brand/app_icon.png and app_icon_foreground.png, the sources
-    flutter_launcher_icons turns into the launcher icons
+It writes the native splash logo for Android and iOS at 144dp/pt, which
+must match splashLogoSize in lib/ui/widgets/splash_intro.dart.
+
+The launcher icon has its own sources, assets/brand/app_icon.png (full
+square) and app_icon_foreground.png (Android adaptive layer, transparent);
+after changing those run `dart pub global run flutter_launcher_icons`.
 """
 
 from pathlib import Path
@@ -21,12 +22,11 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 LOGO = ROOT / "assets/brand/logo.png"
 SPLASH_DP = 144
-BACKGROUND = (255, 255, 255, 255)  # AppColors.surface
 
 
-def fit(logo: Image.Image, canvas: int, share: float, bg=(0, 0, 0, 0)):
+def fit(logo: Image.Image, canvas: int, share: float):
     """The logo centred on a square canvas, its longer side at `share`."""
-    out = Image.new("RGBA", (canvas, canvas), bg)
+    out = Image.new("RGBA", (canvas, canvas), (0, 0, 0, 0))
     side = round(canvas * share)
     w, h = logo.size
     scale = side / max(w, h)
@@ -53,15 +53,7 @@ def main():
         n = SPLASH_DP * mult
         fit(logo, n, 1.0).save(ios / f"LaunchImage{suffix}.png", optimize=True)
 
-    brand = ROOT / "assets/brand"
-    # Full icon (iOS, old Android): logo on white with breathing room.
-    fit(logo, 1024, 0.62, BACKGROUND).convert("RGB").save(
-        brand / "app_icon.png", optimize=True)
-    # Android adaptive foreground: the launcher crops to a circle or squircle,
-    # so keep the logo well inside the safe zone.
-    fit(logo, 1024, 0.72).save(brand / "app_icon_foreground.png",
-                               optimize=True)
-    print("Done. Now run: dart pub global run flutter_launcher_icons")
+    print("Done.")
 
 
 if __name__ == "__main__":
