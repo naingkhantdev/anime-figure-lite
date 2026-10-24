@@ -234,6 +234,23 @@ ThemeData buildAppTheme() {
         ),
       ),
     ),
+    // Same look as the bottom bar, for tablets (shop_home_page.dart).
+    navigationRailTheme: const NavigationRailThemeData(
+      backgroundColor: AppColors.surface,
+      indicatorColor: Colors.transparent,
+      selectedIconTheme: IconThemeData(color: AppColors.ink, size: 24),
+      unselectedIconTheme: IconThemeData(color: AppColors.inkSubtle, size: 24),
+      selectedLabelTextStyle: TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppColors.ink),
+      unselectedLabelTextStyle: TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: AppColors.inkSubtle),
+    ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: AppColors.accent,
       foregroundColor: Colors.white,

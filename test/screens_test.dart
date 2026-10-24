@@ -137,12 +137,32 @@ void main() {
   testWidgets('shop home, every tab', (tester) async {
     await pumpScreen(tester, const ShopHomePage());
     expect(find.text('Nendoroid Miku'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget, reason: 'phone width');
+    expect(find.byType(NavigationRail), findsNothing);
     expect(find.textContaining('expires in 5 days'), findsOneWidget);
     for (final tab in ['History', 'Customers', 'Shop']) {
       await tester.tap(find.text(tab).last);
       await tester.pumpAndSettle();
     }
     expect(find.text('Sign out'), findsOneWidget);
+  });
+
+  testWidgets('tablets get a side rail instead of the bottom bar',
+      (tester) async {
+    tester.view.physicalSize = const Size(1024, 768) * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(ProviderScope(
+      overrides: overrides,
+      child: MaterialApp(theme: buildAppTheme(), home: const ShopHomePage()),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byType(NavigationRail), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+
+    await tester.tap(find.text('Customers'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ko Aung'), findsOneWidget);
   });
 
   testWidgets('item page', (tester) async {

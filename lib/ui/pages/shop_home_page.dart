@@ -11,7 +11,8 @@ import 'item_form_page.dart';
 import 'items_tab.dart';
 import 'shop_tab.dart';
 
-/// A shop owner's home: Stock, History, Customers, Shop.
+/// A shop owner's home: Stock, History, Customers, Shop. Bottom bar on
+/// phones, side rail on tablets.
 class ShopHomePage extends ConsumerStatefulWidget {
   const ShopHomePage({super.key});
 
@@ -43,6 +44,36 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
       _ => null,
     };
 
+    // Phones get a bottom bar, which the thumb reaches. From tablet width
+    // (Material's 600dp breakpoint) there is room for a rail at the side,
+    // and the content stops stretching so lines stay readable.
+    final wide = MediaQuery.sizeOf(context).width >= 600;
+
+    final content = Column(
+      children: [
+        if (shop != null) ExpiryBanner(shop: shop),
+        Expanded(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 840),
+              child: IndexedStack(
+                index: _tab,
+                children: const [
+                  ItemsTab(),
+                  HistoryTab(),
+                  CustomersTab(),
+                  ShopTab(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    void select(int i) => setState(() => _tab = i);
+
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
@@ -60,48 +91,54 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
           ],
         ),
       ),
-      body: Column(
-        children: [
-          if (shop != null) ExpiryBanner(shop: shop),
-          Expanded(
-            child: IndexedStack(
-              index: _tab,
-              children: const [
-                ItemsTab(),
-                HistoryTab(),
-                CustomersTab(),
-                ShopTab(),
+      body: wide
+          ? Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _tab,
+                  onDestinationSelected: select,
+                  labelType: NavigationRailLabelType.all,
+                  groupAlignment: -0.9,
+                  destinations: [
+                    for (final (icon, selected, label) in _sections)
+                      NavigationRailDestination(
+                        icon: Icon(icon),
+                        selectedIcon: Icon(selected),
+                        label: Text(label),
+                      ),
+                  ],
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(child: content),
+              ],
+            )
+          : content,
+      floatingActionButton: canWrite ? fab : null,
+      bottomNavigationBar: wide
+          ? null
+          : NavigationBar(
+              selectedIndex: _tab,
+              onDestinationSelected: select,
+              destinations: [
+                for (final (icon, selected, label) in _sections)
+                  NavigationDestination(
+                    icon: Icon(icon),
+                    selectedIcon: Icon(selected),
+                    label: label,
+                  ),
               ],
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: canWrite ? fab : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.inventory_2_outlined),
-              selectedIcon: Icon(Icons.inventory_2),
-              label: 'Stock'),
-          NavigationDestination(
-              icon: Icon(Icons.swap_vert),
-              selectedIcon: Icon(Icons.swap_vert_circle),
-              label: 'History'),
-          NavigationDestination(
-              icon: Icon(Icons.people_outline),
-              selectedIcon: Icon(Icons.people),
-              label: 'Customers'),
-          NavigationDestination(
-              icon: Icon(Icons.storefront_outlined),
-              selectedIcon: Icon(Icons.storefront),
-              label: 'Shop'),
-        ],
-      ),
     );
   }
 }
+
+/// The four sections, in tab order: icon, selected icon, label.
+const _sections = [
+  (Icons.inventory_2_outlined, Icons.inventory_2, 'Stock'),
+  (Icons.swap_vert, Icons.swap_vert, 'History'),
+  (Icons.people_outline, Icons.people, 'Customers'),
+  (Icons.storefront_outlined, Icons.storefront, 'Shop'),
+];
 
 /// Shown instead of an action when the shop is read-only.
 void explainReadOnly(BuildContext context) =>
