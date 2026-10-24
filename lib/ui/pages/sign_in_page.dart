@@ -30,6 +30,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _isSignUp = false;
+  bool _showPassword = false;
   bool _busy = false;
   String? _error;
 
@@ -113,14 +114,25 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                       const SizedBox(height: 12),
                       TextField(
                         controller: _password,
-                        obscureText: true,
+                        obscureText: !_showPassword,
                         autofillHints: [
                           _isSignUp
                               ? AutofillHints.newPassword
                               : AutofillHints.password
                         ],
-                        decoration:
-                            const InputDecoration(labelText: 'Password'),
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          suffixIcon: IconButton(
+                            tooltip: _showPassword
+                                ? 'Hide password'
+                                : 'Show password',
+                            icon: Icon(_showPassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined),
+                            onPressed: () =>
+                                setState(() => _showPassword = !_showPassword),
+                          ),
+                        ),
                         onSubmitted: (_) => _busy ? null : _submit(),
                       ),
                       if (_error != null) ...[
