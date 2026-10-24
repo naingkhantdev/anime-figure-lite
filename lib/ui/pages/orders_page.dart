@@ -75,6 +75,10 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
             child: const Text('Keep order'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Cancel order'),
           ),

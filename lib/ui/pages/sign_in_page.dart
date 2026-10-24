@@ -67,6 +67,18 @@ class _SignInPageState extends ConsumerState<SignInPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.asset(
+                      'assets/brand/icon.png',
+                      width: 104,
+                      height: 104,
+                      semanticLabel: 'Anime Figure Shop logo',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Text(
                   'Anime Figure Shop',
                   textAlign: TextAlign.center,
