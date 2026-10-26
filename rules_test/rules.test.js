@@ -19,6 +19,7 @@ import {
   deleteDoc,
   writeBatch,
   Timestamp,
+  Bytes,
 } from 'firebase/firestore';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -396,6 +397,230 @@ describe('figure shop', () => {
     await assertFails(
       updateDoc(doc(as('bob'), 'orders/o1'), { status: 'cancelled' }),
       'only pending orders can be cancelled',
+    );
+  });
+});
+
+// A shop's items in the customer catalog, and its orders.
+describe('selling in the app', () => {
+  const listing = (extra = {}) => ({
+    name: 'Figure',
+    description: 'From One Piece.',
+    price: 25000,
+    stock_quantity: 5,
+    image_url: '',
+    category: 'Scale figure',
+    anime: 'One Piece',
+    is_active: true,
+    shop_id: 'alice',
+    shop_name: 'Shop',
+    shop_open_until: null,
+    item_id: 'item1',
+    updated_at: serverTimestamp(),
+    ...extra,
+  });
+
+  /** alice's shop, open until [expires], with a listed item1 of 5. */
+  const seedListed = async (expires = future()) => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'shops/alice'), shopDoc(expires));
+      await setDoc(doc(db, 'shops/alice/items/item1'), {
+        ...itemFields({
+          quantity: 5,
+          listed: true,
+          category: 'Scale figure',
+          anime: 'One Piece',
+          description: 'From One Piece.',
+          image_url: '',
+        }),
+        created_at: Timestamp.now(),
+        updated_at: Timestamp.now(),
+      });
+    });
+    return expires;
+  };
+
+  test('an open shop lists an item that matches it', async () => {
+    const expires = await seedListed();
+    await assertSucceeds(
+      setDoc(
+        doc(as('alice'), 'products/alice_item1'),
+        listing({ shop_open_until: expires }),
+      ),
+    );
+  });
+
+  test('the catalog copy cannot differ from the item', async () => {
+    const expires = await seedListed();
+    const db = as('alice');
+    for (const lie of [
+      { price: 1000 },
+      { stock_quantity: 99 },
+      { shop_name: 'Famous Shop' },
+      { shop_open_until: Timestamp.fromMillis(Date.now() + 999 * DAY) },
+    ]) {
+      await assertFails(
+        setDoc(
+          doc(db, 'products/alice_item1'),
+          listing({ shop_open_until: expires, ...lie }),
+        ),
+        JSON.stringify(lie),
+      );
+    }
+  });
+
+  test("cannot list for another shop or overwrite the house's figures",
+    async () => {
+      const expires = await seedListed();
+      await seed((db) => setDoc(doc(db, 'products/fig-1'), { name: 'Miku' }));
+      const db = as('alice');
+      await assertFails(
+        setDoc(
+          doc(db, 'products/fig-1'),
+          listing({ shop_open_until: expires }),
+        ),
+      );
+      await assertFails(
+        setDoc(
+          doc(as('bob'), 'products/alice_item1'),
+          listing({ shop_open_until: expires }),
+        ),
+      );
+    });
+
+  test('an expired shop cannot list', async () => {
+    const expires = await seedListed(past());
+    await assertFails(
+      setDoc(
+        doc(as('alice'), 'products/alice_item1'),
+        listing({ shop_open_until: expires }),
+      ),
+    );
+  });
+
+  test('a sale updates the item, its history and its listing together',
+    async () => {
+      const expires = await seedListed();
+      const db = as('alice');
+      const batch = writeBatch(db);
+      batch.set(
+        doc(db, 'shops/alice/moves/m2'),
+        moveFields({ type: 'out', quantity: 2, quantity_before: 5,
+          quantity_after: 3 }),
+      );
+      batch.update(doc(db, 'shops/alice/items/item1'), {
+        quantity: 3,
+        last_move_id: 'm2',
+        updated_at: serverTimestamp(),
+      });
+      batch.set(
+        doc(db, 'products/alice_item1'),
+        listing({ shop_open_until: expires, stock_quantity: 3 }),
+      );
+      await assertSucceeds(batch.commit());
+    });
+
+  test('super admin moves the end date with the shop, nothing else',
+    async () => {
+      const expires = await seedListed();
+      await seed(async (db) => {
+        await setDoc(doc(db, 'super_admins/boss'), {});
+        await setDoc(doc(db, 'products/alice_item1'), {
+          ...listing({ shop_open_until: expires }),
+          updated_at: Timestamp.now(),
+        });
+      });
+      const db = as('boss');
+      const later = Timestamp.fromMillis(Date.now() + 90 * DAY);
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'shops/alice'), { expires_at: later });
+      batch.update(doc(db, 'products/alice_item1'), { shop_open_until: later });
+      await assertSucceeds(batch.commit());
+      await assertFails(
+        updateDoc(doc(db, 'products/alice_item1'), { price: 1 }),
+      );
+    });
+
+  const order = (extra = {}) => ({
+    user_id: 'bob',
+    shop_id: 'alice',
+    status: 'pending',
+    items: [{ product_id: 'alice_item1', name: 'Figure', price: 25000,
+      quantity: 1 }],
+    total: 25000,
+    phone: '09123456789',
+    delivery_method: 'pickup',
+    address: '',
+    note: '',
+    created_at: serverTimestamp(),
+    ...extra,
+  });
+
+  test('a customer orders from a shop; the shop sees it, others do not',
+    async () => {
+      await seed((db) => setDoc(doc(db, 'shops/alice'), shopDoc(future())));
+      await assertSucceeds(setDoc(doc(as('bob'), 'orders/o1'), order()));
+      await assertSucceeds(getDoc(doc(as('alice'), 'orders/o1')));
+      await assertFails(getDoc(doc(as('carol'), 'orders/o1')));
+    });
+
+  test('the shop moves its order on step by step, and only the status',
+    async () => {
+      await seed(async (db) => {
+        await setDoc(doc(db, 'shops/alice'), shopDoc(future()));
+        await setDoc(doc(db, 'orders/o1'), {
+          ...order(),
+          created_at: Timestamp.now(),
+        });
+      });
+      const db = as('alice');
+      const o = doc(db, 'orders/o1');
+      await assertFails(updateDoc(o, { status: 'shipped' }), 'skips confirm');
+      await assertFails(updateDoc(o, { status: 'confirmed', total: 1 }));
+      await assertSucceeds(updateDoc(o, { status: 'confirmed' }));
+      await assertSucceeds(updateDoc(o, { status: 'shipped' }));
+      await assertFails(updateDoc(o, { status: 'pending' }));
+      await assertFails(
+        updateDoc(doc(as('carol'), 'orders/o1'), { status: 'cancelled' }),
+      );
+    });
+});
+
+describe('photos', () => {
+  const photo = (extra = {}) => ({
+    shop_id: 'alice',
+    data: Bytes.fromUint8Array(new Uint8Array(1000)),
+    created_at: serverTimestamp(),
+    ...extra,
+  });
+
+  test('an open shop saves a photo; anyone can see it', async () => {
+    await seed((db) => setDoc(doc(db, 'shops/alice'), shopDoc(future())));
+    await assertSucceeds(setDoc(doc(as('alice'), 'photos/p1'), photo()));
+    await assertSucceeds(
+      getDoc(doc(env.unauthenticatedContext().firestore(), 'photos/p1')),
+    );
+  });
+
+  test('no photos for other shops, closed shops, or too big', async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'shops/alice'), shopDoc(future()));
+      await setDoc(doc(db, 'shops/bob'), shopDoc(past()));
+    });
+    await assertFails(
+      setDoc(doc(as('carol'), 'photos/p1'), photo()),
+      'not her shop',
+    );
+    await assertFails(
+      setDoc(doc(as('bob'), 'photos/p2'), photo({ shop_id: 'bob' })),
+      'expired',
+    );
+    await assertFails(
+      setDoc(
+        doc(as('alice'), 'photos/p3'),
+        photo({ data: Bytes.fromUint8Array(new Uint8Array(500 * 1024)) }),
+      ),
+      'too big',
     );
   });
 });

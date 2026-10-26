@@ -13,6 +13,11 @@ rules_version = '2';
 //   ever reach its own.
 // - Customer: any other account. Uses products and orders below.
 //
+// A shop can also sell in the app: an item with listed == true has a copy
+// in products/{shop id}_{item id}, written by the owner's app together with
+// the item. Customers' orders carry the shop's id, and the shop handles
+// them.
+//
 // A shop can change its data only while shops/{id}.expires_at is in the
 // future. A new shop has expires_at == null (pending) until the super admin
 // sets a date. Expired shops can still read everything.
@@ -113,11 +118,14 @@ service cloud.firestore {
         // still point at something.
         allow delete: if false;
 
+        // listed, category, anime, description and image_url are for
+        // selling in the app; older items don't have them.
         function validItem(d) {
           return d.keys().hasOnly(
                    ['name', 'code', 'unit', 'price', 'cost', 'quantity',
                     'low_stock_at', 'is_active', 'last_move_id',
-                    'created_at', 'updated_at'])
+                    'created_at', 'updated_at',
+                    'listed', 'category', 'anime', 'description', 'image_url'])
             && d.keys().hasAll(
                    ['name', 'code', 'unit', 'price', 'cost', 'quantity',
                     'low_stock_at', 'is_active', 'last_move_id',
@@ -131,7 +139,12 @@ service cloud.firestore {
             && wholeNumber(d.low_stock_at, 1000000)
             && d.is_active is bool
             && d.last_move_id is string
-            && d.updated_at == request.time;
+            && d.updated_at == request.time
+            && d.get('listed', false) is bool
+            && text(d.get('category', ''), 0, 40)
+            && text(d.get('anime', ''), 0, 60)
+            && text(d.get('description', ''), 0, 500)
+            && text(d.get('image_url', ''), 0, 500);
         }
 
         // The movement named by last_move_id is being created in this very
@@ -226,18 +239,64 @@ service cloud.firestore {
     }
 
     // ---- The figure shop: products, orders ----
-    // The Firebase console bypasses these rules, so staff manage products
-    // and order status there.
+    // The Firebase console bypasses these rules, so staff manage the
+    // house's own products and order status there.
 
     // Anyone may browse, signed in or not.
     match /products/{productId} {
       allow read: if true;
-      allow write: if false; // console only
+
+      // A shop's copy of one of its items. Every value must equal the item
+      // as it stands after this write, and the shop as it is now, so the
+      // catalog can't say anything the stock doesn't.
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(listingKeys())
+        && request.resource.data.keys().hasAll(listingKeys())
+        && request.resource.data.shop_id == request.auth.uid
+        && canWrite(request.auth.uid)
+        && productId == request.auth.uid + '_' + request.resource.data.item_id
+        && (resource == null
+            || resource.data.get('shop_id', '') == request.auth.uid)
+        && listingMatches(request.resource.data);
+
+      // Renewing or ending a shop moves its figures' end date with it.
+      allow update: if isSuperAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['shop_open_until'])
+        && request.resource.data.shop_open_until == getAfter(
+             /databases/$(database)/documents/shops/$(resource.data.shop_id)
+           ).data.expires_at;
+
+      allow delete: if false; // unlisting sets is_active = false
+
+      function listingKeys() {
+        return ['name', 'description', 'price', 'stock_quantity',
+                'image_url', 'category', 'anime', 'is_active', 'shop_id',
+                'shop_name', 'shop_open_until', 'item_id', 'updated_at'];
+      }
+
+      function listingMatches(d) {
+        let item = getAfter(/databases/$(database)/documents/shops/$(d.shop_id)/items/$(d.item_id)).data;
+        let shop = get(/databases/$(database)/documents/shops/$(d.shop_id)).data;
+        return d.name == item.name
+          && d.price == item.price
+          && d.stock_quantity == item.quantity
+          && d.description == item.get('description', '')
+          && d.image_url == item.get('image_url', '')
+          && d.category == item.get('category', '')
+          && d.anime == item.get('anime', '')
+          && d.is_active == (item.get('listed', false) && item.is_active)
+          && d.shop_name == shop.name
+          && d.shop_open_until == shop.expires_at
+          && d.updated_at == request.time;
+      }
     }
 
     match /orders/{orderId} {
+      // The customer who placed it, and the shop it was placed with.
       allow read: if request.auth != null
-        && resource.data.user_id == request.auth.uid;
+        && (resource.data.user_id == request.auth.uid
+            || resource.data.shop_id == request.auth.uid);
 
       // Customers can only create their own pending order. Prices/total in
       // the order are written by the client, so staff MUST re-check them
@@ -245,12 +304,13 @@ service cloud.firestore {
       // Lengths must match lib/data/order_repository.dart.
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(
-             ['user_id', 'status', 'items', 'total', 'phone',
+             ['user_id', 'shop_id', 'status', 'items', 'total', 'phone',
               'delivery_method', 'address', 'note', 'created_at'])
         && request.resource.data.keys().hasAll(
-             ['user_id', 'status', 'items', 'total', 'phone',
+             ['user_id', 'shop_id', 'status', 'items', 'total', 'phone',
               'delivery_method', 'address', 'note', 'created_at'])
         && request.resource.data.user_id == request.auth.uid
+        && text(request.resource.data.shop_id, 0, 128)
         && request.resource.data.status == 'pending'
         && request.resource.data.items is list
         && request.resource.data.items.size() > 0
@@ -289,7 +349,39 @@ service cloud.firestore {
         && request.resource.data.address == ''
         && request.resource.data.note == '';
 
+      // The shop moves its own order on, one step at a time, while open:
+      // pending → confirmed or cancelled, confirmed → shipped or cancelled.
+      allow update: if signedIn()
+        && resource.data.get('shop_id', '') == request.auth.uid
+        && canWrite(request.auth.uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status'])
+        && ((resource.data.status == 'pending'
+             && request.resource.data.status in ['confirmed', 'cancelled'])
+            || (resource.data.status == 'confirmed'
+             && request.resource.data.status in ['shipped', 'cancelled']));
+
       allow delete: if false; // console only
+    }
+
+    // ---- Photos of shops' items ----
+    // Kept in Firestore because Storage needs the paid plan. The app
+    // shrinks each photo to 800px, JPEG quality 70 (about 60–150 KB); the
+    // cap matches lib/data/photo_repository.dart maxPhotoBytes.
+    match /photos/{photoId} {
+      allow read: if true; // the catalog is public
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['shop_id', 'data', 'created_at'])
+        && request.resource.data.keys().hasAll(['shop_id', 'data', 'created_at'])
+        && request.resource.data.shop_id == request.auth.uid
+        && canWrite(request.auth.uid)
+        && request.resource.data.data is bytes
+        && request.resource.data.data.size() <= 400 * 1024
+        && request.resource.data.created_at == request.time;
+
+      allow update: if false; // a new photo is a new document
+      allow delete: if signedIn() && resource.data.shop_id == request.auth.uid;
     }
 
     match /{document=**} {

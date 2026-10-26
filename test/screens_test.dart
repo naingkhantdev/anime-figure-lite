@@ -7,6 +7,7 @@ import 'package:anime_figure_shop_lite/models/customer.dart';
 import 'package:anime_figure_shop_lite/models/item.dart';
 import 'package:anime_figure_shop_lite/models/product.dart';
 import 'package:anime_figure_shop_lite/models/shop.dart';
+import 'package:anime_figure_shop_lite/models/shop_order.dart';
 import 'package:anime_figure_shop_lite/models/stock_move.dart';
 import 'package:anime_figure_shop_lite/providers/providers.dart';
 import 'package:anime_figure_shop_lite/ui/pages/customer_home_page.dart';
@@ -105,6 +106,26 @@ final overrides = [
             address: 'Yangon',
             note: ''),
       ])),
+  shopOrdersProvider.overrideWith((ref) => Stream.value([
+        ShopOrder(
+          id: 'order1',
+          status: 'pending',
+          total: 25000,
+          items: const [
+            OrderLine(
+                productId: 'me_1',
+                name: 'Nendoroid Miku',
+                price: 25000,
+                quantity: 1),
+          ],
+          phone: '09123456789',
+          deliveryMethod: DeliveryMethod.delivery,
+          address: 'Yangon',
+          note: '',
+          createdAt: now,
+          shopId: 'me',
+        ),
+      ])),
   allShopsProvider.overrideWith((ref) => Stream.value([
         shop('a', 'Sakura Figures', now.add(const Duration(days: 5))),
         shop('b', 'Mandalay Toys', now.add(const Duration(days: 120))),
@@ -113,10 +134,19 @@ final overrides = [
       ])),
 ];
 
+/// Reduce motion on, so looping effects (border beam, skeleton shimmer)
+/// stand still and pumpAndSettle can settle.
+void stillMotion(WidgetTester tester) {
+  tester.platformDispatcher.accessibilityFeaturesTestValue =
+      const FakeAccessibilityFeatures(disableAnimations: true);
+  addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+}
+
 Future<void> pumpScreen(WidgetTester tester, Widget screen) async {
   tester.view.physicalSize = const Size(360, 720) * 2;
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
+  stillMotion(tester);
   await tester.pumpWidget(ProviderScope(
     overrides: overrides,
     child: MaterialApp(theme: buildAppTheme(), home: screen),
@@ -141,6 +171,76 @@ void main() {
     expect(find.text('Sign in'), findsOneWidget);
     expect(find.text('Open a shop'), findsNothing, reason: 'signed in only');
     expect(find.text('Sign out'), findsNothing);
+  });
+
+  testWidgets('catalog search, sort and the in-stock filter', (tester) async {
+    await pumpScreen(tester, const CustomerHomePage());
+    expect(find.text('Gojo Satoru 1/7 scale'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, 'miku');
+    await tester.pumpAndSettle();
+    expect(find.text('Gojo Satoru 1/7 scale'), findsNothing);
+    expect(find.text('Nendoroid Miku'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, '');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Filters'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('In stock only'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Show 1 figure'));
+    await tester.pumpAndSettle();
+    expect(find.text('Gojo Satoru 1/7 scale'), findsNothing,
+        reason: 'sold out');
+    expect(find.text('1 of 2 figures · Recommended'), findsOneWidget);
+    expect(find.text('In stock'), findsOneWidget, reason: 'removable pill');
+
+    await tester.tap(find.byTooltip('Filters'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Highest price'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Show 1 figure'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 of 2 figures · Highest price'), findsOneWidget);
+    expect(find.text('Nendoroid Miku'), findsOneWidget);
+  });
+
+  testWidgets('price filter: typed min and max', (tester) async {
+    await pumpScreen(tester, const CustomerHomePage());
+    await tester.tap(find.byTooltip('Filters'));
+    await tester.pumpAndSettle();
+
+    TextField box(String label) => tester.widget<TextField>(
+        find.ancestor(of: find.text(label), matching: find.byType(TextField)));
+    Finder field(String label) =>
+        find.ancestor(of: find.text(label), matching: find.byType(TextField));
+
+    await tester.enterText(field('Min'), '300000');
+    await tester.pump();
+    expect(box('Min').controller!.text, '300,000', reason: 'grouped');
+    expect(find.text('Show 1 figure'), findsOneWidget);
+
+    await tester.enterText(field('Max'), '100');
+    await tester.pump();
+    expect(find.text('Min is more than max.'), findsOneWidget);
+    expect(find.text('Check the price range'), findsOneWidget);
+
+    await tester.enterText(field('Max'), '400000');
+    await tester.pump();
+    await tester.tap(find.text('Show 1 figure'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nendoroid Miku'), findsNothing);
+    expect(find.text('Gojo Satoru 1/7 scale'), findsOneWidget);
+  });
+
+  testWidgets('a shop sees orders for its figures and can confirm',
+      (tester) async {
+    await pumpScreen(tester, const ShopHomePage());
+    await tester.tap(find.text('Orders').last);
+    await tester.pumpAndSettle();
+    expect(find.text('To do · 1'), findsOneWidget);
+    expect(find.text('1 × Nendoroid Miku'), findsOneWidget);
+    expect(find.text('Confirm'), findsOneWidget);
   });
 
   testWidgets('"View cart" after adding closes the product, opens Cart',
@@ -200,6 +300,7 @@ void main() {
     tester.view.physicalSize = const Size(1024, 768) * 2;
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
+    stillMotion(tester);
     await tester.pumpWidget(ProviderScope(
       overrides: overrides,
       child: MaterialApp(theme: buildAppTheme(), home: const ShopHomePage()),

@@ -1,12 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/auth_repository.dart';
 import '../data/inventory_repository.dart';
 import '../data/order_repository.dart';
+import '../data/photo_repository.dart';
 import '../data/product_repository.dart';
 import '../data/shop_repository.dart';
+import '../logic/catalog.dart';
 import '../models/cart_item.dart';
 import '../models/customer.dart';
 import '../models/item.dart';
@@ -20,6 +23,15 @@ final authRepositoryProvider =
 
 final productRepositoryProvider =
     Provider((ref) => ProductRepository(FirebaseFirestore.instance));
+
+final photoRepositoryProvider =
+    Provider((ref) => PhotoRepository(FirebaseFirestore.instance));
+
+/// A photo's JPEG bytes, by `photos/{id}`. Kept for the session once
+/// loaded, so scrolling back doesn't fetch it again.
+final photoBytesProvider = FutureProvider.family<Uint8List?, String>(
+  (ref, id) => ref.watch(photoRepositoryProvider).load(id),
+);
 
 final orderRepositoryProvider =
     Provider((ref) => OrderRepository(FirebaseFirestore.instance));
@@ -126,7 +138,13 @@ final canWriteProvider = Provider<bool>((ref) {
 final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
   final user = ref.watch(authStateProvider).valueOrNull;
   if (user == null) throw StateError('No shop without a signed-in owner.');
-  return InventoryRepository(FirebaseFirestore.instance, shopId: user.uid);
+  return InventoryRepository(
+    FirebaseFirestore.instance,
+    shopId: user.uid,
+    // Read when writing, not watched: a change to the shop shouldn't
+    // restart every stock stream.
+    shop: () => ref.read(myShopProvider).valueOrNull,
+  );
 });
 
 final itemsProvider = StreamProvider<List<Item>>(
@@ -149,3 +167,14 @@ final itemMovesProvider = StreamProvider.family<List<StockMove>, String>(
 final customersProvider = StreamProvider<List<Customer>>(
   (ref) => ref.watch(inventoryRepositoryProvider).watchCustomers(),
 );
+
+/// Customers' orders for the signed-in owner's shop, newest first.
+final shopOrdersProvider = StreamProvider<List<ShopOrder>>((ref) {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user == null) return Stream.value(const []);
+  return ref.watch(orderRepositoryProvider).watchShopOrders(user.uid);
+});
+
+/// What the customer has asked the catalog to show: search, sort, filters.
+final catalogFilterProvider =
+    StateProvider<CatalogFilter>((ref) => const CatalogFilter());

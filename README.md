@@ -20,10 +20,16 @@ large project. The data shapes use the same snake_case names, so moving is easy.
 - Prices in Myanmar kyat (MMK), shown as `25,000 Ks`
 - Browse products without an account; sign in (email/password) only to
   check out or see "My orders"
+- Search with a sort button beside it (recommended, price either way, name),
+  and filter chips: **Category**, **Anime**, **Price** (slider or ready
+  ranges), **Shop**, **In stock**. Tapping a figure's anime, category or
+  shop on its page shows more of the same.
+- Figures from the house and from shops that sell in the app, side by side
 - Cart (in memory; kept when a guest signs in, cleared on sign-out)
 - Checkout: phone, **Delivery** or **Pick up at shop**, address (delivery
   only), optional note. Pre-filled from the customer's last order.
-- Place an order. It is created as `pending`.
+- Place an order. It is created as `pending`, one order per shop in the
+  cart, so each shop handles its own.
 - "My orders" with status and details; customers can cancel while `pending`
 - Payment happens outside the app (cash on delivery, bank transfer, mobile
   wallet)
@@ -64,13 +70,37 @@ Put how shop admins reach you (to be approved or renew) in
   It can never be edited or deleted; fix mistakes with a new movement.
 - **Customers**: records the shop keeps (not app accounts), each with their
   recent purchases.
+- **Sell in the app**: a switch on an item (with category, anime, photo link
+  and description) puts it in the customer catalog under the shop's name.
+  Its price and stock follow the item. The catalog hides a shop's figures
+  while it is waiting or expired.
+- **Orders**: customers' orders for the shop's figures. **Confirm** takes
+  the stock out (a "Stock out" in History at the order's price), then
+  **Shipped** / **Picked up**, or **Cancel**. Waiting orders show as a count
+  on the tab.
 
 ### Look
 
-Minimal (`lib/ui/theme.dart`): white, near-black ink, hairline rules, DM
-Sans. Pink is the one accent: main buttons, prices, the cart badge, focus.
-Other colour only where it means something: low stock, out of stock, in/out
-numbers, expiry.
+Minimal glass (`lib/ui/theme.dart`, `lib/ui/widgets/glass.dart`): a pale
+aurora ground (soft pink, lilac and sky glows), frosted white panels with a
+bright rim, near-black ink, DM Sans. Pink is the one accent: main buttons,
+prices, the cart badge, the selected tab, focus. Other colour only where it
+means something: low stock, out of stock, in/out numbers, expiry. The bottom
+bar floats as real frosted glass; cards are translucent without blur, so
+long lists stay smooth.
+
+Motion (`lib/ui/widgets/effects.dart`, `skeleton.dart`), all still when the
+phone's "remove animations" setting is on:
+
+- The app name in the bars and on sign-in gets a pink shine that sweeps
+  across it now and then.
+- The one panel holding a screen's main action (sign in, the cart total,
+  place order, waiting for approval) has a beam of light running round its
+  border.
+- While data loads, a skeleton in the shape of the content shimmers instead
+  of a spinner.
+- List items fade in and rise into place, slowing as they settle: staggered
+  on first load, then each one as it scrolls into view.
 
 The phone shows white with the logo from the first instant (native splash),
 then `lib/ui/widgets/splash_intro.dart` lets the logo settle and the name
@@ -175,19 +205,40 @@ Firebase console.
 | stock_quantity | number (integer) | |
 | image_url | string | public image URL, or `assets/products/...` for a bundled photo (optional) |
 | is_active | boolean | only `true` products are shown |
+| category | string | one of the list in `lib/logic/catalog.dart` (optional) |
+| anime | string | the series, e.g. `One Piece` (optional) |
 
-The figures from the old Laravel shop (18, with photos) are loaded by
-`tool/seed/seed_products.js` from `tool/seed/products.json`, with the same key
-as the account seed: `npm run seed:products`. Their photos ship inside the app
-in `assets/products/`, so their `image_url` is an asset path like
-`assets/products/fig-ph-924.webp`. Any `image_url` starting with `assets/`
-is loaded from the app; anything else is loaded from the web.
+A shop's figure is a copy of its item at `products/{shop id}_{item id}`,
+written by the owner's app with the item, plus `shop_id`, `shop_name`,
+`item_id`, `shop_open_until` (the shop's expiry) and `updated_at`. The rules
+only accept it when every value equals the item and the shop, so the
+catalog can't claim a price or stock the shop doesn't have. Renewing a shop
+moves `shop_open_until` on its figures too.
+
+The figures from the old Laravel shop (18, with photos) belong to the demo
+shop **Sakura Figures**: `tool/seed/seed_products.js` (`npm run
+seed:products`, after `npm run seed`) writes each one as a Sakura Figures
+stock item, with its opening stock and its catalog copy, from
+`tool/seed/products.json`, and hides any older house copy. Their photos
+ship inside the app in `assets/products/`, so their `image_url` is an asset
+path like `assets/products/fig-ph-924.webp`. Any `image_url` starting with
+`assets/` is loaded from the app; anything else is loaded from the web.
+
+**Photos from the app** (Edit item → Camera / Gallery) are shrunk on the
+phone to at most 800 px, JPEG quality 70 (about 60–150 KB), and saved in
+Firestore, one document each: `photos/{id}` with shop_id, data (bytes) and
+created_at. The item's `image_url` is then `photo:{id}`. Firebase Storage
+would be the usual place, but it needs the paid Blaze plan, which can't be
+paid from Myanmar. The rules let only an open shop's owner add a photo, up
+to 400 KB; anyone may view. The catalog loads each photo only when its card
+shows, and the phone keeps it.
 
 `orders/{id}`. Created by the app.
 | field | type |
 |---|---|
 | user_id | string (Firebase Auth uid) |
-| status | string: `pending` → staff change to `confirmed` / `shipped` / `cancelled`. The customer may set `cancelled` while `pending`. |
+| shop_id | string: the shop it was placed with; empty for the house's own figures (handled by staff in the console) |
+| status | string: `pending` → `confirmed` → `shipped`, or `cancelled`. The shop moves its own orders one step at a time; staff do the house's in the console. The customer may set `cancelled` while `pending`. |
 | items | array of `{product_id, name, price, quantity}` (price in whole kyats) |
 | total | number (integer, whole kyats; excludes any delivery fee) |
 | phone | string, e.g. `09123456789` |
@@ -210,8 +261,9 @@ is loaded from the app; anything else is loaded from the web.
 | created_at | timestamp | |
 
 `shops/{shopId}/items/{id}`: name, code, unit, price, cost, quantity,
-low_stock_at (ints), is_active (bool), last_move_id, created_at, updated_at.
-Items are hidden, not deleted.
+low_stock_at (ints), is_active (bool), last_move_id, created_at, updated_at,
+and for selling in the app listed (bool), category, anime, description,
+image_url. Items are hidden, not deleted.
 
 `shops/{shopId}/moves/{id}`: type (`in` / `out` / `adjust`), item_id,
 item_name, quantity, quantity_before, quantity_after, unit_price, customer_id,

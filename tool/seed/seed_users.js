@@ -57,14 +57,24 @@ async function main() {
   await db.doc(`super_admins/${admin.uid}`).set({ note: 'seeded super admin' });
 
   const shop = await account('shop@animefigureshop.test', 'Sakura Figures');
+  const openUntil = oneMonthFromNow();
   // Same fields firestore.rules require of a shop (lib/models/shop.dart).
   await db.doc(`shops/${shop.uid}`).set({
     name: 'Sakura Figures',
     phone: '09123456789',
     owner_email: shop.email,
-    expires_at: Timestamp.fromDate(oneMonthFromNow()),
+    expires_at: Timestamp.fromDate(openUntil),
     created_at: FieldValue.serverTimestamp(),
   });
+
+  // Its figures in the catalog (seed_products.js) show until the same day.
+  const listed = await db
+    .collection('products')
+    .where('shop_id', '==', shop.uid)
+    .get();
+  for (const doc of listed.docs) {
+    await doc.ref.update({ shop_open_until: Timestamp.fromDate(openUntil) });
+  }
 
   const customer = await account('customer@animefigureshop.test', 'Customer');
   // A customer is any account that is neither of the above, so make sure no

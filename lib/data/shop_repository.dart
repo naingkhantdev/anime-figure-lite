@@ -54,9 +54,23 @@ class ShopRepository {
     });
   }
 
+  /// Also renames the shop on its figures in the catalog.
   Future<void> updateShop(String uid,
-          {required String name, required String phone}) =>
-      _shops.doc(uid).update(_validate(name, phone));
+      {required String name, required String phone}) async {
+    final fields = _validate(name, phone);
+    final batch = _db.batch()..update(_shops.doc(uid), fields);
+    for (final doc in (await _listings(uid)).docs) {
+      batch.update(doc.reference, {
+        'shop_name': fields['name'],
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
+  }
+
+  /// A shop's figures in the customer catalog (see Product).
+  Future<QuerySnapshot<Map<String, dynamic>>> _listings(String shopId) =>
+      _db.collection('products').where('shop_id', isEqualTo: shopId).get();
 
   Map<String, Object> _validate(String name, String phone) {
     final cleanName = name.trim();
@@ -78,9 +92,16 @@ class ShopRepository {
       _shops.snapshots().map((snap) => snap.docs.map(Shop.fromDoc).toList()
         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase())));
 
-  /// Super admin only. Null puts the shop back to pending.
-  Future<void> setExpiry(String shopId, DateTime? expiresAt) =>
-      _shops.doc(shopId).update({
-        'expires_at': expiresAt == null ? null : Timestamp.fromDate(expiresAt),
-      });
+  /// Super admin only. Null puts the shop back to pending. The shop's
+  /// figures in the catalog show until the same date, so renewing a shop
+  /// brings them back and ending it hides them.
+  Future<void> setExpiry(String shopId, DateTime? expiresAt) async {
+    final stamp = expiresAt == null ? null : Timestamp.fromDate(expiresAt);
+    final batch = _db.batch()
+      ..update(_shops.doc(shopId), {'expires_at': stamp});
+    for (final doc in (await _listings(shopId)).docs) {
+      batch.update(doc.reference, {'shop_open_until': stamp});
+    }
+    await batch.commit();
+  }
 }

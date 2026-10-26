@@ -5,8 +5,11 @@ import '../../models/item.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
 import '../theme.dart';
+import '../widgets/effects.dart';
+import '../widgets/glass.dart';
 import '../widgets/common.dart';
 import 'item_detail_page.dart';
+import 'product_list_page.dart';
 
 enum _ItemFilter { all, low, out, hidden }
 
@@ -46,7 +49,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
         }).toList();
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+          padding: pagePadding(context, bottom: 96),
           children: [
             Card(
               child: Padding(
@@ -115,15 +118,20 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
             else if (visible.isEmpty)
               const EmptyState(icon: Icons.search_off, title: 'Nothing matches')
             else
-              Card(
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  children: [
-                    for (final (index, item) in visible.indexed) ...[
-                      if (index > 0) const Divider(indent: 16),
-                      _ItemRow(item: item),
+              RevealScope(
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      for (final (index, item) in visible.indexed) ...[
+                        if (index > 0) const Divider(indent: 16),
+                        Reveal(
+                            index: index,
+                            id: item.id,
+                            child: _ItemRow(item: item)),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
           ],
@@ -143,8 +151,17 @@ class _ItemRow extends StatelessWidget {
     final sub = [
       if (item.code.isNotEmpty) item.code,
       formatMmk(item.price),
+      if (item.listed && item.isActive) 'In the app',
     ].join(' · ');
     return ListTile(
+      contentPadding: const EdgeInsets.fromLTRB(12, 4, 16, 4),
+      leading: SizedBox.square(
+        dimension: 52,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: ProductImage(url: item.imageUrl),
+        ),
+      ),
       title: Text(item.name,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

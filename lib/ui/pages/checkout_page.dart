@@ -6,6 +6,8 @@ import '../../models/shop_order.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
 import '../../utils/phone.dart';
+import '../theme.dart';
+import '../widgets/glass.dart';
 import 'customer_home_page.dart';
 
 /// Contact and delivery details, then place the order. Fields are pre-filled
@@ -62,7 +64,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
-      await ref.read(orderRepositoryProvider).placeOrder(
+      final orders = await ref.read(orderRepositoryProvider).placeOrder(
             userId: user.uid,
             cart: ref.read(cartProvider),
             phone: _phone.text,
@@ -72,7 +74,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           );
       ref.read(cartProvider.notifier).clear();
       messenger.showSnackBar(
-        const SnackBar(content: Text('Order placed — awaiting confirmation.')),
+        SnackBar(
+          content: Text(orders == 1
+              ? 'Order placed. The shop will confirm it soon.'
+              : 'Placed $orders orders, one for each shop. Each shop '
+                  'confirms its own.'),
+        ),
       );
       showCustomerTab(navigator, ref.read(customerTabProvider.notifier),
           CustomerTab.orders);
@@ -99,7 +106,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: pagePadding(context, top: 4, bottom: 24),
           children: [
             TextFormField(
               controller: _phone,
@@ -146,38 +153,54 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               maxLength: maxTextLength,
               decoration: const InputDecoration(labelText: 'Note (optional)'),
             ),
+            const SizedBox(height: 8),
+            Glass(
+              radius: AppRadius.xl,
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      const Expanded(
+                        child: Text('Estimated total',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: AppColors.inkMuted, fontSize: 13)),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(formatMmk(total),
+                          style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.3)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Pay the shop directly. The shop confirms the final price '
+                    'and any delivery fee.',
+                    style: TextStyle(fontSize: 12, color: AppColors.inkSubtle),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: _placing || cart.isEmpty ? null : _placeOrder,
+                    child: _placing
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Place order'),
+                  ),
+                ],
+              ),
+            ),
           ],
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Estimated total: ${formatMmk(total)}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const Text(
-                'Pay the shop directly. The shop confirms the final price '
-                'and any delivery fee.',
-                style: TextStyle(fontSize: 12),
-              ),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: _placing || cart.isEmpty ? null : _placeOrder,
-                child: _placing
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Place order'),
-              ),
-            ],
-          ),
         ),
       ),
     );

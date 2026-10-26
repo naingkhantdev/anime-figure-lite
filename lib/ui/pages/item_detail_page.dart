@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/move_tile.dart';
 import 'item_form_page.dart';
+import 'product_list_page.dart';
 import 'shop_home_page.dart';
 import 'stock_move_page.dart';
 
@@ -178,6 +179,16 @@ class _QuantityCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
+            if (item.imageUrl.isNotEmpty) ...[
+              SizedBox.square(
+                dimension: 84,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: ProductImage(url: item.imageUrl),
+                ),
+              ),
+              const SizedBox(width: 16),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

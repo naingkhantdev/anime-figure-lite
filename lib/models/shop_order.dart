@@ -14,7 +14,9 @@ enum DeliveryMethod {
 
 /// Firestore: `orders/{id}`
 /// Fields: user_id, status, items (list of maps), total (int, whole kyats),
-/// phone, delivery_method, address, note, created_at.
+/// phone, delivery_method, address, note, created_at, shop_id (the shop
+/// whose figures these are; empty for the house's own, absent on old
+/// orders). Checkout makes one order per shop.
 class ShopOrder {
   const ShopOrder({
     required this.id,
@@ -26,6 +28,7 @@ class ShopOrder {
     required this.address,
     required this.note,
     this.createdAt,
+    this.shopId = '',
   });
 
   final String id;
@@ -37,6 +40,7 @@ class ShopOrder {
   final String address;
   final String note;
   final DateTime? createdAt;
+  final String shopId;
 
   bool get canCancel => status == 'pending';
 
@@ -57,6 +61,7 @@ class ShopOrder {
       address: data['address'] as String? ?? '',
       note: data['note'] as String? ?? '',
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
+      shopId: data['shop_id'] as String? ?? '',
     );
   }
 }
