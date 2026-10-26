@@ -13,9 +13,17 @@ import 'sign_in_page.dart';
 enum CustomerTab { shop, cart, orders, account }
 
 /// The open tab, so pages pushed on top (checkout, a product) can send the
-/// customer to one after closing themselves.
-final customerTabProvider =
-    StateProvider<CustomerTab>((ref) => CustomerTab.shop);
+/// customer to one after closing themselves. Back to Shop when someone signs
+/// out or another account takes over; signing in keeps the open tab.
+final customerTabProvider = StateProvider<CustomerTab>((ref) {
+  ref.listen(authStateProvider.select((s) => s.valueOrNull?.uid),
+      (previous, next) {
+    if (previous != null && previous != next) {
+      ref.controller.state = CustomerTab.shop;
+    }
+  });
+  return CustomerTab.shop;
+});
 
 /// Closes every page above the customer home and opens [tab] on it.
 void showCustomerTab(NavigatorState navigator,
