@@ -24,8 +24,8 @@ class ShopLiteApp extends StatelessWidget {
       title: appName,
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      // Browsing is open to everyone; sign-in is asked for only at checkout,
-      // for "My orders" and to open a shop (see ensureSignedIn). Signed-in
+      // Browsing is open to everyone; sign-in lives on the Account tab, and
+      // checkout asks for it on the spot (see ensureSignedIn). Signed-in
       // shop admins and the super admin get their own screens instead.
       home: const SplashIntro(child: RoleGate()),
     );

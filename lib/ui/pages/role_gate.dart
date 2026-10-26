@@ -5,7 +5,7 @@ import '../../logic/subscription.dart';
 import '../../providers/providers.dart';
 import '../widgets/common.dart';
 import 'pending_page.dart';
-import 'product_list_page.dart';
+import 'customer_home_page.dart';
 import 'shop_home_page.dart';
 import 'super_admin_page.dart';
 
@@ -16,19 +16,18 @@ import 'super_admin_page.dart';
 /// - shop admin (`shops/{uid}` exists) → their own stock, or "waiting for
 ///   approval" until the super admin turns the shop on
 ///
-/// A customer becomes a shop admin through "Open a shop" in the shop's
-/// account menu.
+/// A customer becomes a shop admin through "Open a shop" on the Account tab.
 class RoleGate extends ConsumerWidget {
   const RoleGate({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _gate(ref.watch(authStateProvider), (user) {
-      if (user == null) return const ProductListPage();
+      if (user == null) return const CustomerHomePage();
       return _gate(ref.watch(isSuperAdminProvider), (isSuperAdmin) {
         if (isSuperAdmin) return const SuperAdminPage();
         return _gate(ref.watch(myShopProvider), (shop) {
-          if (shop == null) return const ProductListPage();
+          if (shop == null) return const CustomerHomePage();
           if (shop.statusAt(DateTime.now()) == ShopStatus.pending) {
             return PendingPage(shop: shop);
           }

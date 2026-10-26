@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
+import 'customer_home_page.dart';
 import 'product_list_page.dart';
 
 class ProductDetailPage extends ConsumerWidget {
@@ -66,10 +67,21 @@ class ProductDetailPage extends ConsumerWidget {
                   onPressed: p.inStock
                       ? () {
                           ref.read(cartProvider.notifier).add(p);
+                          // Read now: the action may run after this page
+                          // has closed, while the message is still showing.
+                          final navigator = Navigator.of(context);
+                          final tabs = ref.read(customerTabProvider.notifier);
                           ScaffoldMessenger.of(context)
                             ..hideCurrentSnackBar()
                             ..showSnackBar(
-                              SnackBar(content: Text('Added ${p.name}')),
+                              SnackBar(
+                                content: Text('Added ${p.name}'),
+                                action: SnackBarAction(
+                                  label: 'View cart',
+                                  onPressed: () => showCustomerTab(
+                                      navigator, tabs, CustomerTab.cart),
+                                ),
+                              ),
                             );
                         }
                       : null,

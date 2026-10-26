@@ -9,6 +9,7 @@ import 'package:anime_figure_shop_lite/models/product.dart';
 import 'package:anime_figure_shop_lite/models/shop.dart';
 import 'package:anime_figure_shop_lite/models/stock_move.dart';
 import 'package:anime_figure_shop_lite/providers/providers.dart';
+import 'package:anime_figure_shop_lite/ui/pages/customer_home_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/item_detail_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/product_list_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/shop_home_page.dart';
@@ -124,14 +125,38 @@ Future<void> pumpScreen(WidgetTester tester, Widget screen) async {
 }
 
 void main() {
-  testWidgets('figure shop for guests, with the account menu', (tester) async {
-    await pumpScreen(tester, const ProductListPage());
+  testWidgets('figure shop for guests, with a bottom bar', (tester) async {
+    await pumpScreen(tester, const CustomerHomePage());
     expect(find.text('Nendoroid Miku'), findsOneWidget);
-    await tester.tap(find.byTooltip('Account'));
+    expect(find.byType(NavigationBar), findsOneWidget, reason: 'phone width');
+    for (final tab in ['Cart', 'Orders']) {
+      await tester.tap(find.text(tab).last);
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Sign in to see your orders'), findsOneWidget);
+    expect(find.text('Sign in'), findsNothing, reason: 'only on Account');
+
+    await tester.tap(find.text('Go to Account'));
     await tester.pumpAndSettle();
     expect(find.text('Sign in'), findsOneWidget);
-    expect(find.text('Open a shop'), findsOneWidget);
+    expect(find.text('Open a shop'), findsNothing, reason: 'signed in only');
     expect(find.text('Sign out'), findsNothing);
+  });
+
+  testWidgets('"View cart" after adding closes the product, opens Cart',
+      (tester) async {
+    await pumpScreen(tester, const CustomerHomePage());
+    await tester.tap(find.text('Nendoroid Miku'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add to cart'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('View cart'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add to cart'), findsNothing, reason: 'product closed');
+    expect(find.text('Checkout'), findsOneWidget);
+    expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        CustomerTab.cart.index);
   });
 
   testWidgets('shop home, every tab', (tester) async {

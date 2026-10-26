@@ -6,7 +6,7 @@ import '../../models/shop_order.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
 import '../../utils/phone.dart';
-import 'orders_page.dart';
+import 'customer_home_page.dart';
 
 /// Contact and delivery details, then place the order. Fields are pre-filled
 /// from the customer's most recent order, so no separate profile is stored.
@@ -74,8 +74,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       messenger.showSnackBar(
         const SnackBar(content: Text('Order placed — awaiting confirmation.')),
       );
-      navigator.popUntil((route) => route.isFirst);
-      navigator.push(MaterialPageRoute(builder: (_) => const OrdersPage()));
+      showCustomerTab(navigator, ref.read(customerTabProvider.notifier),
+          CustomerTab.orders);
     } on OrderException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
