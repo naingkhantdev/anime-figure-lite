@@ -6,13 +6,17 @@ import '../../providers/providers.dart';
 import '../theme.dart';
 import '../widgets/brand.dart';
 import '../widgets/common.dart';
+import '../widgets/effects.dart';
+import '../widgets/glass.dart';
 
 /// Returns true if a user is signed in, opening [SignInPage] first when
-/// nobody is. Returns false if the user backs out without signing in.
-Future<bool> ensureSignedIn(BuildContext context, WidgetRef ref) async {
+/// nobody is (on "Create an account" with [signUp]). Returns false if the
+/// user backs out without signing in.
+Future<bool> ensureSignedIn(BuildContext context, WidgetRef ref,
+    {bool signUp = false}) async {
   if (ref.read(authRepositoryProvider).currentUser != null) return true;
   final signedIn = await Navigator.of(context).push<bool>(
-    MaterialPageRoute(builder: (_) => const SignInPage()),
+    MaterialPageRoute(builder: (_) => SignInPage(signUp: signUp)),
   );
   return signedIn ?? false;
 }
@@ -20,7 +24,10 @@ Future<bool> ensureSignedIn(BuildContext context, WidgetRef ref) async {
 /// One sign-in for everybody: customers, shop admins and the super admin.
 /// RoleGate decides where they land afterwards.
 class SignInPage extends ConsumerStatefulWidget {
-  const SignInPage({super.key});
+  const SignInPage({super.key, this.signUp = false});
+
+  /// Open on "Create an account" rather than "Welcome back".
+  final bool signUp;
 
   @override
   ConsumerState<SignInPage> createState() => _SignInPageState();
@@ -29,7 +36,7 @@ class SignInPage extends ConsumerStatefulWidget {
 class _SignInPageState extends ConsumerState<SignInPage> {
   final _email = TextEditingController();
   final _password = TextEditingController();
-  bool _isSignUp = false;
+  late bool _isSignUp = widget.signUp;
   bool _showPassword = false;
   bool _busy = false;
   String? _error;
@@ -89,86 +96,114 @@ class _SignInPageState extends ConsumerState<SignInPage> {
           children: [
             const BrandHeader(),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+              padding: const EdgeInsets.fromLTRB(16, 28, 16, 24),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: AutofillGroup(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        _isSignUp ? 'Create an account' : 'Welcome back',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: _email,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(labelText: 'Email'),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _password,
-                        obscureText: !_showPassword,
-                        autofillHints: [
-                          _isSignUp
-                              ? AutofillHints.newPassword
-                              : AutofillHints.password
-                        ],
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          suffixIcon: IconButton(
-                            tooltip: _showPassword
-                                ? 'Hide password'
-                                : 'Show password',
-                            icon: Icon(_showPassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined),
-                            onPressed: () =>
-                                setState(() => _showPassword = !_showPassword),
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: BorderBeam(
+                  radius: AppRadius.xxl,
+                  child: Glass(
+                    radius: AppRadius.xxl,
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                    child: AutofillGroup(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AnimatedSwitcher(
+                            duration: AppMotion.quick,
+                            layoutBuilder: (current, previous) => Stack(
+                              alignment: Alignment.centerLeft,
+                              children: [
+                                ...previous,
+                                if (current != null) current,
+                              ],
+                            ),
+                            child: Text(
+                              _isSignUp ? 'Create an account' : 'Welcome back',
+                              key: ValueKey(_isSignUp),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
                           ),
-                        ),
-                        onSubmitted: (_) => _busy ? null : _submit(),
+                          const SizedBox(height: 4),
+                          Text(
+                            _isSignUp
+                                ? 'One account to shop, track orders and run a shop.'
+                                : 'Sign in to check out and see your orders.',
+                            style: const TextStyle(color: AppColors.inkMuted),
+                          ),
+                          const SizedBox(height: 20),
+                          TextField(
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                            textInputAction: TextInputAction.next,
+                            decoration:
+                                const InputDecoration(labelText: 'Email'),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _password,
+                            obscureText: !_showPassword,
+                            autofillHints: [
+                              _isSignUp
+                                  ? AutofillHints.newPassword
+                                  : AutofillHints.password
+                            ],
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              suffixIcon: IconButton(
+                                tooltip: _showPassword
+                                    ? 'Hide password'
+                                    : 'Show password',
+                                icon: Icon(_showPassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined),
+                                onPressed: () => setState(
+                                    () => _showPassword = !_showPassword),
+                              ),
+                            ),
+                            onSubmitted: (_) => _busy ? null : _submit(),
+                          ),
+                          if (_error != null) ...[
+                            const SizedBox(height: 12),
+                            Text(_error!,
+                                style: const TextStyle(
+                                    color: AppColors.dangerInk)),
+                          ],
+                          const SizedBox(height: 20),
+                          FilledButton(
+                            onPressed: _busy ? null : _submit,
+                            child: _busy
+                                ? const SizedBox.square(
+                                    dimension: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white),
+                                  )
+                                : Text(
+                                    _isSignUp ? 'Create account' : 'Sign in'),
+                          ),
+                          const SizedBox(height: 4),
+                          TextButton(
+                            onPressed: _busy
+                                ? null
+                                : () => setState(() {
+                                      _isSignUp = !_isSignUp;
+                                      _error = null;
+                                    }),
+                            child: Text(_isSignUp
+                                ? 'Already have an account? Sign in'
+                                : 'New here? Create an account'),
+                          ),
+                          if (!_isSignUp)
+                            TextButton(
+                              onPressed: _busy ? null : _resetPassword,
+                              child: const Text('Forgot password?'),
+                            ),
+                        ],
                       ),
-                      if (_error != null) ...[
-                        const SizedBox(height: 12),
-                        Text(_error!,
-                            style: const TextStyle(color: AppColors.dangerInk)),
-                      ],
-                      const SizedBox(height: 20),
-                      FilledButton(
-                        onPressed: _busy ? null : _submit,
-                        child: _busy
-                            ? const SizedBox.square(
-                                dimension: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
-                              )
-                            : Text(_isSignUp ? 'Create account' : 'Sign in'),
-                      ),
-                      const SizedBox(height: 4),
-                      TextButton(
-                        onPressed: _busy
-                            ? null
-                            : () => setState(() {
-                                  _isSignUp = !_isSignUp;
-                                  _error = null;
-                                }),
-                        child: Text(_isSignUp
-                            ? 'Already have an account? Sign in'
-                            : 'New here? Create an account'),
-                      ),
-                      if (!_isSignUp)
-                        TextButton(
-                          onPressed: _busy ? null : _resetPassword,
-                          child: const Text('Forgot password?'),
-                        ),
-                    ],
+                    ),
                   ),
                 ),
               ),

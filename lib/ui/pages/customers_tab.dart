@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
 import '../theme.dart';
+import '../widgets/effects.dart';
+import '../widgets/skeleton.dart';
+import '../widgets/glass.dart';
 import '../widgets/common.dart';
 import 'customer_form_page.dart';
 
@@ -20,6 +23,7 @@ class _CustomersTabState extends ConsumerState<CustomersTab> {
   Widget build(BuildContext context) {
     return AsyncBody(
       value: ref.watch(customersProvider),
+      loading: const SkeletonList(header: false, round: true),
       data: (customers) {
         final q = _query.trim().toLowerCase();
         final visible = customers
@@ -29,7 +33,7 @@ class _CustomersTabState extends ConsumerState<CustomersTab> {
                 c.phone.contains(q))
             .toList();
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+          padding: pagePadding(context, bottom: 96),
           children: [
             TextField(
               decoration: const InputDecoration(
@@ -55,30 +59,33 @@ class _CustomersTabState extends ConsumerState<CustomersTab> {
                   children: [
                     for (final (i, c) in visible.indexed) ...[
                       if (i > 0) const Divider(indent: 72),
-                      ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: AppColors.surfaceSunken,
-                          foregroundColor: AppColors.ink,
-                          child: Text(c.name.characters.first.toUpperCase()),
-                        ),
-                        title: Text(c.name,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: c.phone.isEmpty && c.address.isEmpty
-                            ? null
-                            : Text(
-                                [c.phone, c.address]
-                                    .where((s) => s.isNotEmpty)
-                                    .join(' · '),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style:
-                                    const TextStyle(color: AppColors.inkMuted),
-                              ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => CustomerFormPage(customer: c)),
+                      Reveal(
+                        index: i,
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.accentSoft,
+                            foregroundColor: AppColors.accent,
+                            child: Text(c.name.characters.first.toUpperCase()),
+                          ),
+                          title: Text(c.name,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: c.phone.isEmpty && c.address.isEmpty
+                              ? null
+                              : Text(
+                                  [c.phone, c.address]
+                                      .where((s) => s.isNotEmpty)
+                                      .join(' · '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      color: AppColors.inkMuted),
+                                ),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => CustomerFormPage(customer: c)),
+                          ),
                         ),
                       ),
                     ],

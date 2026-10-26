@@ -7,6 +7,8 @@ import '../../models/shop.dart';
 import '../../providers/providers.dart';
 import '../../utils/dates.dart';
 import '../theme.dart';
+import '../widgets/glass.dart';
+import '../widgets/skeleton.dart';
 import '../widgets/brand.dart';
 import '../widgets/common.dart';
 import 'delete_account_dialog.dart';
@@ -19,12 +21,13 @@ class ShopTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return AsyncBody(
       value: ref.watch(myShopProvider),
+      loading: const SkeletonList(header: false, rows: 3),
       data: (shop) {
         if (shop == null) return const SizedBox.shrink();
         final now = DateTime.now();
         final status = shop.statusAt(now);
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+          padding: pagePadding(context),
           children: [
             Card(
               child: Padding(
@@ -102,7 +105,7 @@ class ShopTab extends ConsumerWidget {
             const SizedBox(height: 32),
             const Center(child: AppLogo(size: 56)),
             const SizedBox(height: 8),
-            const Center(child: Wordmark(size: 16, color: AppColors.inkSubtle)),
+            const Center(child: Wordmark(size: 14, shine: true)),
           ],
         );
       },

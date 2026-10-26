@@ -1,31 +1,56 @@
 import 'package:flutter/material.dart';
 
-/// Minimal: white space, near-black ink, hairline rules. Pink is the one
-/// accent, kept for main actions, prices, the cart badge and focus. Other
-/// colour appears only where it carries meaning (in/out, low, expired).
+import 'widgets/glass.dart';
+
+/// Minimal glass: a pale aurora ground (pink, lilac and sky glows on
+/// lavender-white), frosted white panels with a bright rim, near-black ink.
+/// Pink is the one accent, kept for main actions, prices, the cart badge and
+/// focus. Other colour appears only where it carries meaning (in/out, low,
+/// expired).
+///
+/// Real blur is kept for chrome that content scrolls under (the bottom bar,
+/// the product bar); cards are translucent without blur, which reads the
+/// same over the soft ground and costs nothing to scroll.
 ///
 /// **Light only.**
 abstract final class AppColors {
-  // Surfaces. Everything sits on white; cards are separated by hairlines,
-  // not shadows or tinted backgrounds.
+  // The ground everything floats on, under the aurora glows (glass.dart).
+  static const ground = Color(0xFFF5F3F8);
+
+  // Surfaces. Opaque white is for the splash and the few places that must
+  // not let the ground through; panels use the glass tones below.
   static const surface = Color(0xFFFFFFFF);
   static const surfaceRaised = Color(0xFFFFFFFF);
-  static const surfaceSunken = Color(0xFFF4F4F5);
-  static const line = Color(0xFFECECEE);
-  static const lineStrong = Color(0xFFD9D9DE);
+  static const surfaceSunken = Color(0xFFEEEBF2);
+  static const line = Color(0xFFE6E2EC);
+  static const lineStrong = Color(0xFFD3CEDB);
+
+  // Glass. Fill for cards and panels, a stronger fill for chrome and
+  // sheets, the bright rim light catches on, and the hairline that keeps a
+  // panel's edge visible where the ground is palest.
+  static const glass = Color(0xA8FFFFFF);
+  static const glassStrong = Color(0xD9FFFFFF);
+  static const glassRim = Color(0xCCFFFFFF);
+  static const glassEdge = Color(0x140A0A0B);
+  static const glassShadow = Color(0x1A4A2D63);
 
   // Ink, for text and for selection (chips, segments, tabs).
-  // All three clear WCAG AA on white: ink 19.6:1, inkMuted 6.3:1,
-  // inkSubtle 4.8:1.
+  // All three clear WCAG AA on the ground and on glass: ink 18:1,
+  // inkMuted 5.9:1, inkSubtle 4.5:1.
   static const ink = Color(0xFF0A0A0B);
-  static const inkMuted = Color(0xFF5F5F67);
-  static const inkSubtle = Color(0xFF74747C);
+  static const inkMuted = Color(0xFF5B5A66);
+  static const inkSubtle = Color(0xFF6E6C79);
 
   // The accent. The logo's own pink (#FF2E7E, used for the launcher icon) is
   // too light for text on white, so the UI uses this deeper pink, which
   // passes WCAG AA (5.1:1) for normal text and white text on it.
   static const accent = Color(0xFFE0115F);
   static const accentSoft = Color(0xFFFFE3EC);
+
+  // The light that runs round a border beam and the glint in the shine:
+  // the logo pink, then a lilac from the aurora.
+  static const glow = Color(0xFFFF2E7E);
+  static const glowLilac = Color(0xFF9B7BFF);
 
   // Semantics: soft = tint background, line = its border, ink = text on the
   // tint. Every pair is at least 5.7:1.
@@ -46,18 +71,46 @@ abstract final class AppColors {
   static const infoInk = Color(0xFF14548F);
 }
 
-/// Controls 10, cards 14, sheets 20, pills full.
+/// Controls 12, cards 18, panels 22, sheets 26, pills full.
 abstract final class AppRadius {
-  static const sm = 6.0;
-  static const md = 10.0;
-  static const lg = 14.0;
-  static const xl = 16.0;
-  static const xxl = 20.0;
+  static const sm = 8.0;
+  static const md = 12.0;
+  static const lg = 18.0;
+  static const xl = 22.0;
+  static const xxl = 26.0;
 }
 
 /// Families declared in pubspec.yaml.
 abstract final class AppFonts {
   static const sans = 'DMSans';
+}
+
+/// Shared timing. Entrances decelerate hard (an exponential ease-out), so
+/// things arrive quickly and settle slowly.
+abstract final class AppMotion {
+  static const settle = Cubic(0.16, 1, 0.3, 1);
+  static const quick = Duration(milliseconds: 180);
+  static const reveal = Duration(milliseconds: 650);
+}
+
+/// Every page sits on the aurora ground. Done in the page transition, not
+/// behind the Navigator, so a page sliding in covers the one below instead
+/// of showing it through its glass.
+class _GroundedTransitions extends PageTransitionsBuilder {
+  const _GroundedTransitions(this.inner);
+
+  final PageTransitionsBuilder inner;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) =>
+      inner.buildTransitions(route, context, animation, secondaryAnimation,
+          AuroraBackground(child: child));
 }
 
 ThemeData buildAppTheme() {
@@ -103,57 +156,75 @@ ThemeData buildAppTheme() {
   final controlShape = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(AppRadius.md),
   );
+  OutlineInputBorder inputBorder(Color color, [double width = 1]) =>
+      OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderSide: BorderSide(color: color, width: width),
+      );
 
   return base.copyWith(
-    scaffoldBackgroundColor: AppColors.surface,
+    // Transparent so the aurora (added per page above) shows through.
+    scaffoldBackgroundColor: Colors.transparent,
+    canvasColor: AppColors.ground,
+    pageTransitionsTheme: const PageTransitionsTheme(builders: {
+      TargetPlatform.android:
+          _GroundedTransitions(ZoomPageTransitionsBuilder()),
+      TargetPlatform.iOS:
+          _GroundedTransitions(CupertinoPageTransitionsBuilder()),
+      TargetPlatform.windows:
+          _GroundedTransitions(ZoomPageTransitionsBuilder()),
+      TargetPlatform.macOS:
+          _GroundedTransitions(CupertinoPageTransitionsBuilder()),
+      TargetPlatform.linux: _GroundedTransitions(ZoomPageTransitionsBuilder()),
+    }),
     dividerTheme: const DividerThemeData(
       color: AppColors.line,
       thickness: 1,
       space: 1,
     ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.surface,
+    appBarTheme: AppBarTheme(
+      // Clear over the ground; frosted once content scrolls under it.
+      backgroundColor: WidgetStateColor.resolveWith(
+        (states) => states.contains(WidgetState.scrolledUnder)
+            ? AppColors.glassStrong
+            : Colors.transparent,
+      ),
       foregroundColor: AppColors.ink,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
-      titleTextStyle: TextStyle(
+      titleTextStyle: const TextStyle(
         fontFamily: AppFonts.sans,
         fontSize: 18,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.2,
         color: AppColors.ink,
       ),
-      shape: Border(bottom: BorderSide(color: AppColors.line)),
     ),
     textTheme: base.textTheme
         .apply(bodyColor: AppColors.ink, displayColor: AppColors.ink)
         .copyWith(
           headlineSmall: base.textTheme.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.5),
+              ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.6),
           titleLarge: base.textTheme.titleLarge
               ?.copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.3),
         ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.surfaceSunken,
+      fillColor: AppColors.glassStrong,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.accent, width: 1.2),
-      ),
+      border: inputBorder(AppColors.glassEdge),
+      enabledBorder: inputBorder(AppColors.glassEdge),
+      disabledBorder: inputBorder(AppColors.glassEdge),
+      focusedBorder: inputBorder(AppColors.accent, 1.4),
+      errorBorder: inputBorder(AppColors.dangerLine),
+      focusedErrorBorder: inputBorder(AppColors.dangerInk, 1.4),
       labelStyle: const TextStyle(color: AppColors.inkMuted),
       floatingLabelStyle: const TextStyle(color: AppColors.ink),
       hintStyle: const TextStyle(color: AppColors.inkSubtle),
+      prefixIconColor: AppColors.inkMuted,
+      suffixIconColor: AppColors.inkMuted,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -169,6 +240,7 @@ ThemeData buildAppTheme() {
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(0, 52),
         foregroundColor: AppColors.ink,
+        backgroundColor: AppColors.glass,
         side: const BorderSide(color: AppColors.lineStrong),
         shape: controlShape,
         textStyle: buttonText,
@@ -180,11 +252,15 @@ ThemeData buildAppTheme() {
         textStyle: buttonText.copyWith(fontWeight: FontWeight.w500),
       ),
     ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(foregroundColor: AppColors.ink),
+    ),
+    // Picked chips and segments turn pink-tinted, never solid black.
     chipTheme: const ChipThemeData(
       showCheckmark: false,
-      backgroundColor: AppColors.surface,
-      selectedColor: AppColors.ink,
-      side: BorderSide(color: AppColors.lineStrong),
+      backgroundColor: AppColors.glassStrong,
+      selectedColor: AppColors.accentSoft,
+      side: BorderSide(color: AppColors.glassEdge),
       shape: StadiumBorder(),
       labelStyle: TextStyle(
           fontFamily: AppFonts.sans,
@@ -192,32 +268,35 @@ ThemeData buildAppTheme() {
           color: AppColors.ink),
       secondaryLabelStyle: TextStyle(
           fontFamily: AppFonts.sans,
-          fontWeight: FontWeight.w500,
-          color: Colors.white),
+          fontWeight: FontWeight.w600,
+          color: AppColors.accent),
     ),
     cardTheme: CardTheme(
-      color: AppColors.surfaceRaised,
+      color: AppColors.glass,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: const BorderSide(color: AppColors.line),
+        side: const BorderSide(color: AppColors.glassRim),
       ),
     ),
     listTileTheme: const ListTileThemeData(
       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      iconColor: AppColors.inkMuted,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: Colors.transparent,
+      elevation: 0,
+      indicatorColor: AppColors.accentSoft,
+      indicatorShape: const StadiumBorder(),
       height: 64,
       iconTheme: WidgetStateProperty.resolveWith(
         (states) => IconThemeData(
           size: 24,
           color: states.contains(WidgetState.selected)
-              ? AppColors.ink
+              ? AppColors.accent
               : AppColors.inkSubtle,
         ),
       ),
@@ -226,7 +305,7 @@ ThemeData buildAppTheme() {
           fontFamily: AppFonts.sans,
           fontSize: 12,
           fontWeight: states.contains(WidgetState.selected)
-              ? FontWeight.w600
+              ? FontWeight.w700
               : FontWeight.w500,
           color: states.contains(WidgetState.selected)
               ? AppColors.ink
@@ -236,14 +315,14 @@ ThemeData buildAppTheme() {
     ),
     // Same look as the bottom bar, for tablets (shop_home_page.dart).
     navigationRailTheme: const NavigationRailThemeData(
-      backgroundColor: AppColors.surface,
-      indicatorColor: Colors.transparent,
-      selectedIconTheme: IconThemeData(color: AppColors.ink, size: 24),
+      backgroundColor: AppColors.glass,
+      indicatorColor: AppColors.accentSoft,
+      selectedIconTheme: IconThemeData(color: AppColors.accent, size: 24),
       unselectedIconTheme: IconThemeData(color: AppColors.inkSubtle, size: 24),
       selectedLabelTextStyle: TextStyle(
           fontFamily: AppFonts.sans,
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: AppColors.ink),
       unselectedLabelTextStyle: TextStyle(
           fontFamily: AppFonts.sans,
@@ -265,33 +344,39 @@ ThemeData buildAppTheme() {
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
-        selectedBackgroundColor: AppColors.ink,
-        selectedForegroundColor: Colors.white,
+        backgroundColor: AppColors.glass,
+        selectedBackgroundColor: AppColors.accentSoft,
+        selectedForegroundColor: AppColors.accent,
         foregroundColor: AppColors.ink,
-        side: const BorderSide(color: AppColors.lineStrong),
+        side: const BorderSide(color: AppColors.glassEdge),
         textStyle: buttonText.copyWith(fontSize: 14),
       ),
     ),
     bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Color(0xF5FFFFFF),
       surfaceTintColor: Colors.transparent,
       showDragHandle: true,
       dragHandleColor: AppColors.lineStrong,
+      shape: RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+      ),
     ),
     dialogTheme: DialogTheme(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xF7FFFFFF),
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.xxl),
+        side: const BorderSide(color: AppColors.glassRim),
       ),
     ),
     popupMenuTheme: PopupMenuThemeData(
-      color: AppColors.surface,
+      color: const Color(0xF7FFFFFF),
       surfaceTintColor: Colors.transparent,
-      elevation: 2,
+      elevation: 3,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: const BorderSide(color: AppColors.line),
+        side: const BorderSide(color: AppColors.glassRim),
       ),
     ),
     badgeTheme: const BadgeThemeData(
@@ -300,9 +385,15 @@ ThemeData buildAppTheme() {
     ),
     progressIndicatorTheme:
         const ProgressIndicatorThemeData(color: AppColors.accent),
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: AppColors.accent,
+      selectionColor: Color(0x40E0115F),
+      selectionHandleColor: AppColors.accent,
+    ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: AppColors.ink,
+      backgroundColor: const Color(0xF20A0A0B),
+      actionTextColor: const Color(0xFFFF8DB8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),

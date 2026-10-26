@@ -8,6 +8,8 @@ import '../../providers/providers.dart';
 import '../../utils/dates.dart';
 import '../../utils/money.dart';
 import '../theme.dart';
+import '../widgets/effects.dart';
+import '../widgets/glass.dart';
 import '../widgets/common.dart';
 import '../widgets/move_tile.dart';
 import 'item_detail_page.dart';
@@ -55,7 +57,7 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
         }
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+          padding: pagePadding(context),
           children: [
             Card(
               child: Padding(
@@ -111,7 +113,7 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                 title: 'No movements yet',
                 message: 'Open an item and tap In, Out or Count.',
               ),
-            for (final (day, dayMoves) in groups) ...[
+            for (final (g, (day, dayMoves)) in groups.indexed) ...[
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
                 child: Text(
@@ -120,22 +122,26 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                       fontWeight: FontWeight.w600, color: AppColors.inkMuted),
                 ),
               ),
-              Card(
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  children: [
-                    for (final (i, m) in dayMoves.indexed) ...[
-                      if (i > 0) const Divider(indent: 72),
-                      InkWell(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => ItemDetailPage(itemId: m.itemId)),
+              Reveal(
+                index: g,
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      for (final (i, m) in dayMoves.indexed) ...[
+                        if (i > 0) const Divider(indent: 72),
+                        InkWell(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    ItemDetailPage(itemId: m.itemId)),
+                          ),
+                          child: MoveTile(move: m, showDay: false),
                         ),
-                        child: MoveTile(move: m, showDay: false),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ],

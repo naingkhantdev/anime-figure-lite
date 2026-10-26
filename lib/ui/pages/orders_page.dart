@@ -4,6 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/shop_order.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
+import '../theme.dart';
+import '../widgets/common.dart';
+import '../widgets/effects.dart';
+import '../widgets/glass.dart';
+import '../widgets/skeleton.dart';
 
 class OrdersPage extends ConsumerWidget {
   const OrdersPage({super.key});
@@ -16,35 +21,101 @@ class OrdersPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('My orders')),
       body: orders.when(
         data: (list) => list.isEmpty
-            ? const Center(child: Text('No orders yet.'))
-            : ListView.separated(
-                itemCount: list.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (_, i) {
-                  final order = list[i];
-                  final date = order.createdAt?.toLocal();
-                  final itemCount =
-                      order.items.fold<int>(0, (s, l) => s + l.quantity);
-                  return ListTile(
-                    title: Text(formatMmk(order.total)),
-                    subtitle: Text(
-                      '$itemCount item(s)'
-                      '${date == null ? '' : ' · ${_formatDate(date)}'}',
-                    ),
-                    trailing: Chip(label: Text(order.status)),
-                    onTap: () => showModalBottomSheet<void>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (_) => _OrderDetailSheet(order: order),
-                    ),
-                  );
-                },
+            ? const EmptyState(
+                icon: Icons.receipt_long_outlined,
+                title: 'No orders yet',
+                message: 'When you check out, your order shows up here.',
+              )
+            : RevealScope(
+                child: ListView.separated(
+                  padding: pagePadding(context, top: 4),
+                  itemCount: list.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) {
+                    final order = list[i];
+                    final date = order.createdAt?.toLocal();
+                    final itemCount =
+                        order.items.fold<int>(0, (s, l) => s + l.quantity);
+                    final names = order.items.map((l) => l.name).join(', ');
+                    return Reveal(
+                      index: i,
+                      id: order.id,
+                      child: Card(
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () => showModalBottomSheet<void>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => _OrderDetailSheet(order: order),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(formatMmk(order.total),
+                                          style: const TextStyle(
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w700)),
+                                    ),
+                                    OrderStatusPill(
+                                        status: order.status,
+                                        pickup: order.deliveryMethod ==
+                                            DeliveryMethod.pickup),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(names,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$itemCount ${itemCount == 1 ? 'item' : 'items'}'
+                                  '${date == null ? '' : ' · ${_formatDate(date)}'}',
+                                  style: const TextStyle(
+                                      color: AppColors.inkMuted, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Could not load orders.\n$e')),
+        loading: () => const SkeletonList(header: false, rows: 4),
+        error: (e, _) => EmptyState(
+          icon: Icons.cloud_off_outlined,
+          title: 'Could not load your orders',
+          message: friendlyError(e),
+        ),
       ),
     );
   }
+}
+
+/// An order's status in words a customer understands, coloured by what it
+/// means for them.
+class OrderStatusPill extends StatelessWidget {
+  const OrderStatusPill({super.key, required this.status, this.pickup = false});
+
+  final String status;
+
+  /// Picked up at the shop rather than delivered.
+  final bool pickup;
+
+  @override
+  Widget build(BuildContext context) => switch (status) {
+        'pending' => const Pill.info('Waiting for shop'),
+        'confirmed' => const Pill.success('Confirmed'),
+        'shipped' => Pill.success(pickup ? 'Picked up' : 'On its way'),
+        'cancelled' => const Pill.danger('Cancelled'),
+        _ => Pill.info(status),
+      };
 }
 
 String _formatDate(DateTime d) {
@@ -106,7 +177,7 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,16 +188,23 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
                   child: Text(formatMmk(order.total),
                       style: theme.textTheme.titleLarge),
                 ),
-                Chip(label: Text(order.status)),
+                OrderStatusPill(
+                    status: order.status,
+                    pickup: order.deliveryMethod == DeliveryMethod.pickup),
               ],
             ),
             const SizedBox(height: 8),
             for (final line in order.items)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text(
-                  '${line.quantity} × ${line.name} — '
-                  '${formatMmk(line.price * line.quantity)}',
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: Text('${line.quantity} × ${line.name}')),
+                    const SizedBox(width: 12),
+                    Text(formatMmk(line.price * line.quantity),
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ],
                 ),
               ),
             const Divider(height: 24),

@@ -7,6 +7,8 @@ import '../../logic/subscription.dart';
 import '../../models/shop.dart';
 import '../../utils/dates.dart';
 import '../theme.dart';
+import 'glass.dart';
+import 'skeleton.dart';
 
 /// A message a person can act on, for any error the app's code may throw.
 String friendlyError(Object error) {
@@ -29,23 +31,29 @@ void showMessage(BuildContext context, String message) {
     ..showSnackBar(SnackBar(content: Text(message)));
 }
 
-/// Loading spinner, error text, or [data], for a Riverpod [AsyncValue].
+/// A skeleton of what is coming, error text, or [data], for a Riverpod
+/// [AsyncValue].
 class AsyncBody<T> extends StatelessWidget {
-  const AsyncBody({super.key, required this.value, required this.data});
+  const AsyncBody({
+    super.key,
+    required this.value,
+    required this.data,
+    this.loading = const SkeletonList(),
+  });
 
   final AsyncValue<T> value;
   final Widget Function(T data) data;
+  final Widget loading;
 
   @override
   Widget build(BuildContext context) {
     return value.when(
       data: data,
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(friendlyError(e), textAlign: TextAlign.center),
-        ),
+      loading: () => loading,
+      error: (e, _) => EmptyState(
+        icon: Icons.cloud_off_outlined,
+        title: 'Could not load this',
+        message: friendlyError(e),
       ),
     );
   }
@@ -57,11 +65,19 @@ class EmptyState extends StatelessWidget {
     required this.icon,
     required this.title,
     this.message,
+    this.action,
+    this.secondary,
   });
 
   final IconData icon;
   final String title;
   final String? message;
+
+  /// The one thing to do next, under the message.
+  final Widget? action;
+
+  /// A quieter way out, under [action].
+  final Widget? secondary;
 
   @override
   Widget build(BuildContext context) {
@@ -71,17 +87,78 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: AppColors.lineStrong),
-            const SizedBox(height: 12),
+            _Halo(icon: icon),
+            const SizedBox(height: 20),
             Text(title,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700)),
             if (message != null) ...[
-              const SizedBox(height: 6),
-              Text(message!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.inkMuted)),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: Text(message!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: AppColors.inkMuted, height: 1.45)),
+              ),
             ],
+            if (action != null) ...[
+              const SizedBox(height: 24),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 200),
+                child: action!,
+              ),
+            ],
+            if (secondary != null) ...[
+              const SizedBox(height: 6),
+              secondary!,
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The empty state's mark: the icon on a glass disc, inside two faint rings
+/// of the aurora's pink, so an empty screen still feels made.
+class _Halo extends StatelessWidget {
+  const _Halo({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget ring(double size, double alpha) => Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(colors: [
+              AppColors.glow.withOpacity(alpha),
+              AppColors.glow.withOpacity(0),
+            ]),
+            border: Border.all(color: Colors.white.withOpacity(0.7)),
+          ),
+        );
+    return ExcludeSemantics(
+      child: SizedBox.square(
+        dimension: 132,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            ring(132, 0.07),
+            ring(104, 0.1),
+            Glass(
+              radius: 40,
+              child: SizedBox.square(
+                dimension: 80,
+                child: Icon(icon, size: 34, color: AppColors.accent),
+              ),
+            ),
           ],
         ),
       ),
@@ -182,7 +259,8 @@ class ExpiryBanner extends StatelessWidget {
             '(${formatDate(shop.expiresAt!)}). Contact the owner to renew.'
             '$contact';
     return Material(
-      color: expired ? AppColors.dangerSoft : AppColors.warnSoft,
+      color: (expired ? AppColors.dangerSoft : AppColors.warnSoft)
+          .withOpacity(0.88),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(

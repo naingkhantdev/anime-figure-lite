@@ -6,6 +6,8 @@ import '../../models/shop.dart';
 import '../../providers/providers.dart';
 import '../../utils/dates.dart';
 import '../theme.dart';
+import '../widgets/effects.dart';
+import '../widgets/glass.dart';
 import '../widgets/brand.dart';
 import '../widgets/common.dart';
 
@@ -26,19 +28,7 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
-        title: const Row(
-          children: [
-            AppLogo(size: 32),
-            SizedBox(width: 10),
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Wordmark(size: 18),
-              ),
-            ),
-          ],
-        ),
+        title: const AppTitle(),
         actions: [
           IconButton(
             tooltip: 'Sign out',
@@ -72,7 +62,7 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
             });
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+            padding: pagePadding(context),
             children: [
               Text('Shops',
                   style: Theme.of(context)
@@ -138,8 +128,8 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
                   message: 'New shops appear when someone signs up in the app.',
                 )
               else
-                for (final shop in visible) ...[
-                  _ShopTile(shop: shop, now: now),
+                for (final (i, shop) in visible.indexed) ...[
+                  Reveal(index: i, child: _ShopTile(shop: shop, now: now)),
                   const SizedBox(height: 8),
                 ],
             ],
