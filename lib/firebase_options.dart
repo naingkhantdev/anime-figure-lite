@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyA5ejY_nSl55z9RyX3G4HMKrKDuvRJNRnQ',
-    appId: '1:453445152676:android:783af824cecef024b59b31',
+    appId: '1:453445152676:android:8706585c953598a4b59b31',
     messagingSenderId: '453445152676',
     projectId: 'anime-figure-shop-lite',
     storageBucket: 'anime-figure-shop-lite.firebasestorage.app',

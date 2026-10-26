@@ -142,6 +142,26 @@ To try it on the local emulators instead (needs Java): `npm run seed:emulator`.
    `platform :ios, '13.0'`.
 7. `flutter run`
 
+## Releasing (Google Play)
+
+- **App ID:** `com.animefigureshop.app`. It can never change once on Play.
+- **Upload key:** `C:\Users\User\keys\anime-figure-shop-upload.jks`, outside
+  the repo. Its password is in `android/key.properties` (git-ignored).
+  **Back up both files** somewhere safe (a password manager or a USB stick).
+  Turn on **Play App Signing** when creating the app in Play Console, so
+  Google holds the final key and can reset a lost upload key.
+- **Build:** bump `version:` in `pubspec.yaml` (the number after `+` must go
+  up every upload), then `flutter build appbundle` and upload
+  `build/app/outputs/bundle/release/app-release.aab`.
+- **Crashlytics:** release builds report crashes to Firebase console →
+  Crashlytics. Debug builds don't.
+- **Privacy policy:** `public/privacy.html`, served by Firebase Hosting at
+  https://anime-figure-shop-lite.web.app/privacy.html after
+  `firebase deploy --only hosting`. Put that link in Play Console.
+- **Account deletion:** Account → Delete my account (customers). Shop owners
+  are asked to contact you; delete their shop and account in the console.
+  For the Play "Data deletion" form, the web link is the privacy page.
+
 ## Data model (Firestore)
 
 `products/{id}`. Load them with the seed script below, or add them in the
