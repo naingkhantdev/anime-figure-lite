@@ -99,6 +99,17 @@ class OrderRepository {
   Future<void> cancelOrder(String orderId) =>
       _orders.doc(orderId).update({'status': 'cancelled'});
 
+  /// Before an account is deleted: cancels its pending orders and blanks
+  /// the phone, address and note on all of them. The orders stay, so the
+  /// shop's sales records still add up. firestore.rules allows exactly this.
+  Future<void> forgetContactDetails(String userId) async {
+    final snap = await _orders.where('user_id', isEqualTo: userId).get();
+    for (final doc in snap.docs) {
+      if (doc.data()['status'] == 'pending') await cancelOrder(doc.id);
+      await doc.reference.update({'phone': '', 'address': '', 'note': ''});
+    }
+  }
+
   /// Sorted client-side (newest first) so no composite index is needed.
   Stream<List<ShopOrder>> watchOrdersFor(String userId) => _orders
       .where('user_id', isEqualTo: userId)

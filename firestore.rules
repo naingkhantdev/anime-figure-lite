@@ -278,6 +278,17 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['status']);
 
+      // Before deleting their account, a customer blanks their phone,
+      // address and note on their orders. The orders stay for the shop's
+      // records. See OrderRepository.forgetContactDetails.
+      allow update: if request.auth != null
+        && resource.data.user_id == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['phone', 'address', 'note'])
+        && request.resource.data.phone == ''
+        && request.resource.data.address == ''
+        && request.resource.data.note == '';
+
       allow delete: if false; // console only
     }
 

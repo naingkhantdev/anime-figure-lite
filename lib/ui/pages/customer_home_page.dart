@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
+import '../theme.dart';
 import '../widgets/common.dart';
 import 'cart_page.dart';
 import 'create_shop_page.dart';
+import 'delete_account_dialog.dart';
 import 'orders_page.dart';
 import 'product_list_page.dart';
 import 'sign_in_page.dart';
@@ -207,6 +209,14 @@ class _AccountTab extends ConsumerWidget {
                   leading: const Icon(Icons.logout),
                   title: const Text('Sign out'),
                   onTap: () => ref.read(authRepositoryProvider).signOut(),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.delete_outline,
+                      color: AppColors.dangerInk),
+                  title: const Text('Delete my account',
+                      style: TextStyle(color: AppColors.dangerInk)),
+                  onTap: () => showDeleteAccountDialog(context),
                 ),
               ],
             ),

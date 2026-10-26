@@ -9,6 +9,7 @@ import '../../utils/dates.dart';
 import '../theme.dart';
 import '../widgets/brand.dart';
 import '../widgets/common.dart';
+import 'delete_account_dialog.dart';
 
 /// The shop's details, its subscription, and signing out.
 class ShopTab extends ConsumerWidget {
@@ -92,6 +93,11 @@ class ShopTab extends ConsumerWidget {
                   context, ref.read(authRepositoryProvider).signOut),
               icon: const Icon(Icons.logout),
               label: const Text('Sign out'),
+            ),
+            TextButton(
+              onPressed: () => showCloseShopDialog(context),
+              style: TextButton.styleFrom(foregroundColor: AppColors.dangerInk),
+              child: const Text('Delete my account'),
             ),
             const SizedBox(height: 32),
             const Center(child: AppLogo(size: 56)),

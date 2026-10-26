@@ -364,4 +364,38 @@ describe('figure shop', () => {
     await assertSucceeds(getDoc(doc(as('bob'), 'orders/o1')));
     await assertFails(getDoc(doc(as('alice'), 'orders/o1')));
   });
+
+  const seedOrder = () =>
+    seed((db) =>
+      setDoc(doc(db, 'orders/o1'), {
+        user_id: 'bob',
+        status: 'confirmed',
+        total: 45000,
+        phone: '09123456789',
+        address: 'Yangon',
+        note: 'ring twice',
+      }),
+    );
+  const blank = { phone: '', address: '', note: '' };
+
+  test('before deleting their account, a customer blanks their details',
+    async () => {
+      await seedOrder();
+      await assertFails(updateDoc(doc(as('alice'), 'orders/o1'), blank));
+      await assertSucceeds(updateDoc(doc(as('bob'), 'orders/o1'), blank));
+    });
+
+  test('blanking details cannot change anything else', async () => {
+    await seedOrder();
+    await assertFails(
+      updateDoc(doc(as('bob'), 'orders/o1'), { ...blank, total: 0 }),
+    );
+    await assertFails(
+      updateDoc(doc(as('bob'), 'orders/o1'), { ...blank, phone: '0999' }),
+    );
+    await assertFails(
+      updateDoc(doc(as('bob'), 'orders/o1'), { status: 'cancelled' }),
+      'only pending orders can be cancelled',
+    );
+  });
 });

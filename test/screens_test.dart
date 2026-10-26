@@ -182,6 +182,19 @@ void main() {
     expect(find.text('Sign out'), findsOneWidget);
   });
 
+  testWidgets('shop owners are told to contact us to delete their account',
+      (tester) async {
+    await pumpScreen(tester, const ShopHomePage());
+    await tester.tap(find.text('Shop').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Delete my account'));
+    await tester.tap(find.text('Delete my account'));
+    await tester.pumpAndSettle();
+    expect(
+        find.textContaining('Contact us to close your shop'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing, reason: 'nothing to confirm');
+  });
+
   testWidgets('tablets get a side rail instead of the bottom bar',
       (tester) async {
     tester.view.physicalSize = const Size(1024, 768) * 2;
