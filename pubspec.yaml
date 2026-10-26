@@ -73,6 +73,9 @@ flutter:
   # native splash are generated from it; see README "Changing the logo".
   assets:
     - assets/brand/logo.png
+    # Product photos from the old shop; products.image_url points here
+    # (tool/seed/seed_products.js).
+    - assets/products/
 
   # DM Sans, SIL OFL (licence in assets/fonts). Static instances cut from
   # the Google Fonts variable file, because Flutter 3.22 can't pick a weight

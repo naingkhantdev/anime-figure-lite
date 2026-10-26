@@ -159,6 +159,16 @@ void main() {
         CustomerTab.cart.index);
   });
 
+  testWidgets('product photos: bundled asset or web', (tester) async {
+    await tester.pumpWidget(const Column(children: [
+      Expanded(child: ProductImage(url: 'assets/products/fig-ph-924.webp')),
+      Expanded(child: ProductImage(url: 'https://example.com/a.webp')),
+    ]));
+    final images = tester.widgetList<Image>(find.byType(Image)).toList();
+    expect(images[0].image, isA<AssetImage>());
+    expect(images[1].image, isA<NetworkImage>());
+  });
+
   testWidgets('shop home, every tab', (tester) async {
     await pumpScreen(tester, const ShopHomePage());
     expect(find.text('Nendoroid Miku'), findsOneWidget);

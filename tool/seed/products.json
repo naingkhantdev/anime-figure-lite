@@ -1,0 +1,20 @@
+[
+  {"id": "fig-gns-001", "name": "Boa Hancock Figure Ver.", "description": "Boa Hancock, the Pirate Empress, from One Piece.", "price": 641000, "stock_quantity": 12, "image_url": "assets/products/fig-gns-001.webp"},
+  {"id": "gk-fgo-002", "name": "Luffy GK", "description": "Monkey D. Luffy from One Piece. Garage kit statue.", "price": 1346000, "stock_quantity": 2, "image_url": "assets/products/gk-fgo-002.webp"},
+  {"id": "nen-op-003", "name": "Marin Kitagawa", "description": "Marin Kitagawa from My Dress-Up Darling.", "price": 142000, "stock_quantity": 1, "image_url": "assets/products/nen-op-003.webp"},
+  {"id": "fig-gns-004-po", "name": "Marin Kitagawa AMP", "description": "Marin Kitagawa from My Dress-Up Darling, AMP figure.", "price": 990000, "stock_quantity": 0, "image_url": "assets/products/fig-gns-004-po.webp"},
+  {"id": "fig-fi-611", "name": "Konosuba Aqua Sneaker Bunko 30th Anniversary", "description": "Aqua from KonoSuba, Sneaker Bunko 30th anniversary version.", "price": 795000, "stock_quantity": 9, "image_url": "assets/products/fig-fi-611.webp"},
+  {"id": "fig-tp-607", "name": "Zenitsu Agatsuma Demon Slayer", "description": "Zenitsu Agatsuma from Demon Slayer.", "price": 1735000, "stock_quantity": 7, "image_url": "assets/products/fig-tp-607.webp"},
+  {"id": "fig-pf-592", "name": "Nico Robin Wing Of Illusion GK Statue", "description": "Nico Robin from One Piece, Wing of Illusion. Garage kit statue.", "price": 1357000, "stock_quantity": 2, "image_url": "assets/products/fig-pf-592.jpg"},
+  {"id": "fig-ph-924", "name": "Albedo Overlord", "description": "Albedo from Overlord.", "price": 1068000, "stock_quantity": 11, "image_url": "assets/products/fig-ph-924.webp"},
+  {"id": "fig-uu-012", "name": "Albedo Overlord GK standing", "description": "Albedo from Overlord, standing pose. Garage kit statue.", "price": 637000, "stock_quantity": 12, "image_url": "assets/products/fig-uu-012.webp"},
+  {"id": "fig-tq-994", "name": "T-Most Overlord Albedo White Pure Figure", "description": "Albedo from Overlord in white, by T-Most.", "price": 1222000, "stock_quantity": 8, "image_url": "assets/products/fig-tq-994.webp"},
+  {"id": "fig-nt-117", "name": "Tsunade Collectible Figure By Mega House", "description": "Tsunade from Naruto, by MegaHouse.", "price": 1083000, "stock_quantity": 3, "image_url": "assets/products/fig-nt-117.webp"},
+  {"id": "fig-gc-411", "name": "Tsunade GK Figure", "description": "Tsunade from Naruto. Garage kit statue.", "price": 947000, "stock_quantity": 14, "image_url": "assets/products/fig-gc-411.webp"},
+  {"id": "fig-au-020", "name": "Hinata Sexy Naruto Figure", "description": "Hinata Hyuga from Naruto.", "price": 550000, "stock_quantity": 20, "image_url": "assets/products/fig-au-020.webp"},
+  {"id": "fig-ee-936", "name": "Bleach Zaraki Figure", "description": "Kenpachi Zaraki from Bleach.", "price": 1057000, "stock_quantity": 18, "image_url": "assets/products/fig-ee-936.webp"},
+  {"id": "fig-cx-472", "name": "Bleach Kurosaki Ichigo GK Figure", "description": "Ichigo Kurosaki from Bleach. Garage kit statue.", "price": 321000, "stock_quantity": 0, "image_url": "assets/products/fig-cx-472.webp"},
+  {"id": "fig-ei-878", "name": "Blue Lock Seishiro Nagi Figure", "description": "Seishiro Nagi from Blue Lock.", "price": 548000, "stock_quantity": 13, "image_url": "assets/products/fig-ei-878.webp"},
+  {"id": "fig-td-673", "name": "Itachi GK bullet Figure", "description": "Itachi Uchiha from Naruto. Garage kit statue.", "price": 815000, "stock_quantity": 18, "image_url": "assets/products/fig-td-673.webp"},
+  {"id": "fig-nn-957", "name": "Rangiku Matsumoto Bleach Figure", "description": "Rangiku Matsumoto from Bleach.", "price": 1654000, "stock_quantity": 18, "image_url": "assets/products/fig-nn-957.webp"}
+]

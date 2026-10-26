@@ -112,6 +112,14 @@ class ProductImage extends StatelessWidget {
       child: const Icon(Icons.image_not_supported_outlined, size: 40),
     );
     if (url == null || url!.isEmpty) return placeholder;
+    // A path like assets/products/x.webp is a photo bundled with the app.
+    if (url!.startsWith('assets/')) {
+      return Image.asset(
+        url!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => placeholder,
+      );
+    }
     return Image.network(
       url!,
       fit: BoxFit.cover,

@@ -144,15 +144,24 @@ To try it on the local emulators instead (needs Java): `npm run seed:emulator`.
 
 ## Data model (Firestore)
 
-`products/{id}`. Add products in the Firebase console.
+`products/{id}`. Load them with the seed script below, or add them in the
+Firebase console.
+
 | field | type | note |
 |---|---|---|
 | name | string | |
 | description | string | |
 | price | number (integer) | Whole kyats: 25000 = 25,000 Ks. Never use decimals or floats for money. |
 | stock_quantity | number (integer) | |
-| image_url | string | public image URL (optional) |
+| image_url | string | public image URL, or `assets/products/...` for a bundled photo (optional) |
 | is_active | boolean | only `true` products are shown |
+
+The figures from the old Laravel shop (18, with photos) are loaded by
+`tool/seed/seed_products.js` from `tool/seed/products.json`, with the same key
+as the account seed: `npm run seed:products`. Their photos ship inside the app
+in `assets/products/`, so their `image_url` is an asset path like
+`assets/products/fig-ph-924.webp`. Any `image_url` starting with `assets/`
+is loaded from the app; anything else is loaded from the web.
 
 `orders/{id}`. Created by the app.
 | field | type |
