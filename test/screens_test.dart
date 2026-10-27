@@ -9,6 +9,7 @@ import 'package:anime_figure_shop_lite/models/item.dart';
 import 'package:anime_figure_shop_lite/models/product.dart';
 import 'package:anime_figure_shop_lite/models/shop.dart';
 import 'package:anime_figure_shop_lite/models/shop_order.dart';
+import 'package:anime_figure_shop_lite/models/shop_public.dart';
 import 'package:anime_figure_shop_lite/models/stock_move.dart';
 import 'package:anime_figure_shop_lite/providers/providers.dart';
 import 'package:anime_figure_shop_lite/ui/pages/customer_home_page.dart';
@@ -127,6 +128,21 @@ final overrides = [
           shopId: 'me',
         ),
       ])),
+  shopPublicProvider.overrideWith((ref, id) => Stream.value(ShopPublic(
+        shopId: id,
+        phone: '09123456789',
+        deliveryFee: 3000,
+        paymentMethods: const [
+          PaymentMethod(
+              type: PaymentType.kbzPay,
+              accountName: 'Sakura Figures',
+              number: '09123456789'),
+          PaymentMethod(
+              type: PaymentType.bank,
+              accountName: 'Daw Sakura',
+              number: 'KBZ Bank 0123 4567 8901'),
+        ],
+      ))),
   allShopsProvider.overrideWith((ref) => Stream.value([
         shop('a', 'Sakura Figures', now.add(const Duration(days: 5))),
         shop('b', 'Mandalay Toys', now.add(const Duration(days: 120))),
@@ -288,12 +304,36 @@ void main() {
     expect(find.text('Sign out'), findsOneWidget);
   });
 
+  testWidgets('shop settings: delivery fee and ways to pay', (tester) async {
+    await pumpScreen(tester, const ShopHomePage());
+    await tester.tap(find.text('Shop').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Delivery and payment'), findsOneWidget);
+    expect(find.textContaining('Delivery 3,000 Ks'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Edit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Shop settings'), findsOneWidget);
+    expect(find.text('3000'), findsOneWidget, reason: 'saved fee');
+    expect(find.text('Daw Sakura'), findsOneWidget, reason: 'saved method');
+
+    await tester.dragUntilVisible(find.text('Add a way to pay'),
+        find.byType(ListView).first, const Offset(0, -200));
+    await tester.tap(find.text('Add a way to pay'));
+    await tester.pumpAndSettle();
+    expect(find.text('Account name'), findsNWidgets(3));
+    await tester.tap(find.byTooltip('Remove').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Account name'), findsNWidgets(2));
+  });
+
   testWidgets('shop owners are told to contact us to delete their account',
       (tester) async {
     await pumpScreen(tester, const ShopHomePage());
     await tester.tap(find.text('Shop').last);
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Delete my account'));
+    await tester.dragUntilVisible(find.text('Delete my account'),
+        find.byType(ListView).first, const Offset(0, -200));
     await tester.tap(find.text('Delete my account'));
     await tester.pumpAndSettle();
     expect(

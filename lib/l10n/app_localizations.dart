@@ -1315,12 +1315,6 @@ abstract class AppLocalizations {
   /// **'Read-only. Contact the owner to renew.'**
   String get readOnlyRenew;
 
-  /// No description provided for @shopDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Shop details'**
-  String get shopDetails;
-
   /// No description provided for @save.
   ///
   /// In en, this message translates to:
@@ -1998,6 +1992,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading'**
   String get loading;
+
+  /// No description provided for @errDeliveryFeeTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'That delivery fee is too large.'**
+  String get errDeliveryFeeTooLarge;
+
+  /// No description provided for @errTooManyPaymentMethods.
+  ///
+  /// In en, this message translates to:
+  /// **'A shop can list at most {max} ways to pay.'**
+  String errTooManyPaymentMethods(int max);
+
+  /// No description provided for @errPaymentMethodIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in the account name and number for each way to pay, or remove it.'**
+  String get errPaymentMethodIncomplete;
+
+  /// No description provided for @errPaymentMethodTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'That account name or number is too long.'**
+  String get errPaymentMethodTooLong;
+
+  /// No description provided for @paymentBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank account'**
+  String get paymentBank;
+
+  /// No description provided for @shopSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop settings'**
+  String get shopSettings;
+
+  /// No description provided for @shopPhoneHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers call and Viber you on this number.'**
+  String get shopPhoneHelp;
+
+  /// No description provided for @deliveryFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery fee'**
+  String get deliveryFee;
+
+  /// No description provided for @deliveryFeeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to each delivery order. Leave empty for free delivery.'**
+  String get deliveryFeeHelp;
+
+  /// No description provided for @waysToPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Ways to pay'**
+  String get waysToPay;
+
+  /// No description provided for @waysToPayHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers see these on their order, with a copy button.'**
+  String get waysToPayHelp;
+
+  /// No description provided for @addWayToPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a way to pay'**
+  String get addWayToPay;
+
+  /// No description provided for @accountName.
+  ///
+  /// In en, this message translates to:
+  /// **'Account name'**
+  String get accountName;
+
+  /// No description provided for @walletPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet phone number'**
+  String get walletPhone;
+
+  /// No description provided for @bankAccountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank and account number'**
+  String get bankAccountNumber;
+
+  /// No description provided for @bankAccountNumberHint.
+  ///
+  /// In en, this message translates to:
+  /// **'KBZ Bank 0123 4567 8901'**
+  String get bankAccountNumberHint;
+
+  /// No description provided for @settingsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings saved.'**
+  String get settingsSaved;
+
+  /// No description provided for @setUpPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up delivery and payment'**
+  String get setUpPayment;
+
+  /// No description provided for @setUpPaymentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your phone, delivery fee and how customers pay you.'**
+  String get setUpPaymentBody;
+
+  /// No description provided for @deliveryAndPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery and payment'**
+  String get deliveryAndPayment;
+
+  /// No description provided for @freeDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Free delivery'**
+  String get freeDelivery;
+
+  /// No description provided for @deliveryFeeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery {fee}'**
+  String deliveryFeeLine(String fee);
+
+  /// No description provided for @noWaysToPay.
+  ///
+  /// In en, this message translates to:
+  /// **'No ways to pay yet'**
+  String get noWaysToPay;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -743,9 +743,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readOnlyRenew => 'Read-only. Contact the owner to renew.';
 
   @override
-  String get shopDetails => 'Shop details';
-
-  @override
   String get save => 'Save';
 
   @override
@@ -1127,4 +1124,77 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loading => 'Loading';
+
+  @override
+  String get errDeliveryFeeTooLarge => 'That delivery fee is too large.';
+
+  @override
+  String errTooManyPaymentMethods(int max) {
+    return 'A shop can list at most $max ways to pay.';
+  }
+
+  @override
+  String get errPaymentMethodIncomplete => 'Fill in the account name and number for each way to pay, or remove it.';
+
+  @override
+  String get errPaymentMethodTooLong => 'That account name or number is too long.';
+
+  @override
+  String get paymentBank => 'Bank account';
+
+  @override
+  String get shopSettings => 'Shop settings';
+
+  @override
+  String get shopPhoneHelp => 'Customers call and Viber you on this number.';
+
+  @override
+  String get deliveryFee => 'Delivery fee';
+
+  @override
+  String get deliveryFeeHelp => 'Added to each delivery order. Leave empty for free delivery.';
+
+  @override
+  String get waysToPay => 'Ways to pay';
+
+  @override
+  String get waysToPayHelp => 'Customers see these on their order, with a copy button.';
+
+  @override
+  String get addWayToPay => 'Add a way to pay';
+
+  @override
+  String get accountName => 'Account name';
+
+  @override
+  String get walletPhone => 'Wallet phone number';
+
+  @override
+  String get bankAccountNumber => 'Bank and account number';
+
+  @override
+  String get bankAccountNumberHint => 'KBZ Bank 0123 4567 8901';
+
+  @override
+  String get settingsSaved => 'Settings saved.';
+
+  @override
+  String get setUpPayment => 'Set up delivery and payment';
+
+  @override
+  String get setUpPaymentBody => 'Add your phone, delivery fee and how customers pay you.';
+
+  @override
+  String get deliveryAndPayment => 'Delivery and payment';
+
+  @override
+  String get freeDelivery => 'Free delivery';
+
+  @override
+  String deliveryFeeLine(String fee) {
+    return 'Delivery $fee';
+  }
+
+  @override
+  String get noWaysToPay => 'No ways to pay yet';
 }

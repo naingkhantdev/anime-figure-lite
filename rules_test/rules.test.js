@@ -48,7 +48,7 @@ const seed = (fn) =>
 
 const shopDoc = (expires) => ({
   name: 'Shop',
-  phone: '',
+  phone: '09123456789',
   owner_email: 'x@test.com',
   expires_at: expires,
   created_at: Timestamp.now(),
@@ -113,7 +113,7 @@ describe('shops', () => {
     await assertSucceeds(
       setDoc(doc(as('alice'), 'shops/alice'), {
         name: 'Alice Toys',
-        phone: '',
+        phone: '09123456789',
         owner_email: 'alice@test.com',
         expires_at: null,
         created_at: serverTimestamp(),
@@ -121,11 +121,33 @@ describe('shops', () => {
     );
   });
 
-  test('cannot give yourself an expiry date when creating', async () => {
+  test('a shop needs a phone customers can call', async () => {
     await assertFails(
       setDoc(doc(as('alice'), 'shops/alice'), {
         name: 'Alice Toys',
         phone: '',
+        owner_email: 'alice@test.com',
+        expires_at: null,
+        created_at: serverTimestamp(),
+      }),
+    );
+    await seed((db) =>
+      setDoc(doc(db, 'shops/bob'), { ...shopDoc(future()), phone: '' }));
+    await assertFails(
+      updateDoc(doc(as('bob'), 'shops/bob'), { name: 'Renamed' }),
+      'an older shop adds its phone the next time it saves',
+    );
+    await assertSucceeds(
+      updateDoc(doc(as('bob'), 'shops/bob'),
+        { name: 'Renamed', phone: '09987654321' }),
+    );
+  });
+
+  test('cannot give yourself an expiry date when creating', async () => {
+    await assertFails(
+      setDoc(doc(as('alice'), 'shops/alice'), {
+        name: 'Alice Toys',
+        phone: '09123456789',
         owner_email: 'alice@test.com',
         expires_at: future(),
         created_at: serverTimestamp(),
@@ -137,7 +159,7 @@ describe('shops', () => {
     await assertFails(
       setDoc(doc(as('alice'), 'shops/bob'), {
         name: 'Fake',
-        phone: '',
+        phone: '09123456789',
         owner_email: 'alice@test.com',
         expires_at: null,
         created_at: serverTimestamp(),
@@ -176,6 +198,64 @@ describe('shops', () => {
   test('nobody can make themselves super admin', async () => {
     await assertFails(setDoc(doc(as('alice'), 'super_admins/alice'), {}));
   });
+});
+
+describe('shop_public', () => {
+  const info = (extra = {}) => ({
+    phone: '09123456789',
+    delivery_fee: 3000,
+    payment_methods: [
+      { type: 'kbzpay', name: 'Alice', number: '09123456789' },
+    ],
+    updated_at: serverTimestamp(),
+    ...extra,
+  });
+
+  test('an open shop saves its settings; anyone can read them', async () => {
+    await seed((db) => setDoc(doc(db, 'shops/alice'), shopDoc(future())));
+    await assertSucceeds(setDoc(doc(as('alice'), 'shop_public/alice'), info()));
+    await assertSucceeds(
+      getDoc(doc(env.unauthenticatedContext().firestore(), 'shop_public/alice')),
+    );
+  });
+
+  test('settings change with the shop phone, in one write', async () => {
+    await seed((db) => setDoc(doc(db, 'shops/alice'), shopDoc(future())));
+    const db = as('alice');
+    await assertFails(
+      setDoc(doc(db, 'shop_public/alice'), info({ phone: '09111111111' })),
+      'phone differs from the shop',
+    );
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'shops/alice'), { phone: '09111111111' });
+    batch.set(doc(db, 'shop_public/alice'), info({ phone: '09111111111' }));
+    await assertSucceeds(batch.commit());
+  });
+
+  test('no settings for other, closed or waiting shops, or bad values',
+    async () => {
+      await seed(async (db) => {
+        await setDoc(doc(db, 'shops/alice'), shopDoc(future()));
+        await setDoc(doc(db, 'shops/bob'), shopDoc(past()));
+        await setDoc(doc(db, 'shops/carol'), shopDoc(null));
+      });
+      await assertFails(setDoc(doc(as('bob'), 'shop_public/alice'), info()));
+      await assertFails(setDoc(doc(as('bob'), 'shop_public/bob'), info()));
+      await assertFails(setDoc(doc(as('carol'), 'shop_public/carol'), info()));
+      const db = as('alice');
+      for (const bad of [
+        { delivery_fee: -1 },
+        { delivery_fee: 1.5 },
+        { payment_methods: 'KBZPay 0912' },
+        { payment_methods: Array(7).fill({ type: 'bank' }) },
+        { owner_email: 'x@test.com' },
+      ]) {
+        await assertFails(
+          setDoc(doc(db, 'shop_public/alice'), info(bad)),
+          JSON.stringify(bad),
+        );
+      }
+    });
 });
 
 describe('items and stock', () => {

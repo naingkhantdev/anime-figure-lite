@@ -521,7 +521,6 @@
     }
   },
   "readOnlyRenew": "Read-only. Contact the owner to renew.",
-  "shopDetails": "Shop details",
   "save": "Save",
   "statItems": "Items",
   "statLow": "Low",
@@ -755,5 +754,42 @@
   "addOneYear": "+ 1 year",
   "pickEndDate": "Pick an end date",
   "stopThisShopNow": "Stop this shop now",
-  "loading": "Loading"
+  "loading": "Loading",
+  "errDeliveryFeeTooLarge": "That delivery fee is too large.",
+  "errTooManyPaymentMethods": "A shop can list at most {max} ways to pay.",
+  "@errTooManyPaymentMethods": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errPaymentMethodIncomplete": "Fill in the account name and number for each way to pay, or remove it.",
+  "errPaymentMethodTooLong": "That account name or number is too long.",
+  "paymentBank": "Bank account",
+  "shopSettings": "Shop settings",
+  "shopPhoneHelp": "Customers call and Viber you on this number.",
+  "deliveryFee": "Delivery fee",
+  "deliveryFeeHelp": "Added to each delivery order. Leave empty for free delivery.",
+  "waysToPay": "Ways to pay",
+  "waysToPayHelp": "Customers see these on their order, with a copy button.",
+  "addWayToPay": "Add a way to pay",
+  "accountName": "Account name",
+  "walletPhone": "Wallet phone number",
+  "bankAccountNumber": "Bank and account number",
+  "bankAccountNumberHint": "KBZ Bank 0123 4567 8901",
+  "settingsSaved": "Settings saved.",
+  "setUpPayment": "Set up delivery and payment",
+  "setUpPaymentBody": "Add your phone, delivery fee and how customers pay you.",
+  "deliveryAndPayment": "Delivery and payment",
+  "freeDelivery": "Free delivery",
+  "deliveryFeeLine": "Delivery {fee}",
+  "@deliveryFeeLine": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "noWaysToPay": "No ways to pay yet"
 }

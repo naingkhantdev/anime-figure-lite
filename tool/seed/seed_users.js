@@ -66,6 +66,16 @@ async function main() {
     expires_at: Timestamp.fromDate(openUntil),
     created_at: FieldValue.serverTimestamp(),
   });
+  // What customers see to pay it (lib/models/shop_public.dart).
+  await db.doc(`shop_public/${shop.uid}`).set({
+    phone: '09123456789',
+    delivery_fee: 3000,
+    payment_methods: [
+      { type: 'kbzpay', name: 'Sakura Figures', number: '09123456789' },
+      { type: 'wavepay', name: 'Sakura Figures', number: '09123456789' },
+    ],
+    updated_at: FieldValue.serverTimestamp(),
+  });
 
   // Its figures in the catalog (seed_products.js) show until the same day.
   const listed = await db

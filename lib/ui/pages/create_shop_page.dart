@@ -90,8 +90,9 @@ class _CreateShopPageState extends ConsumerState<CreateShopPage> {
                     controller: _phone,
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
-                        labelText: context.l10n.phoneOptional,
-                        hintText: '09xxxxxxxxx'),
+                        labelText: context.l10n.phone,
+                        hintText: '09xxxxxxxxx',
+                        helperText: context.l10n.shopPhoneHelp),
                     onSubmitted: (_) => _busy ? null : _submit(),
                   ),
                   if (_error != null) ...[

@@ -3,18 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config.dart';
 import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../logic/subscription.dart';
 import '../../models/shop.dart';
+import '../../models/shop_public.dart';
 import '../../providers/providers.dart';
 import '../../utils/dates.dart';
+import '../../utils/money.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/brand.dart';
 import '../widgets/common.dart';
 import 'delete_account_dialog.dart';
+import 'shop_settings_page.dart';
 
-/// The shop's details, its subscription, and signing out.
+/// The shop's details, how customers pay it, its subscription, and signing
+/// out.
 class ShopTab extends ConsumerWidget {
   const ShopTab({super.key});
 
@@ -27,6 +32,12 @@ class ShopTab extends ConsumerWidget {
         if (shop == null) return const SizedBox.shrink();
         final now = DateTime.now();
         final status = shop.statusAt(now);
+        final public = ref.watch(shopPublicProvider(shop.id)).valueOrNull;
+        void openSettings() => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => ShopSettingsPage(shop: shop, public: public)),
+            );
         return ListView(
           padding: pagePadding(context),
           children: [
@@ -48,10 +59,7 @@ class ShopTab extends ConsumerWidget {
                         IconButton(
                           tooltip: context.l10n.edit,
                           icon: const Icon(Icons.edit_outlined),
-                          onPressed: () => showDialog<void>(
-                            context: context,
-                            builder: (_) => _EditShopDialog(shop: shop),
-                          ),
+                          onPressed: openSettings,
                         ),
                       ],
                     ),
@@ -63,6 +71,12 @@ class ShopTab extends ConsumerWidget {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+            _PaymentCard(
+              shop: shop,
+              public: public,
+              onTap: openSettings,
             ),
             const SizedBox(height: 12),
             Card(
@@ -114,77 +128,47 @@ class ShopTab extends ConsumerWidget {
   }
 }
 
-class _EditShopDialog extends ConsumerStatefulWidget {
-  const _EditShopDialog({required this.shop});
+/// The delivery fee and ways to pay, as customers will see them; or, until
+/// they are set, what to do first.
+class _PaymentCard extends StatelessWidget {
+  const _PaymentCard({
+    required this.shop,
+    required this.public,
+    required this.onTap,
+  });
 
   final Shop shop;
-
-  @override
-  ConsumerState<_EditShopDialog> createState() => _EditShopDialogState();
-}
-
-class _EditShopDialogState extends ConsumerState<_EditShopDialog> {
-  late final _name = TextEditingController(text: widget.shop.name);
-  late final _phone = TextEditingController(text: widget.shop.phone);
-  bool _busy = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _phone.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      await ref
-          .read(shopRepositoryProvider)
-          .updateShop(widget.shop.id, name: _name.text, phone: _phone.text);
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(context, e));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
+  final ShopPublic? public;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(context.l10n.shopDetails),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _name,
-            decoration: InputDecoration(labelText: context.l10n.shopName),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _phone,
-            keyboardType: TextInputType.phone,
-            decoration:
-                InputDecoration(labelText: context.l10n.phoneOptional),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: AppColors.dangerInk)),
-          ],
-        ],
+    final l = context.l10n;
+    final p = public;
+    final missing = p == null || shop.phone.isEmpty;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        leading: Icon(
+          missing ? Icons.error_outline : Icons.payments_outlined,
+          color: missing ? AppColors.warnInk : AppColors.accent,
+        ),
+        title: Text(missing ? l.setUpPayment : l.deliveryAndPayment,
+            style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(missing
+            ? l.setUpPaymentBody
+            : [
+                p.deliveryFee == 0
+                    ? l.freeDelivery
+                    : l.deliveryFeeLine(formatMmk(p.deliveryFee)),
+                if (p.paymentMethods.isEmpty)
+                  l.noWaysToPay
+                else
+                  p.paymentMethods.map((m) => m.type.label(l)).join(', '),
+              ].join('\n')),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.l10n.cancel)),
-        FilledButton(
-            onPressed: _busy ? null : _save,
-            child: Text(context.l10n.save)),
-      ],
     );
   }
 }

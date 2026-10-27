@@ -1,11 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../models/shop.dart';
-import '../utils/phone.dart';
 import '../l10n/l10n.dart';
+import '../models/shop.dart';
+import '../models/shop_public.dart';
+import '../utils/phone.dart';
 
 // These must match firestore.rules.
 const maxShopNameLength = 80;
+const maxDeliveryFee = 1000000;
+const maxPaymentMethods = 6;
+
+// App-side limits on a payment method; the rules cap the list's size.
+const maxAccountNameLength = 60;
+const maxAccountNumberLength = 40;
 
 class ShopException extends AppException {
   ShopException(super.message);
@@ -52,11 +59,56 @@ class ShopRepository {
     });
   }
 
-  /// Also renames the shop on its figures in the catalog.
-  Future<void> updateShop(String uid,
-      {required String name, required String phone}) async {
+  /// What customers may read about a shop (see ShopPublic). Null until the
+  /// owner first saves their settings.
+  Stream<ShopPublic?> watchPublic(String shopId) => _db
+      .collection('shop_public')
+      .doc(shopId)
+      .snapshots()
+      .map((snap) => snap.exists ? ShopPublic.fromDoc(snap) : null);
+
+  /// Saves the shop's settings in one write: name and phone on the shop,
+  /// what customers see in shop_public, and the new name on its figures in
+  /// the catalog. firestore.rules allow it only while the shop is open.
+  Future<void> saveSettings(
+    String uid, {
+    required String name,
+    required String phone,
+    required int deliveryFee,
+    required List<PaymentMethod> paymentMethods,
+  }) async {
     final fields = _validate(name, phone);
-    final batch = _db.batch()..update(_shops.doc(uid), fields);
+    if (deliveryFee < 0 || deliveryFee > maxDeliveryFee) {
+      throw ShopException((l) => l.errDeliveryFeeTooLarge);
+    }
+    if (paymentMethods.length > maxPaymentMethods) {
+      throw ShopException((l) => l.errTooManyPaymentMethods(maxPaymentMethods));
+    }
+    final methods = [
+      for (final m in paymentMethods)
+        PaymentMethod(
+          type: m.type,
+          accountName: m.accountName.trim(),
+          number: m.number.trim(),
+        ),
+    ];
+    for (final m in methods) {
+      if (m.accountName.isEmpty || m.number.isEmpty) {
+        throw ShopException((l) => l.errPaymentMethodIncomplete);
+      }
+      if (m.accountName.length > maxAccountNameLength ||
+          m.number.length > maxAccountNumberLength) {
+        throw ShopException((l) => l.errPaymentMethodTooLong);
+      }
+    }
+    final batch = _db.batch()
+      ..update(_shops.doc(uid), fields)
+      ..set(_db.collection('shop_public').doc(uid), {
+        'phone': fields['phone']!,
+        'delivery_fee': deliveryFee,
+        'payment_methods': [for (final m in methods) m.toMap()],
+        'updated_at': FieldValue.serverTimestamp(),
+      });
     for (final doc in (await _listings(uid)).docs) {
       batch.update(doc.reference, {
         'shop_name': fields['name'],
@@ -77,11 +129,9 @@ class ShopRepository {
       throw ShopException(
           (l) => l.errShopNameTooLong(maxShopNameLength));
     }
-    var cleanPhone = '';
-    if (phone.trim().isNotEmpty) {
-      cleanPhone = normalizePhone(phone) ??
-          (throw ShopException((l) => l.errPhoneFormat));
-    }
+    // Customers call and Viber the shop on it, so it is required.
+    final cleanPhone = normalizePhone(phone) ??
+        (throw ShopException((l) => l.errPhoneFormat));
     return {'name': cleanName, 'phone': cleanPhone};
   }
 

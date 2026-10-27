@@ -16,6 +16,7 @@ import '../models/item.dart';
 import '../models/product.dart';
 import '../models/shop.dart';
 import '../models/shop_order.dart';
+import '../models/shop_public.dart';
 import '../models/stock_move.dart';
 
 final authRepositoryProvider =
@@ -121,6 +122,12 @@ final myShopProvider = StreamProvider<Shop?>((ref) {
   if (user == null) return Stream.value(null);
   return ref.watch(shopRepositoryProvider).watchShop(user.uid);
 });
+
+/// A shop's phone, delivery fee and ways to pay, readable by anyone; null
+/// until the shop has saved its settings.
+final shopPublicProvider = StreamProvider.family<ShopPublic?, String>(
+  (ref, shopId) => ref.watch(shopRepositoryProvider).watchPublic(shopId),
+);
 
 /// Super admin only.
 final allShopsProvider = StreamProvider<List<Shop>>(

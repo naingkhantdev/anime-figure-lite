@@ -74,19 +74,21 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(
              ['name', 'phone', 'owner_email', 'expires_at', 'created_at'])
         && text(request.resource.data.name, 1, 80)
-        && text(request.resource.data.phone, 0, 20)
+        && text(request.resource.data.phone, 1, 20)
         && request.resource.data.owner_email == request.auth.token.email
         && request.resource.data.expires_at == null
         && request.resource.data.created_at == request.time;
 
       // The owner may rename their shop and change its phone, even when
-      // expired. Only the super admin may touch expires_at.
+      // expired. Only the super admin may touch expires_at. Customers call
+      // the shop on its phone, so it can't be blank (older shops are asked
+      // for one the next time they save).
       allow update: if (
           isOwner(shopId)
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['name', 'phone'])
           && text(request.resource.data.name, 1, 80)
-          && text(request.resource.data.phone, 0, 20)
+          && text(request.resource.data.phone, 1, 20)
         ) || (
           isSuperAdmin()
           && request.resource.data.diff(resource.data).affectedKeys()
@@ -236,6 +238,30 @@ service cloud.firestore {
         // Movements keep a copy of the customer's name, so deleting is safe.
         allow delete: if canWrite(shopId);
       }
+    }
+
+    // ---- What customers may know about a shop ----
+    // shops/{id} holds the owner's email and expiry, so it stays private;
+    // this copy holds only what a customer needs to order and pay: the
+    // shop's phone, its delivery fee and how to pay it. Written by the
+    // owner's app together with shops/{id}, while the shop is open.
+    // Numbers must match lib/data/shop_repository.dart.
+    match /shop_public/{shopId} {
+      allow read: if true;
+
+      allow create, update: if canWrite(shopId)
+        && request.resource.data.keys().hasOnly(
+             ['phone', 'delivery_fee', 'payment_methods', 'updated_at'])
+        && request.resource.data.keys().hasAll(
+             ['phone', 'delivery_fee', 'payment_methods', 'updated_at'])
+        && request.resource.data.phone == getAfter(
+             /databases/$(database)/documents/shops/$(shopId)).data.phone
+        && wholeNumber(request.resource.data.delivery_fee, 1000000)
+        && request.resource.data.payment_methods is list
+        && request.resource.data.payment_methods.size() <= 6
+        && request.resource.data.updated_at == request.time;
+
+      allow delete: if false;
     }
 
     // ---- The figure shop: products, orders ----

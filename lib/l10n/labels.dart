@@ -1,6 +1,7 @@
 import '../logic/catalog.dart';
 import '../logic/stock.dart';
 import '../models/shop_order.dart';
+import '../models/shop_public.dart';
 import 'app_localizations.dart';
 
 // Display names for values the data and logic code keep as plain enums or
@@ -28,6 +29,12 @@ extension DeliveryMethodLabel on DeliveryMethod {
         DeliveryMethod.delivery => l.deliveryMethodDelivery,
         DeliveryMethod.pickup => l.deliveryMethodPickup,
       };
+}
+
+extension PaymentTypeLabel on PaymentType {
+  /// Wallets go by their own name; a bank account is named in the reader's
+  /// language.
+  String label(AppLocalizations l) => brand.isEmpty ? l.paymentBank : brand;
 }
 
 /// A stored category (one of [productCategories]) in the app's language.
