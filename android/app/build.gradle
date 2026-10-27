@@ -80,6 +80,11 @@ android {
             signingConfig = keystorePropertiesFile.exists()
                 ? signingConfigs.release
                 : signingConfigs.debug
+            // R8: shrink and obfuscate the code, then drop unused resources.
+            // Crashlytics' plugin uploads the mapping file so stack traces stay readable.
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
 }
