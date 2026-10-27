@@ -9,6 +9,10 @@ import '../l10n/l10n.dart';
 const photoMaxSide = 800.0;
 const photoQuality = 70;
 
+/// The same for a payment screenshot: tall, and mostly text.
+const screenshotMaxSide = 1600.0;
+const screenshotQuality = 60;
+
 /// Must match firestore.rules (photos). A Firestore document holds at most
 /// 1 MiB; this leaves plenty of room.
 const maxPhotoBytes = 400 * 1024;
@@ -42,6 +46,17 @@ class PhotoRepository {
         maxWidth: photoMaxSide,
         maxHeight: photoMaxSide,
         imageQuality: photoQuality,
+        requestFullMetadata: false,
+      );
+
+  /// Lets a customer choose a screenshot of their payment from the
+  /// gallery. Larger than an item photo so the amount and reference stay
+  /// readable on a tall screenshot, and still well under the 400 KB cap.
+  Future<XFile?> pickScreenshot() => _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: screenshotMaxSide,
+        maxHeight: screenshotMaxSide,
+        imageQuality: screenshotQuality,
         requestFullMetadata: false,
       );
 

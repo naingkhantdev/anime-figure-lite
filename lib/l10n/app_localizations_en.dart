@@ -1217,4 +1217,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pickupNoFee => 'None, you pick up';
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String copied(String number) {
+    return 'Copied $number';
+  }
+
+  @override
+  String get screenshotGone => 'This screenshot is no longer here.';
+
+  @override
+  String get screenshotSent => 'Screenshot sent. The shop will check it.';
+
+  @override
+  String get screenshotSentLine => 'Payment screenshot sent';
+
+  @override
+  String get view => 'View';
+
+  @override
+  String howToPay(String total) {
+    return 'Pay $total to the shop';
+  }
+
+  @override
+  String get sendPaymentScreenshot => 'Send payment screenshot';
+
+  @override
+  String get replaceScreenshot => 'Send a different screenshot';
+
+  @override
+  String get customerSentPayment => 'Customer sent a payment screenshot';
 }

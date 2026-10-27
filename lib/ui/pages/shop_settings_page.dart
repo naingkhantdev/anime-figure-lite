@@ -85,12 +85,12 @@ class _ShopSettingsPageState extends ConsumerState<ShopSettingsPage> {
     });
     try {
       await ref.read(shopRepositoryProvider).saveSettings(
-            widget.shop.id,
-            name: _name.text,
-            phone: _phone.text,
-            deliveryFee: fee,
-            paymentMethods: [for (final m in _methods) m.value],
-          );
+        widget.shop.id,
+        name: _name.text,
+        phone: _phone.text,
+        deliveryFee: fee,
+        paymentMethods: [for (final m in _methods) m.value],
+      );
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
@@ -233,8 +233,8 @@ class _MethodEditor extends StatelessWidget {
                   controller: draft.name,
                   enabled: enabled,
                   textCapitalization: TextCapitalization.words,
-                  decoration: InputDecoration(
-                      labelText: l.accountName, isDense: true),
+                  decoration:
+                      InputDecoration(labelText: l.accountName, isDense: true),
                 ),
                 const SizedBox(height: 10),
                 TextField(

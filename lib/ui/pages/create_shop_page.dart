@@ -83,7 +83,8 @@ class _CreateShopPageState extends ConsumerState<CreateShopPage> {
                   TextField(
                     controller: _name,
                     textCapitalization: TextCapitalization.words,
-                    decoration: InputDecoration(labelText: context.l10n.shopName),
+                    decoration:
+                        InputDecoration(labelText: context.l10n.shopName),
                   ),
                   const SizedBox(height: 12),
                   TextField(

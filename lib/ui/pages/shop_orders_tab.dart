@@ -10,6 +10,7 @@ import '../../utils/money.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/contact_buttons.dart';
+import '../widgets/payment.dart';
 import '../widgets/effects.dart';
 import '../widgets/glass.dart';
 import '../widgets/skeleton.dart';
@@ -53,8 +54,7 @@ class _ShopOrdersTabState extends ConsumerState<ShopOrdersTab> {
               segments: [
                 ButtonSegment(
                     value: _Show.open,
-                    label: Text(
-                        waiting > 0 ? '${l.toDo} · $waiting' : l.toDo)),
+                    label: Text(waiting > 0 ? '${l.toDo} · $waiting' : l.toDo)),
                 ButtonSegment(value: _Show.done, label: Text(l.done)),
               ],
               selected: {_show},
@@ -174,6 +174,38 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                   Text(formatMmk(line.price * line.quantity),
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                 ],
+              ),
+            ),
+          if (o.paymentSent)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Material(
+                color: AppColors.successSoft,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  onTap: () => showPaymentProof(context, o.paymentProofId),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.receipt_long_outlined,
+                            size: 18, color: AppColors.successInk),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(l.customerSentPayment,
+                              style: const TextStyle(
+                                  color: AppColors.successInk,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                        Text(l.view,
+                            style: const TextStyle(
+                                color: AppColors.successInk,
+                                fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           if (o.deliveryFee > 0)

@@ -27,12 +27,18 @@ large project. The data shapes use the same snake_case names, so moving is easy.
 - Figures from the house and from shops that sell in the app, side by side
 - Cart (in memory; kept when a guest signs in, cleared on sign-out)
 - Checkout: phone, **Delivery** or **Pick up at shop**, address (delivery
-  only), optional note. Pre-filled from the customer's last order.
+  only), optional note. Pre-filled from the customer's last order. Shows
+  the figures, each shop's **delivery fee** (none for pickup) and the total.
 - Place an order. It is created as `pending`, one order per shop in the
   cart, so each shop handles its own.
 - "My orders" with status and details; customers can cancel while `pending`
-- Payment happens outside the app (cash on delivery, bank transfer, mobile
-  wallet)
+- On each order: **Call** and **Viber** buttons for the shop (and, on the
+  shop's side, for the customer), the shop's **ways to pay** (KBZPay,
+  WavePay, AYA Pay, CB Pay, bank) with copy buttons, and **Send payment
+  screenshot**, replaceable while the order waits. Only the customer, that
+  shop and the super admin can see the screenshot.
+- Money still moves outside the app (wallet, bank transfer, cash on
+  delivery); the screenshot saves sending it over Viber.
 
 ## Roles: one app, three kinds of people
 
@@ -77,7 +83,10 @@ Put how shop admins reach you (to be approved or renew) in
 - **Orders**: customers' orders for the shop's figures. **Confirm** takes
   the stock out (a "Stock out" in History at the order's price), then
   **Shipped** / **Picked up**, or **Cancel**. Waiting orders show as a count
-  on the tab.
+  on the tab. Each order has Call and Viber for the customer, and shows
+  when they have sent a payment screenshot (tap to view it).
+- **Shop settings** (Shop tab → edit): name, phone (required; customers call
+  it), delivery fee, and up to six ways to pay. Saving needs an open shop.
 
 ### Look
 
@@ -254,7 +263,9 @@ shows, and the phone keeps it.
 | shop_id | string: the shop it was placed with; empty for the house's own figures (handled by staff in the console) |
 | status | string: `pending` → `confirmed` → `shipped`, or `cancelled`. The shop moves its own orders one step at a time; staff do the house's in the console. The customer may set `cancelled` while `pending`. |
 | items | array of `{product_id, name, price, quantity}` (price in whole kyats) |
-| total | number (integer, whole kyats; excludes any delivery fee) |
+| total | number (integer, whole kyats; **includes** delivery_fee) |
+| delivery_fee | number (integer): the shop's fee from `shop_public` for delivery, 0 for pickup or the house. The rules check it. Absent on older orders. |
+| payment_proof_id, payment_sent_at | the customer's payment screenshot in `payment_proofs`, once sent |
 | phone | string, e.g. `09123456789` |
 | delivery_method | string: `delivery` or `pickup` |
 | address | string (empty for `pickup`) |
@@ -273,6 +284,20 @@ shows, and the phone keeps it.
 | owner_email | string | |
 | expires_at | timestamp or null | null = waiting. Only the super admin can change it. |
 | created_at | timestamp | |
+
+`shop_public/{shopId}`: what customers may know about a shop, readable by
+anyone, written by the owner's app together with `shops/{id}` while the shop
+is open: phone (always equal to the shop's), delivery_fee (int, whole
+kyats), payment_methods (up to 6 of `{type, name, number}`, type one of
+`kbzpay`, `wavepay`, `ayapay`, `cbpay`, `bank`), updated_at.
+`shops/{id}` itself stays private (owner email, expiry).
+
+`payment_proofs/{id}`: order_id, user_id, shop_id, data (bytes, JPEG up to
+400 KB), created_at. A customer's screenshot of paying a shop. Readable
+only by that customer, that shop and the super admin; only for the
+customer's own pending order with a shop; never edited (a replacement is
+a new document, and the old one is deleted). Deleting an account deletes
+its screenshots.
 
 `shops/{shopId}/items/{id}`: name, code, unit, price, cost, quantity,
 low_stock_at (ints), is_active (bool), last_move_id, created_at, updated_at,
@@ -351,7 +376,11 @@ That means:
   transfer, mobile wallet) and then confirm the order.
 - **No notifications.** Staff must check for new orders themselves (see the
   daily routine above).
-- **Delivery fee is not in the app.** Tell the customer when confirming.
+- **Delivery fee is one flat fee per shop**, set in Shop settings (none for
+  pickup). The house's own figures deliver free in the app; tell the
+  customer any fee when confirming.
+- **A payment screenshot is not a payment.** Check the money has arrived in
+  the wallet or bank before confirming.
 - **Images:** Cloud Storage for Firebase needs the Blaze plan for new
   projects, so use public image URLs (for example Cloudflare R2 or any image
   host).

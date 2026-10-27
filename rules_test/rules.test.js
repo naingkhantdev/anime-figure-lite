@@ -706,6 +706,88 @@ describe('selling in the app', () => {
     });
 });
 
+describe('payment screenshots', () => {
+  const proof = (extra = {}) => ({
+    order_id: 'o1',
+    user_id: 'bob',
+    shop_id: 'alice',
+    data: Bytes.fromUint8Array(new Uint8Array(1000)),
+    created_at: serverTimestamp(),
+    ...extra,
+  });
+
+  /** bob's order o1 with alice's shop, in [status]. */
+  const seedOrder = (status = 'pending') =>
+    seed((db) =>
+      setDoc(doc(db, 'orders/o1'), {
+        user_id: 'bob',
+        shop_id: 'alice',
+        status,
+        total: 25000,
+        delivery_fee: 0,
+        phone: '09123456789',
+        delivery_method: 'pickup',
+        address: '',
+        note: '',
+        created_at: Timestamp.now(),
+      }),
+    );
+
+  /** The app's sendPaymentProof: the proof and the order's pointer. */
+  const send = (db, proofId, extra = {}) => {
+    const batch = writeBatch(db);
+    batch.set(doc(db, `payment_proofs/${proofId}`), proof(extra));
+    batch.update(doc(db, 'orders/o1'), {
+      payment_proof_id: proofId,
+      payment_sent_at: serverTimestamp(),
+    });
+    return batch.commit();
+  };
+
+  test('a customer sends a screenshot; only they and the shop see it',
+    async () => {
+      await seedOrder();
+      await seed((db) => setDoc(doc(db, 'super_admins/boss'), {}));
+      await assertSucceeds(send(as('bob'), 'pr1'));
+      await assertSucceeds(getDoc(doc(as('bob'), 'payment_proofs/pr1')));
+      await assertSucceeds(getDoc(doc(as('alice'), 'payment_proofs/pr1')));
+      await assertSucceeds(getDoc(doc(as('boss'), 'payment_proofs/pr1')));
+      await assertFails(getDoc(doc(as('carol'), 'payment_proofs/pr1')));
+      await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(),
+        'payment_proofs/pr1')));
+    });
+
+  test('and replaces it while the order waits', async () => {
+    await seedOrder();
+    const db = as('bob');
+    await assertSucceeds(send(db, 'pr1'));
+    await assertSucceeds(send(db, 'pr2'));
+    await assertSucceeds(deleteDoc(doc(db, 'payment_proofs/pr1')));
+    await assertFails(
+      updateDoc(doc(db, 'payment_proofs/pr2'), { order_id: 'o9' }),
+      'write-once',
+    );
+  });
+
+  test('no screenshots on others\' orders, closed orders, or too big',
+    async () => {
+      await seedOrder();
+      await assertFails(send(as('carol'), 'pr1', { user_id: 'carol' }));
+      await assertFails(send(as('bob'), 'pr2', { shop_id: 'carol' }));
+      await assertFails(send(as('bob'), 'pr3',
+        { data: Bytes.fromUint8Array(new Uint8Array(500 * 1024)) }));
+      await assertFails(
+        updateDoc(doc(as('bob'), 'orders/o1'), {
+          payment_proof_id: 'nothing',
+          payment_sent_at: serverTimestamp(),
+        }),
+        'the proof must exist',
+      );
+      await seedOrder('confirmed');
+      await assertFails(send(as('bob'), 'pr4'), 'not pending');
+    });
+});
+
 describe('photos', () => {
   const photo = (extra = {}) => ({
     shop_id: 'alice',

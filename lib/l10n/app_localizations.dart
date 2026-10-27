@@ -2166,6 +2166,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'None, you pick up'**
   String get pickupNoFee;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
+
+  /// No description provided for @copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied {number}'**
+  String copied(String number);
+
+  /// No description provided for @screenshotGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This screenshot is no longer here.'**
+  String get screenshotGone;
+
+  /// No description provided for @screenshotSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshot sent. The shop will check it.'**
+  String get screenshotSent;
+
+  /// No description provided for @screenshotSentLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment screenshot sent'**
+  String get screenshotSentLine;
+
+  /// No description provided for @view.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get view;
+
+  /// No description provided for @howToPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay {total} to the shop'**
+  String howToPay(String total);
+
+  /// No description provided for @sendPaymentScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Send payment screenshot'**
+  String get sendPaymentScreenshot;
+
+  /// No description provided for @replaceScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a different screenshot'**
+  String get replaceScreenshot;
+
+  /// No description provided for @customerSentPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer sent a payment screenshot'**
+  String get customerSentPayment;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

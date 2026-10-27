@@ -105,63 +105,67 @@ final pendingOrder = ShopOrder(
   shopId: 'me',
 );
 
-final overrides = [
-  authStateProvider.overrideWith((ref) => Stream.value(null)),
-  productsProvider.overrideWith((ref) => Stream.value(const [
-        Product(
-            id: 'p1',
-            name: 'Nendoroid Miku',
-            description: '',
-            price: 45000,
-            stockQuantity: 3,
-            isActive: true),
-        Product(
-            id: 'p2',
-            name: 'Gojo Satoru 1/7 scale',
-            description: '',
-            price: 320000,
-            stockQuantity: 0,
-            isActive: true),
-      ])),
-  myShopProvider.overrideWith((ref) => Stream.value(
-      shop('me', 'Sakura Figures', now.add(const Duration(days: 5))))),
-  itemsProvider.overrideWith((ref) => Stream.value(items)),
-  itemProvider.overrideWith(
-      (ref, id) => Stream.value(items.firstWhere((i) => i.id == id))),
-  recentMovesProvider.overrideWith((ref) => Stream.value(moves)),
-  itemMovesProvider.overrideWith((ref, id) => Stream.value(moves)),
-  customersProvider.overrideWith((ref) => Stream.value(const [
-        Customer(
-            id: 'c1',
-            name: 'Ko Aung',
+final overrides = sampleOverrides();
+
+/// The sample data; [shopOrders] are what the shop 'me' sees.
+List<Override> sampleOverrides({List<ShopOrder>? shopOrders}) => [
+      authStateProvider.overrideWith((ref) => Stream.value(null)),
+      productsProvider.overrideWith((ref) => Stream.value(const [
+            Product(
+                id: 'p1',
+                name: 'Nendoroid Miku',
+                description: '',
+                price: 45000,
+                stockQuantity: 3,
+                isActive: true),
+            Product(
+                id: 'p2',
+                name: 'Gojo Satoru 1/7 scale',
+                description: '',
+                price: 320000,
+                stockQuantity: 0,
+                isActive: true),
+          ])),
+      myShopProvider.overrideWith((ref) => Stream.value(
+          shop('me', 'Sakura Figures', now.add(const Duration(days: 5))))),
+      itemsProvider.overrideWith((ref) => Stream.value(items)),
+      itemProvider.overrideWith(
+          (ref, id) => Stream.value(items.firstWhere((i) => i.id == id))),
+      recentMovesProvider.overrideWith((ref) => Stream.value(moves)),
+      itemMovesProvider.overrideWith((ref, id) => Stream.value(moves)),
+      customersProvider.overrideWith((ref) => Stream.value(const [
+            Customer(
+                id: 'c1',
+                name: 'Ko Aung',
+                phone: '09123456789',
+                address: 'Yangon',
+                note: ''),
+          ])),
+      shopOrdersProvider
+          .overrideWith((ref) => Stream.value(shopOrders ?? [pendingOrder])),
+      myOrdersProvider.overrideWith((ref) => Stream.value([pendingOrder])),
+      shopPublicProvider.overrideWith((ref, id) => Stream.value(ShopPublic(
+            shopId: id,
             phone: '09123456789',
-            address: 'Yangon',
-            note: ''),
-      ])),
-  shopOrdersProvider.overrideWith((ref) => Stream.value([pendingOrder])),
-  myOrdersProvider.overrideWith((ref) => Stream.value([pendingOrder])),
-  shopPublicProvider.overrideWith((ref, id) => Stream.value(ShopPublic(
-        shopId: id,
-        phone: '09123456789',
-        deliveryFee: 3000,
-        paymentMethods: const [
-          PaymentMethod(
-              type: PaymentType.kbzPay,
-              accountName: 'Sakura Figures',
-              number: '09123456789'),
-          PaymentMethod(
-              type: PaymentType.bank,
-              accountName: 'Daw Sakura',
-              number: 'KBZ Bank 0123 4567 8901'),
-        ],
-      ))),
-  allShopsProvider.overrideWith((ref) => Stream.value([
-        shop('a', 'Sakura Figures', now.add(const Duration(days: 5))),
-        shop('b', 'Mandalay Toys', now.add(const Duration(days: 120))),
-        shop('c', 'New Shop', null),
-        shop('d', 'Old Shop', now.subtract(const Duration(days: 3))),
-      ])),
-];
+            deliveryFee: 3000,
+            paymentMethods: const [
+              PaymentMethod(
+                  type: PaymentType.kbzPay,
+                  accountName: 'Sakura Figures',
+                  number: '09123456789'),
+              PaymentMethod(
+                  type: PaymentType.bank,
+                  accountName: 'Daw Sakura',
+                  number: 'KBZ Bank 0123 4567 8901'),
+            ],
+          ))),
+      allShopsProvider.overrideWith((ref) => Stream.value([
+            shop('a', 'Sakura Figures', now.add(const Duration(days: 5))),
+            shop('b', 'Mandalay Toys', now.add(const Duration(days: 120))),
+            shop('c', 'New Shop', null),
+            shop('d', 'Old Shop', now.subtract(const Duration(days: 3))),
+          ])),
+    ];
 
 /// Reduce motion on, so looping effects (border beam, skeleton shimmer)
 /// stand still and pumpAndSettle can settle.
@@ -171,13 +175,15 @@ void stillMotion(WidgetTester tester) {
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 }
 
-Future<void> pumpScreen(WidgetTester tester, Widget screen) async {
+/// Pumps [screen] with the sample data, or [withOverrides] instead.
+Future<void> pumpScreen(WidgetTester tester, Widget screen,
+    {List<Override>? withOverrides}) async {
   tester.view.physicalSize = const Size(360, 720) * 2;
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
   stillMotion(tester);
   await tester.pumpWidget(ProviderScope(
-    overrides: overrides,
+    overrides: withOverrides ?? overrides,
     child: MaterialApp(
       theme: buildAppTheme(),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -311,8 +317,8 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    await tester.dragUntilVisible(find.text('Total'),
-        find.byType(ListView).first, const Offset(0, -200));
+    await tester.dragUntilVisible(
+        find.text('Total'), find.byType(ListView).first, const Offset(0, -200));
     expect(find.text('3,000 Ks'), findsOneWidget);
     expect(find.text('28,000 Ks'), findsOneWidget);
 
@@ -320,8 +326,8 @@ void main() {
         find.byType(ListView).first, const Offset(0, 200));
     await tester.tap(find.text('Pick up at shop'));
     await tester.pumpAndSettle();
-    await tester.dragUntilVisible(find.text('Total'),
-        find.byType(ListView).first, const Offset(0, -200));
+    await tester.dragUntilVisible(
+        find.text('Total'), find.byType(ListView).first, const Offset(0, -200));
     expect(find.text('None, you pick up'), findsOneWidget);
     expect(find.text('25,000 Ks'), findsNWidgets(2), reason: 'figures, total');
   });
@@ -334,6 +340,35 @@ void main() {
     expect(find.text('Contact the shop'), findsOneWidget);
     expect(find.text('Call'), findsOneWidget);
     expect(find.text('Viber'), findsOneWidget);
+    expect(find.text('Pay 25,000 Ks to the shop'), findsOneWidget);
+    expect(find.text('KBZPay'), findsOneWidget);
+    expect(find.text('KBZ Bank 0123 4567 8901'), findsOneWidget);
+    expect(find.byTooltip('Copy'), findsNWidgets(2));
+    await tester.dragUntilVisible(find.text('Send payment screenshot'),
+        find.byType(SingleChildScrollView).last, const Offset(0, -200));
+    expect(find.text('Send payment screenshot'), findsOneWidget);
+  });
+
+  testWidgets('the shop sees when a payment screenshot has come',
+      (tester) async {
+    final paid = ShopOrder(
+      id: 'order2',
+      status: 'pending',
+      total: 25000,
+      items: pendingOrder.items,
+      phone: '09123456789',
+      deliveryMethod: DeliveryMethod.pickup,
+      address: '',
+      note: '',
+      createdAt: now,
+      shopId: 'me',
+      paymentProofId: 'proof1',
+    );
+    await pumpScreen(tester, const ShopHomePage(),
+        withOverrides: sampleOverrides(shopOrders: [paid]));
+    await tester.tap(find.text('Orders').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Customer sent a payment screenshot'), findsOneWidget);
   });
 
   testWidgets('"View cart" after adding closes the product, opens Cart',

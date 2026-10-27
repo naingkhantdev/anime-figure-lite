@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../logic/stock.dart';
@@ -11,6 +13,7 @@ import '../l10n/l10n.dart';
 const maxOrderLines = 20;
 const maxPhoneLength = 20;
 const maxTextLength = 500;
+const maxProofBytes = 400 * 1024;
 
 class OrderException extends AppException {
   OrderException(super.message);
@@ -44,8 +47,7 @@ class OrderRepository {
   }) async {
     if (cart.isEmpty) throw OrderException((l) => l.errCartEmpty);
     if (cart.length > maxOrderLines) {
-      throw OrderException(
-          (l) => l.errTooManyOrderLines(maxOrderLines));
+      throw OrderException((l) => l.errTooManyOrderLines(maxOrderLines));
     }
     final cleanPhone = normalizePhone(phone);
     if (cleanPhone == null) {
@@ -66,7 +68,8 @@ class OrderRepository {
             await tx.get(_db.collection('products').doc(item.product.id));
         final data = snap.data();
         if (data == null || data['is_active'] != true) {
-          throw OrderException((l) => l.errProductUnavailable(item.product.name));
+          throw OrderException(
+              (l) => l.errProductUnavailable(item.product.name));
         }
         final stock = (data['stock_quantity'] as num?)?.toInt() ?? 0;
         if (stock < item.quantity) {
@@ -152,15 +155,54 @@ class OrderRepository {
   Future<void> cancelOrder(String orderId) =>
       _orders.doc(orderId).update({'status': 'cancelled'});
 
-  /// Before an account is deleted: cancels its pending orders and blanks
-  /// the phone, address and note on all of them. The orders stay, so the
-  /// shop's sales records still add up. firestore.rules allows exactly this.
+  /// Before an account is deleted: cancels its pending orders, blanks the
+  /// phone, address and note on all of them, and deletes its payment
+  /// screenshots. The orders stay, so the shop's sales records still add
+  /// up. firestore.rules allows exactly this.
   Future<void> forgetContactDetails(String userId) async {
     final snap = await _orders.where('user_id', isEqualTo: userId).get();
     for (final doc in snap.docs) {
       if (doc.data()['status'] == 'pending') await cancelOrder(doc.id);
       await doc.reference.update({'phone': '', 'address': '', 'note': ''});
     }
+    final proofs = await _proofs.where('user_id', isEqualTo: userId).get();
+    for (final doc in proofs.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  CollectionReference<Map<String, dynamic>> get _proofs =>
+      _db.collection('payment_proofs');
+
+  /// Attaches [bytes], a screenshot of the customer's payment, to their
+  /// waiting [order], replacing any earlier one. firestore.rules check the
+  /// order is theirs, still pending, and with a shop.
+  Future<void> sendPaymentProof(ShopOrder order, Uint8List bytes,
+      {required String userId}) async {
+    if (bytes.length > maxProofBytes) {
+      throw OrderException((l) => l.errPhotoTooBig);
+    }
+    final proof = _proofs.doc();
+    final batch = _db.batch()
+      ..set(proof, {
+        'order_id': order.id,
+        'user_id': userId,
+        'shop_id': order.shopId,
+        'data': Blob(bytes),
+        'created_at': FieldValue.serverTimestamp(),
+      })
+      ..update(_orders.doc(order.id), {
+        'payment_proof_id': proof.id,
+        'payment_sent_at': FieldValue.serverTimestamp(),
+      });
+    if (order.paymentSent) batch.delete(_proofs.doc(order.paymentProofId));
+    await batch.commit();
+  }
+
+  /// The JPEG bytes of a payment screenshot, or null if it is gone.
+  Future<Uint8List?> loadPaymentProof(String id) async {
+    final data = (await _proofs.doc(id).get()).data()?['data'];
+    return data is Blob ? data.bytes : null;
   }
 
   /// Sorted client-side (newest first) so no composite index is needed.

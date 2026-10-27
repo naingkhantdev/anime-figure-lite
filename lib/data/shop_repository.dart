@@ -126,12 +126,11 @@ class ShopRepository {
     final cleanName = name.trim();
     if (cleanName.isEmpty) throw ShopException((l) => l.errShopNameEmpty);
     if (cleanName.length > maxShopNameLength) {
-      throw ShopException(
-          (l) => l.errShopNameTooLong(maxShopNameLength));
+      throw ShopException((l) => l.errShopNameTooLong(maxShopNameLength));
     }
     // Customers call and Viber the shop on it, so it is required.
-    final cleanPhone = normalizePhone(phone) ??
-        (throw ShopException((l) => l.errPhoneFormat));
+    final cleanPhone =
+        normalizePhone(phone) ?? (throw ShopException((l) => l.errPhoneFormat));
     return {'name': cleanName, 'phone': cleanPhone};
   }
 

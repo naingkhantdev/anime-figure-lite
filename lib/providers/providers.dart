@@ -37,6 +37,11 @@ final photoBytesProvider = FutureProvider.family<Uint8List?, String>(
 final orderRepositoryProvider =
     Provider((ref) => OrderRepository(FirebaseFirestore.instance));
 
+/// A payment screenshot's JPEG bytes, by `payment_proofs/{id}`.
+final paymentProofProvider = FutureProvider.family<Uint8List?, String>(
+  (ref, id) => ref.watch(orderRepositoryProvider).loadPaymentProof(id),
+);
+
 final authStateProvider = StreamProvider<User?>(
   (ref) => ref.watch(authRepositoryProvider).authStateChanges(),
 );

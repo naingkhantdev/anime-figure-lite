@@ -39,8 +39,7 @@ extension PaymentTypeLabel on PaymentType {
 
 /// A stored category (one of [productCategories]) in the app's language.
 /// Anything else, such as an old value, is shown as stored.
-String categoryLabel(AppLocalizations l, String category) =>
-    switch (category) {
+String categoryLabel(AppLocalizations l, String category) => switch (category) {
       'Scale figure' => l.categoryScaleFigure,
       'Nendoroid' => l.categoryNendoroid,
       'Garage kit' => l.categoryGarageKit,

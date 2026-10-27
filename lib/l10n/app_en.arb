@@ -804,5 +804,29 @@
   "viberNotInstalled": "Viber isn't on this phone.",
   "contactTheShop": "Contact the shop",
   "total": "Total",
-  "pickupNoFee": "None, you pick up"
+  "pickupNoFee": "None, you pick up",
+  "copy": "Copy",
+  "copied": "Copied {number}",
+  "@copied": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "screenshotGone": "This screenshot is no longer here.",
+  "screenshotSent": "Screenshot sent. The shop will check it.",
+  "screenshotSentLine": "Payment screenshot sent",
+  "view": "View",
+  "howToPay": "Pay {total} to the shop",
+  "@howToPay": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "sendPaymentScreenshot": "Send payment screenshot",
+  "replaceScreenshot": "Send a different screenshot",
+  "customerSentPayment": "Customer sent a payment screenshot"
 }

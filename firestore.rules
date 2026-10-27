@@ -373,6 +373,25 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['status']);
 
+      // While the order waits, the customer may attach a screenshot of
+      // their payment, or replace it: payment_proof_id names a proof
+      // created in this same write, for this order (see payment_proofs).
+      allow update: if request.auth != null
+        && resource.data.user_id == request.auth.uid
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['payment_proof_id', 'payment_sent_at'])
+        && request.resource.data.payment_sent_at == request.time
+        && proofIsFor(request.resource.data.payment_proof_id, orderId);
+
+      function proofIsFor(proofId, orderId) {
+        let proof = getAfter(
+          /databases/$(database)/documents/payment_proofs/$(proofId)).data;
+        return proofId is string
+          && proof.order_id == orderId
+          && proof.user_id == request.auth.uid;
+      }
+
       // Before deleting their account, a customer blanks their phone,
       // address and note on their orders. The orders stay for the shop's
       // records. See OrderRepository.forgetContactDetails.
@@ -426,6 +445,44 @@ service cloud.firestore {
 
       allow update: if false; // a new photo is a new document
       allow delete: if signedIn() && resource.data.shop_id == request.auth.uid;
+    }
+
+    // ---- Payment screenshots ----
+    // A customer's proof of paying a shop for one order. Private, unlike
+    // product photos: only the customer, that shop and the super admin see
+    // it. Write-once; a replacement is a new document. The size cap matches
+    // lib/data/order_repository.dart maxProofBytes.
+    match /payment_proofs/{proofId} {
+      allow read: if signedIn()
+        && (resource.data.user_id == request.auth.uid
+            || resource.data.shop_id == request.auth.uid
+            || isSuperAdmin());
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(
+             ['order_id', 'user_id', 'shop_id', 'data', 'created_at'])
+        && request.resource.data.keys().hasAll(
+             ['order_id', 'user_id', 'shop_id', 'data', 'created_at'])
+        && request.resource.data.user_id == request.auth.uid
+        && proofMatchesOrder(request.resource.data)
+        && request.resource.data.data is bytes
+        && request.resource.data.data.size() <= 400 * 1024
+        && request.resource.data.created_at == request.time;
+
+      allow update: if false;
+
+      // When replaced, and when the customer deletes their account.
+      allow delete: if signedIn() && resource.data.user_id == request.auth.uid;
+
+      // The customer's own waiting order, with that order's shop.
+      function proofMatchesOrder(d) {
+        let order = get(
+          /databases/$(database)/documents/orders/$(d.order_id)).data;
+        return order.user_id == request.auth.uid
+          && order.status == 'pending'
+          && order.get('shop_id', '') != ''
+          && order.get('shop_id', '') == d.shop_id;
+      }
     }
 
     match /{document=**} {

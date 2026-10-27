@@ -9,6 +9,7 @@ import '../../utils/money.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/contact_buttons.dart';
+import '../widgets/payment.dart';
 import '../widgets/effects.dart';
 import '../widgets/glass.dart';
 import '../widgets/skeleton.dart';
@@ -119,8 +120,7 @@ class OrderStatusPill extends StatelessWidget {
     return switch (status) {
       'pending' => Pill.info(l.statusWaitingForShop),
       'confirmed' => Pill.success(l.statusConfirmed),
-      'shipped' =>
-        Pill.success(pickup ? l.statusPickedUp : l.statusOnItsWay),
+      'shipped' => Pill.success(pickup ? l.statusPickedUp : l.statusOnItsWay),
       'cancelled' => Pill.danger(l.statusCancelled),
       _ => Pill.info(status),
     };
@@ -180,14 +180,46 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
     }
   }
 
+  bool _sending = false;
+
+  /// Picks a screenshot from the gallery and attaches it to the order.
+  Future<void> _sendScreenshot(ShopOrder order) async {
+    final user = ref.read(authStateProvider).valueOrNull;
+    if (user == null) return;
+    final l = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final picked = await ref.read(photoRepositoryProvider).pickScreenshot();
+      if (picked == null || !mounted) return;
+      setState(() => _sending = true);
+      await ref.read(orderRepositoryProvider).sendPaymentProof(
+          order, await picked.readAsBytes(),
+          userId: user.uid);
+      messenger.showSnackBar(SnackBar(content: Text(l.screenshotSent)));
+    } catch (e) {
+      if (mounted) showMessage(context, friendlyError(context, e));
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final order = widget.order;
+    // Follow the live order, so a sent screenshot shows at once.
+    final order = ref
+            .watch(myOrdersProvider)
+            .valueOrNull
+            ?.where((o) => o.id == widget.order.id)
+            .firstOrNull ??
+        widget.order;
     final theme = Theme.of(context);
+    final l = context.l10n;
     // The house's own figures (no shop) are handled by staff, not a shop.
-    final shopPhone = order.shopId.isEmpty
-        ? ''
-        : ref.watch(shopPublicProvider(order.shopId)).valueOrNull?.phone ?? '';
+    final shop = order.shopId.isEmpty
+        ? null
+        : ref.watch(shopPublicProvider(order.shopId)).valueOrNull;
+    final shopPhone = shop?.phone ?? '';
+    final payable = order.status == 'pending' || order.status == 'confirmed';
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -233,7 +265,8 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
                 ),
               ),
             const Divider(height: 24),
-            Text('${order.deliveryMethod.label(context.l10n)} · ${order.phone}'),
+            Text(
+                '${order.deliveryMethod.label(context.l10n)} · ${order.phone}'),
             if (order.address.isNotEmpty) Text(order.address),
             if (order.note.isNotEmpty) ...[
               const SizedBox(height: 4),
@@ -246,6 +279,50 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
                   style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               ContactButtons(phone: shopPhone),
+            ],
+            if (shop != null &&
+                shop.paymentMethods.isNotEmpty &&
+                payable &&
+                !order.paymentSent) ...[
+              const SizedBox(height: 20),
+              Text(l.howToPay(formatMmk(order.total)),
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              PaymentMethodsList(methods: shop.paymentMethods),
+            ],
+            if (order.paymentSent) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.check_circle_outline,
+                      size: 20, color: AppColors.successInk),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(l.screenshotSentLine)),
+                  TextButton(
+                    onPressed: () =>
+                        showPaymentProof(context, order.paymentProofId),
+                    child: Text(l.view),
+                  ),
+                ],
+              ),
+            ],
+            // Only shops' orders: the house's are paid as staff arrange.
+            if (order.canCancel && order.shopId.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  onPressed: _sending ? null : () => _sendScreenshot(order),
+                  icon: _sending
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.receipt_long_outlined),
+                  label: Text(order.paymentSent
+                      ? l.replaceScreenshot
+                      : l.sendPaymentScreenshot),
+                ),
+              ),
             ],
             if (order.canCancel) ...[
               const SizedBox(height: 16),

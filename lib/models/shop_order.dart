@@ -13,8 +13,9 @@ enum DeliveryMethod {
 /// Fields: user_id, status, items (list of maps), total (int, whole kyats,
 /// delivery included), delivery_fee (int; absent on old orders), phone,
 /// delivery_method, address, note, created_at, shop_id (the shop whose
-/// figures these are; empty for the house's own, absent on old orders).
-/// Checkout makes one order per shop.
+/// figures these are; empty for the house's own, absent on old orders),
+/// and once the customer has sent a payment screenshot, payment_proof_id
+/// and payment_sent_at. Checkout makes one order per shop.
 class ShopOrder {
   const ShopOrder({
     required this.id,
@@ -28,7 +29,16 @@ class ShopOrder {
     this.deliveryFee = 0,
     this.createdAt,
     this.shopId = '',
+    this.paymentProofId = '',
+    this.paymentSentAt,
   });
+
+  /// `payment_proofs/{id}` of the customer's payment screenshot; empty
+  /// until they send one.
+  final String paymentProofId;
+  final DateTime? paymentSentAt;
+
+  bool get paymentSent => paymentProofId.isNotEmpty;
 
   final String id;
   final String status;
@@ -68,6 +78,8 @@ class ShopOrder {
       note: data['note'] as String? ?? '',
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
       shopId: data['shop_id'] as String? ?? '',
+      paymentProofId: data['payment_proof_id'] as String? ?? '',
+      paymentSentAt: (data['payment_sent_at'] as Timestamp?)?.toDate(),
     );
   }
 }
