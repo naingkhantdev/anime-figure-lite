@@ -67,7 +67,7 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   image_path: "assets/brand/icon.png"
-  adaptive_icon_background: "assets/brand/icon_background.png"
+  adaptive_icon_background: "#12182C"
   adaptive_icon_foreground: "assets/brand/icon_foreground.png"
   # The art already keeps to the adaptive-icon safe zone; no extra padding.
   adaptive_icon_foreground_inset: 0

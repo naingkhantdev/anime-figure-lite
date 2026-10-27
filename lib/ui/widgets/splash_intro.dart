@@ -17,18 +17,21 @@ import 'brand.dart';
 const splashLogoSize = 144.0;
 
 /// The fighter's poses, built by tool/brand_assets.py: any extra poses in
-/// order, then the logo itself.
+/// order, then the logo's own.
 const _posesFolder = 'assets/brand/poses/';
 
 /// Plays once per launch over [child], which builds and loads underneath
 /// the whole time. On the logo's dark navy, the fighter throws a quick
-/// combo: each pose snaps in with a red flash and a jolt, then it lands on
-/// the logo, which settles a little higher as the name fades in beneath.
-/// With only the logo to show, it strikes twice in the same pose.
+/// combo: each strike winds up, dashes forward trailing after-images and
+/// lands with a red flash, a shockwave and a shake; each extra pose gets
+/// its own strike. Then it settles a little higher as the name fades in
+/// beneath. With only the logo's pose, it strikes three times, the middle
+/// one in the mirrored stance.
 ///
 /// It leaves after the intro has played and sign-in state is known, or after
 /// [_maxWait] whatever happens, or at once on a tap. With reduce motion on
-/// nothing moves; it shows the finished frame briefly and fades.
+/// (Android: "Remove animations", or animator duration scale off) nothing
+/// moves; it shows the finished frame briefly and fades.
 class SplashIntro extends ConsumerStatefulWidget {
   const SplashIntro({super.key, required this.child});
 
@@ -56,7 +59,7 @@ class _SplashIntroState extends ConsumerState<SplashIntro>
   void initState() {
     super.initState();
     // Keep the native splash up until the poses are decoded (see below), so
-    // Flutter's first frame already has the logo.
+    // Flutter's first frame already has the fighter.
     WidgetsBinding.instance.deferFirstFrame();
     _firstFrameHeld = true;
   }
@@ -104,8 +107,7 @@ class _SplashIntroState extends ConsumerState<SplashIntro>
     }
     if (!mounted) return;
     await Future.wait([
-      for (final pose in {logoAsset, ..._combo.poses})
-        precacheImage(AssetImage(pose), context),
+      for (final pose in _combo.poses) precacheImage(AssetImage(pose), context),
     ]);
   }
 
@@ -170,37 +172,70 @@ class _SplashIntroState extends ConsumerState<SplashIntro>
   }
 }
 
-/// The intro's timeline: a short hold on the logo (what the native splash
-/// showed), one beat per pose, then the settle.
+/// The intro's timeline: a short hold on the logo's pose (what the native
+/// splash showed), one strike per pose, then the settle.
 class _Combo {
   const _Combo(this.poses);
 
-  /// Ends with the logo.
+  /// Ends with the logo's pose.
   final List<String> poses;
 
   static const _hold = 150;
   static const _settle = 600;
 
-  /// With extra poses, one beat each; with the logo alone, two strikes.
-  int get beats => poses.length > 1 ? poses.length : 2;
+  /// With extra poses, one strike each; with the logo's pose alone, three.
+  int get strikes => poses.length > 1 ? poses.length : 3;
 
   /// Snappier the more poses there are, so the whole intro stays under
   /// about 1.9 s.
-  int get beatMs => ((1900 - _hold - _settle) ~/ beats).clamp(120, 280);
+  int get strikeMs => ((1900 - _hold - _settle) ~/ strikes).clamp(160, 380);
 
-  int get comboMs => _hold + beats * beatMs;
+  int get comboMs => _hold + strikes * strikeMs;
 
   Duration get length => Duration(milliseconds: comboMs + _settle);
 
-  /// Where the combo is at [ms] into the intro: which pose shows, and how
-  /// far through its beat (0 at the hit, 1 at its end; 1 outside beats).
-  (String pose, double beat) at(int ms) {
-    if (ms < _hold) return (poses.last, 1);
-    final i = (ms - _hold) ~/ beatMs;
-    if (i >= beats) return (poses.last, 1);
-    final pose = poses.length > 1 ? poses[i] : poses.last;
-    return (pose, ((ms - _hold) % beatMs) / beatMs);
+  /// Where the combo is at [ms] into the intro: which pose shows, whether
+  /// mirrored, and how far through its strike (null outside strikes).
+  (String pose, bool mirrored, double? strike) at(int ms) {
+    if (ms < _hold) return (poses.last, false, null);
+    final i = (ms - _hold) ~/ strikeMs;
+    if (i >= strikes) return (poses.last, false, null);
+    final single = poses.length == 1;
+    return (
+      single ? poses.last : poses[i],
+      single && i.isOdd,
+      ((ms - _hold) % strikeMs) / strikeMs,
+    );
   }
+}
+
+/// The fighter's place in one strike, [u] from 0 to 1: a wind-up back, a
+/// dash forward, then a recovery to the middle. [impact] is how far past
+/// the hit it is, null before it.
+({double x, double scale, double turn, double? impact}) _strike(double u) {
+  double lerp(double a, double b, double t) => a + (b - a) * t;
+  const windUp = 0.22, hit = 0.42;
+  if (u < windUp) {
+    final w = Curves.easeOut.transform(u / windUp);
+    return (x: -16 * w, scale: 1 - 0.06 * w, turn: -0.05 * w, impact: null);
+  }
+  if (u < hit) {
+    final d = Curves.easeIn.transform((u - windUp) / (hit - windUp));
+    return (
+      x: lerp(-16, 30, d),
+      scale: lerp(0.94, 1.16, d),
+      turn: lerp(-0.05, 0.04, d),
+      impact: null,
+    );
+  }
+  final p = (u - hit) / (1 - hit);
+  final r = Curves.easeOutCubic.transform(p);
+  return (
+    x: lerp(30, 0, r),
+    scale: lerp(1.16, 1, r),
+    turn: lerp(0.04, 0, r),
+    impact: p,
+  );
 }
 
 class _IntroFrame extends StatelessWidget {
@@ -209,8 +244,8 @@ class _IntroFrame extends StatelessWidget {
   final AnimationController intro;
   final _Combo combo;
 
-  // Below the logo: a gap and the name. Fixed heights so the group's centre
-  // is known, which is what lets the logo start at screen centre.
+  // Below the fighter: a gap and the name. Fixed heights so the group's
+  // centre is known, which is what lets the fighter start at screen centre.
   static const _gap = 28.0;
   static const _nameHeight = 20.0;
   static const _below = _gap + _nameHeight;
@@ -226,19 +261,51 @@ class _IntroFrame extends StatelessWidget {
         builder: (context, _) {
           final total = intro.duration?.inMilliseconds ?? 1;
           final ms = (intro.value * total).round();
-          final (pose, beat) = combo.at(ms);
+          final (pose, mirrored, strike) = combo.at(ms);
           // After the combo: lift into place, then the name.
-          final settle = ((ms - combo.comboMs) / _Combo._settle).clamp(0.0, 1.0);
+          final settle =
+              ((ms - combo.comboMs) / _Combo._settle).clamp(0.0, 1.0);
           final lift = Curves.easeInOutCubic.transform(settle);
-          final name =
-              Curves.easeOutCubic.transform(((settle - 0.3) / 0.7).clamp(0, 1));
+          final name = Curves.easeOutCubic
+              .transform(((settle - 0.3) / 0.7).clamp(0.0, 1.0));
 
-          // Each hit: a red flash that fades, a punch in size, and a jolt
-          // sideways that dies away.
-          final hit = 1 - beat;
-          final flash = hit * hit;
-          final punch = 1 + 0.09 * math.sin(math.pi * beat.clamp(0, 0.5) * 2);
-          final jolt = math.sin(beat * math.pi * 5) * 6 * hit;
+          final dir = mirrored ? -1.0 : 1.0;
+          final impact = strike == null ? null : _strike(strike).impact;
+          final flash = impact == null ? 0.0 : (1 - impact) * (1 - impact);
+          // The whole picture shakes for a moment on each hit.
+          final shake = impact == null
+              ? 0.0
+              : math.sin(impact * math.pi * 9) * 4 * (1 - impact);
+          // After-images trail the dash and fade soon after the hit.
+          final trail = strike == null || strike < 0.2 || strike > 0.62
+              ? 0.0
+              : 1 - ((strike - 0.2) / 0.42 - 0.5).abs() * 2;
+
+          Widget fighter(double opacity, {double lag = 0}) {
+            final at =
+                strike == null ? null : _strike((strike - lag).clamp(0.0, 1.0));
+            final scale = at?.scale ?? 1;
+            return Opacity(
+              opacity: opacity,
+              child: Transform.translate(
+                offset: Offset((at?.x ?? 0) * dir, 0),
+                child: Transform.rotate(
+                  angle: (at?.turn ?? 0) * dir,
+                  child: Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.diagonal3Values(scale * dir, scale, 1),
+                    child: Image.asset(
+                      pose,
+                      width: splashLogoSize,
+                      height: splashLogoSize,
+                      gaplessPlayback: true,
+                      excludeFromSemantics: true,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
 
           return Center(
             child: Column(
@@ -246,7 +313,7 @@ class _IntroFrame extends StatelessWidget {
               children: [
                 Transform.translate(
                   // Starts _below/2 lower: exactly the screen centre.
-                  offset: Offset(jolt, (1 - lift) * _below / 2),
+                  offset: Offset(shake, (1 - lift) * _below / 2 + shake / 2),
                   child: SizedBox.square(
                     dimension: splashLogoSize,
                     child: Stack(
@@ -254,31 +321,15 @@ class _IntroFrame extends StatelessWidget {
                       alignment: Alignment.center,
                       children: [
                         if (flash > 0.01)
-                          Transform.scale(
-                            scale: 1.6 + 0.5 * beat,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(colors: [
-                                  AppColors.splashNeon
-                                      .withOpacity(0.75 * flash),
-                                  AppColors.splashNeon.withOpacity(0),
-                                ]),
-                              ),
-                              child: const SizedBox.square(
-                                  dimension: splashLogoSize),
-                            ),
-                          ),
-                        Transform.scale(
-                          scale: punch,
-                          child: Image.asset(
-                            pose,
-                            width: splashLogoSize,
-                            height: splashLogoSize,
-                            gaplessPlayback: true,
-                            excludeFromSemantics: true,
-                          ),
-                        ),
+                          _Glow(strength: flash, spread: impact!),
+                        if (impact != null && impact < 1)
+                          _Shockwave(progress: impact),
+                        if (trail > 0.01) ...[
+                          fighter(0.12 * trail, lag: 0.15),
+                          fighter(0.22 * trail, lag: 0.1),
+                          fighter(0.35 * trail, lag: 0.05),
+                        ],
+                        fighter(1),
                       ],
                     ),
                   ),
@@ -298,6 +349,57 @@ class _IntroFrame extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// The red light thrown off by a hit, fading as it spreads.
+class _Glow extends StatelessWidget {
+  const _Glow({required this.strength, required this.spread});
+
+  final double strength;
+  final double spread;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.scale(
+      scale: 1.5 + 0.7 * spread,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(colors: [
+            AppColors.splashNeon.withOpacity(0.8 * strength),
+            AppColors.splashNeon.withOpacity(0),
+          ]),
+        ),
+        child: const SizedBox.square(dimension: splashLogoSize),
+      ),
+    );
+  }
+}
+
+/// A thin ring of neon racing outwards from a hit.
+class _Shockwave extends StatelessWidget {
+  const _Shockwave({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final grow = Curves.easeOutCubic.transform(progress);
+    return Transform.scale(
+      scale: 0.6 + 1.6 * grow,
+      child: Container(
+        width: splashLogoSize,
+        height: splashLogoSize,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: AppColors.splashNeon.withOpacity(0.9 * (1 - progress)),
+            width: 3 * (1 - progress) + 0.5,
+          ),
+        ),
       ),
     );
   }

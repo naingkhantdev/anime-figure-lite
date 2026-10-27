@@ -17,14 +17,14 @@ After changing any of them, run from the project folder:
 
 It writes:
 
-    assets/brand/logo.png         the tile, rounded, transparent outside;
-                                  the logo everywhere in the app
-    assets/brand/poses/NN.png     each pose as a tile like logo.png, then
-                                  the logo last (splash_intro.dart)
-    assets/brand/icon.png         launcher icon, full square
-    assets/brand/icon_foreground.png, icon_background.png
-                                  Android adaptive icon: the glowing fighter
-                                  cut out, over the tile softly blurred
+    assets/brand/logo.png         the glowing fighter alone, transparent
+                                  around it; the logo everywhere in the app
+    assets/brand/poses/NN.png     each pose cut out the same way, then the
+                                  logo's last (splash_intro.dart)
+    assets/brand/icon.png         launcher icon: the fighter on navy
+    assets/brand/icon_foreground.png
+                                  Android adaptive icon layer, over plain
+                                  navy (pubspec.yaml)
     android .../splash_logo.png, iOS LaunchImage*.png
                                   native splash, 144dp/pt, which must match
                                   splashLogoSize in splash_intro.dart
@@ -32,14 +32,15 @@ It writes:
 
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 BRAND = ROOT / "assets/brand"
 SOURCE = BRAND / "source"
 SPLASH_DP = 144
 POSE_PX = 512          # splash draws 144dp; 3.5x covers the sharpest phones
-CORNER = 0.165         # the tile's corner radius, as a share of its side
+POSE_MARGIN = 0.06     # tile rim left out of the splash poses, each side
+NAVY = (18, 24, 44, 255)  # AppColors.splash
 
 
 def find_tile(img: Image.Image):
@@ -59,17 +60,6 @@ def find_tile(img: Image.Image):
     return (x0, y0, x0 + side, y0 + side)
 
 
-def rounded(tile: Image.Image) -> Image.Image:
-    """The tile with its own rounded corners, transparent outside them.
-    The mask is drawn 4x and scaled down, so the edge is smooth."""
-    n = tile.width
-    big = Image.new("L", (n * 4, n * 4), 0)
-    ImageDraw.Draw(big).rounded_rectangle(
-        (0, 0, n * 4 - 1, n * 4 - 1), radius=round(n * 4 * CORNER), fill=255)
-    out = tile.convert("RGBA")
-    out.putalpha(big.resize((n, n), Image.LANCZOS))
-    return out
-
 
 def tile_of(path: Path, size: int) -> Image.Image:
     img = Image.open(path).convert("RGB")
@@ -78,21 +68,41 @@ def tile_of(path: Path, size: int) -> Image.Image:
 
 def fighter_cutout(tile: Image.Image) -> Image.Image:
     """Just the red neon fighter, transparent elsewhere: alpha is how much
-    redder than grey each pixel is, so the glow fades out softly."""
-    r, g, b = tile.convert("RGB").split()
+    redder than grey each pixel is, so the glow fades out softly.
+
+    A glowing pixel is part fighter, part grey glass behind it. The glass
+    is estimated (the tile with the red taken out, blurred) and taken back
+    out of each pixel's colour, so on a light background the glow is red
+    light, not a grey haze."""
+    rgb = tile.convert("RGB")
+    r, g, b = rgb.split()
     redness = ImageChops.subtract(r, ImageChops.lighter(g, b))
     alpha = redness.point(lambda v: max(0, min(255, (v - 8) * 6)))
-    out = tile.convert("RGBA")
-    out.putalpha(alpha)
+
+    glass = Image.merge("RGB", (ImageChops.darker(r, ImageChops.lighter(g, b)),
+                                g, b)).filter(ImageFilter.GaussianBlur(24))
+    px, bg, a = rgb.load(), glass.load(), alpha.load()
+    out = Image.new("RGBA", rgb.size)
+    o = out.load()
+    for y in range(rgb.height):
+        for x in range(rgb.width):
+            k = a[x, y]
+            if k == 0:
+                continue
+            f = k / 255
+            # pixel = f * fighter + (1 - f) * glass, solved for fighter
+            o[x, y] = tuple(
+                max(0, min(255, round((c - (1 - f) * q) / f)))
+                for c, q in zip(px[x, y], bg[x, y])) + (k,)
     return out
 
 
-def without_fighter(tile: Image.Image) -> Image.Image:
-    """The tile's glass with the red taken out, for a backdrop that has no
-    second, blurred fighter in it."""
-    r, g, b = tile.convert("RGB").split()
-    grey = ImageChops.add(ImageChops.lighter(g, b), Image.new("L", r.size, 6))
-    return Image.merge("RGB", (ImageChops.darker(r, grey), g, b))
+def pose_frame(cutout: Image.Image) -> Image.Image:
+    """The middle of a tile, where the fighter is, the same box for every
+    pose: the tile's rim and corners stay out."""
+    n = cutout.width
+    m = round(n * POSE_MARGIN)
+    return cutout.crop((m, m, n - m, n - m))
 
 
 def fit(img: Image.Image, canvas: int, share: float) -> Image.Image:
@@ -109,12 +119,14 @@ def fit(img: Image.Image, canvas: int, share: float) -> Image.Image:
 
 def main():
     logo_src = SOURCE / "logo.jpg"
-    tile = tile_of(logo_src, 1024)
+    fighter = fighter_cutout(tile_of(logo_src, 1024))
 
-    logo = rounded(tile)
-    logo.save(BRAND / "logo.png", optimize=True)
+    # In the app: the fighter alone, transparent around it, cropped close.
+    logo = fighter.crop(fighter.getchannel("A").getbbox())
+    fit(logo, 1024, 1.0).save(BRAND / "logo.png", optimize=True)
 
-    # The splash's poses: the extra ones in name order, the logo last.
+    # The splash's poses: the extra ones in name order, the logo last. All
+    # cut from the same part of their tile, so a pose change doesn't jump.
     out = BRAND / "poses"
     out.mkdir(exist_ok=True)
     for old in out.glob("*.png"):
@@ -122,30 +134,34 @@ def main():
     extra = sorted(p for p in (SOURCE / "poses").glob("*")
                    if p.suffix.lower() in (".jpg", ".jpeg", ".png"))
     for i, path in enumerate([*extra, logo_src]):
-        rounded(tile_of(path, POSE_PX)).save(out / f"{i:02d}.png", optimize=True)
+        pose_frame(fighter_cutout(tile_of(path, 1024))).resize(
+            (POSE_PX, POSE_PX), Image.LANCZOS).save(
+                out / f"{i:02d}.png", optimize=True)
 
-    # Launcher: iOS and older Android show the whole tile; adaptive Android
-    # masks it to a circle or squircle, so the fighter goes on its own
-    # layer inside the safe zone, over the tile blurred into a soft glow.
-    tile.save(BRAND / "icon.png", optimize=True)
-    fighter = fighter_cutout(tile)
-    fighter = fighter.crop(fighter.getchannel("A").getbbox())
+    # Launcher icons must be solid: the fighter on the splash navy. Adaptive
+    # Android masks to a circle or squircle, so there the fighter is its own
+    # layer inside the safe zone, over plain navy (pubspec.yaml).
+    icon = Image.new("RGBA", (1024, 1024), NAVY)
+    icon.alpha_composite(fit(logo, 1024, 0.78))
+    icon.convert("RGB").save(BRAND / "icon.png", optimize=True)
     # 66%: the part of an adaptive icon no launcher mask cuts into.
-    fit(fighter, 1024, 0.66).save(BRAND / "icon_foreground.png", optimize=True)
-    without_fighter(tile).filter(ImageFilter.GaussianBlur(48)).save(
-        BRAND / "icon_background.png", optimize=True)
+    fit(logo, 1024, 0.66).save(BRAND / "icon_foreground.png", optimize=True)
 
+    # Native splash: the same picture as the splash's first frame, the
+    # logo's pose as cut for the poses.
+    splash = pose_frame(fighter)
     res = ROOT / "android/app/src/main/res"
     for folder, mult in [("mdpi", 1), ("hdpi", 1.5), ("xhdpi", 2),
                          ("xxhdpi", 3), ("xxxhdpi", 4)]:
         n = round(SPLASH_DP * mult)
-        fit(logo, n, 1.0).save(res / f"drawable-{folder}/splash_logo.png",
-                               optimize=True)
+        splash.resize((n, n), Image.LANCZOS).save(
+            res / f"drawable-{folder}/splash_logo.png", optimize=True)
 
     ios = ROOT / "ios/Runner/Assets.xcassets/LaunchImage.imageset"
     for suffix, mult in [("", 1), ("@2x", 2), ("@3x", 3)]:
         n = SPLASH_DP * mult
-        fit(logo, n, 1.0).save(ios / f"LaunchImage{suffix}.png", optimize=True)
+        splash.resize((n, n), Image.LANCZOS).save(
+            ios / f"LaunchImage{suffix}.png", optimize=True)
 
     print(f"Done: logo, {len(extra) + 1} splash pose(s), icons, splash logos.")
 

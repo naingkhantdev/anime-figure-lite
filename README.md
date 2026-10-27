@@ -131,15 +131,17 @@ follows the phone's language when it has a file for it, else English.
 
 ### Changing the logo
 
-The logo is a red neon fighter on a glass tile, on dark navy. Everything is
-built from the source art in `assets/brand/source/`:
+The logo is a red neon fighter, cut out with a transparent background (the
+launcher icon puts it on dark navy). Everything is built from the source
+art in `assets/brand/source/`:
 
 - `logo.jpg`: the logo, square, the tile in the middle of the dark
   background (as the artist made it).
 - `poses/1.jpg`, `2.jpg`, ...: more fighting poses in the same style, same
   tile and background. The splash plays them in name order as a quick
-  combo, each with a red flash, then lands on the logo. With none, the
-  fighter strikes twice in the logo's pose.
+  combo, each strike with after-images, a red flash and a shockwave, then
+  lands on the logo. With none, the fighter strikes three times in the
+  logo's pose, the middle one mirrored.
 
 After adding or changing any of them, from the project folder:
 
