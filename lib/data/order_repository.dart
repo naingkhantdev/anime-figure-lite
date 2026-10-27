@@ -26,8 +26,9 @@ class OrderRepository {
 
   /// Creates `pending` orders, one for each shop in the cart (the house's
   /// own figures count as one shop), so each shop sees and handles only its
-  /// own. Prices and names are re-read from Firestore inside a transaction
-  /// rather than taken from the cart. Returns how many orders it made.
+  /// own. Prices, names and each shop's delivery fee are re-read from
+  /// Firestore inside a transaction rather than taken from the cart.
+  /// Returns how many orders it made.
   ///
   /// Stock is NOT decremented here: on the Spark plan there are no Cloud
   /// Functions, and security rules can't safely validate a multi-product
@@ -83,13 +84,25 @@ class OrderRepository {
         totals[shopId] = (totals[shopId] ?? 0) + price * item.quantity;
       }
 
+      // Each shop's own delivery fee, as firestore.rules will check it.
+      final fees = <String, int>{};
+      for (final shopId in lines.keys) {
+        if (deliveryMethod == DeliveryMethod.pickup || shopId.isEmpty) {
+          fees[shopId] = 0;
+          continue;
+        }
+        final info = await tx.get(_db.collection('shop_public').doc(shopId));
+        fees[shopId] = (info.data()?['delivery_fee'] as num?)?.toInt() ?? 0;
+      }
+
       for (final MapEntry(key: shopId, value: shopLines) in lines.entries) {
         tx.set(_orders.doc(), {
           'user_id': userId,
           'shop_id': shopId,
           'status': 'pending',
           'items': shopLines.map((l) => l.toMap()).toList(),
-          'total': totals[shopId],
+          'total': totals[shopId]! + fees[shopId]!,
+          'delivery_fee': fees[shopId],
           'phone': cleanPhone,
           'delivery_method': deliveryMethod.name,
           'address': cleanAddress,

@@ -281,7 +281,7 @@
   "deliveryAddressHint": "Township, street, landmark",
   "noteOptional": "Note (optional)",
   "estimatedTotal": "Estimated total",
-  "payShopDirectly": "Pay the shop directly. The shop confirms the final price and any delivery fee.",
+  "payShopDirectly": "Pay the shop after you order: how to pay is on your order. Cash on delivery works too.",
   "placeOrder": "Place order",
   "cartEmpty": "Your cart is empty",
   "cartEmptyBody": "Figures you add show up here.",
@@ -303,8 +303,8 @@
       }
     }
   },
-  "setByShop": "Set by the shop",
-  "cartManyShops": "These come from {shops} shops, so you will get one order from each. Each shop confirms its price and any delivery fee.",
+  "setByShop": "Added at checkout",
+  "cartManyShops": "These come from {shops} shops, so you will get one order from each, and each shop charges its own delivery.",
   "@cartManyShops": {
     "placeholders": {
       "shops": {
@@ -312,7 +312,7 @@
       }
     }
   },
-  "cartOneShop": "The shop confirms the final price and any delivery fee.",
+  "cartOneShop": "Pick delivery or pickup at checkout.",
   "priceEach": "{price} each",
   "@priceEach": {
     "placeholders": {
@@ -802,5 +802,7 @@
     }
   },
   "viberNotInstalled": "Viber isn't on this phone.",
-  "contactTheShop": "Contact the shop"
+  "contactTheShop": "Contact the shop",
+  "total": "Total",
+  "pickupNoFee": "None, you pick up"
 }

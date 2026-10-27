@@ -426,7 +426,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get estimatedTotal => 'Estimated total';
 
   @override
-  String get payShopDirectly => 'Pay the shop directly. The shop confirms the final price and any delivery fee.';
+  String get payShopDirectly => 'Pay the shop after you order: how to pay is on your order. Cash on delivery works too.';
 
   @override
   String get placeOrder => 'Place order';
@@ -460,15 +460,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get setByShop => 'Set by the shop';
+  String get setByShop => 'Added at checkout';
 
   @override
   String cartManyShops(int shops) {
-    return 'These come from $shops shops, so you will get one order from each. Each shop confirms its price and any delivery fee.';
+    return 'These come from $shops shops, so you will get one order from each, and each shop charges its own delivery.';
   }
 
   @override
-  String get cartOneShop => 'The shop confirms the final price and any delivery fee.';
+  String get cartOneShop => 'Pick delivery or pickup at checkout.';
 
   @override
   String priceEach(String price) {
@@ -1211,4 +1211,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contactTheShop => 'Contact the shop';
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String get pickupNoFee => 'None, you pick up';
 }

@@ -820,7 +820,7 @@ abstract class AppLocalizations {
   /// No description provided for @payShopDirectly.
   ///
   /// In en, this message translates to:
-  /// **'Pay the shop directly. The shop confirms the final price and any delivery fee.'**
+  /// **'Pay the shop after you order: how to pay is on your order. Cash on delivery works too.'**
   String get payShopDirectly;
 
   /// No description provided for @placeOrder.
@@ -868,19 +868,19 @@ abstract class AppLocalizations {
   /// No description provided for @setByShop.
   ///
   /// In en, this message translates to:
-  /// **'Set by the shop'**
+  /// **'Added at checkout'**
   String get setByShop;
 
   /// No description provided for @cartManyShops.
   ///
   /// In en, this message translates to:
-  /// **'These come from {shops} shops, so you will get one order from each. Each shop confirms its price and any delivery fee.'**
+  /// **'These come from {shops} shops, so you will get one order from each, and each shop charges its own delivery.'**
   String cartManyShops(int shops);
 
   /// No description provided for @cartOneShop.
   ///
   /// In en, this message translates to:
-  /// **'The shop confirms the final price and any delivery fee.'**
+  /// **'Pick delivery or pickup at checkout.'**
   String get cartOneShop;
 
   /// No description provided for @priceEach.
@@ -2154,6 +2154,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contact the shop'**
   String get contactTheShop;
+
+  /// No description provided for @total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get total;
+
+  /// No description provided for @pickupNoFee.
+  ///
+  /// In en, this message translates to:
+  /// **'None, you pick up'**
+  String get pickupNoFee;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

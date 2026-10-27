@@ -632,9 +632,49 @@ describe('selling in the app', () => {
     delivery_method: 'pickup',
     address: '',
     note: '',
+    delivery_fee: 0,
     created_at: serverTimestamp(),
     ...extra,
   });
+
+  test("a delivery order carries the shop's own delivery fee", async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'shops/alice'), shopDoc(future()));
+      await setDoc(doc(db, 'shop_public/alice'), {
+        phone: '09123456789',
+        delivery_fee: 3000,
+        payment_methods: [],
+        updated_at: Timestamp.now(),
+      });
+    });
+    const db = as('bob');
+    const delivery = { delivery_method: 'delivery', address: 'Yangon' };
+    await assertSucceeds(setDoc(doc(db, 'orders/o1'),
+      order({ ...delivery, delivery_fee: 3000, total: 28000 })));
+    for (const bad of [
+      { ...delivery, delivery_fee: 0, total: 25000 },
+      { ...delivery, delivery_fee: 1000, total: 26000 },
+      { ...delivery, delivery_fee: 3000, total: 2000 },
+      { delivery_fee: 3000, total: 28000 },
+    ]) {
+      await assertFails(setDoc(doc(db, 'orders/o2'), order(bad)),
+        JSON.stringify(bad));
+    }
+    const { delivery_fee, ...noFee } = order();
+    await assertFails(setDoc(doc(db, 'orders/o3'), noFee), 'fee is required');
+  });
+
+  test('delivery is free from a shop without settings, and for the house',
+    async () => {
+      await seed((db) => setDoc(doc(db, 'shops/alice'), shopDoc(future())));
+      const db = as('bob');
+      const delivery = { delivery_method: 'delivery', address: 'Yangon' };
+      await assertSucceeds(setDoc(doc(db, 'orders/o1'), order(delivery)));
+      await assertSucceeds(
+        setDoc(doc(db, 'orders/o2'), order({ ...delivery, shop_id: '' })));
+      await assertFails(setDoc(doc(db, 'orders/o3'),
+        order({ ...delivery, delivery_fee: 500, total: 25500 })));
+    });
 
   test('a customer orders from a shop; the shop sees it, others do not',
     async () => {

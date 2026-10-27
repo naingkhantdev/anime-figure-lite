@@ -176,6 +176,18 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                 ],
               ),
             ),
+          if (o.deliveryFee > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Expanded(child: Text(l.deliveryMethodDelivery)),
+                  const SizedBox(width: 12),
+                  Text(formatMmk(o.deliveryFee),
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
           const Divider(height: 24),
           _Detail(
               icon: o.deliveryMethod == DeliveryMethod.pickup

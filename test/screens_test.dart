@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:anime_figure_shop_lite/l10n/app_localizations.dart';
 import 'package:anime_figure_shop_lite/logic/stock.dart';
+import 'package:anime_figure_shop_lite/models/cart_item.dart';
 import 'package:anime_figure_shop_lite/models/customer.dart';
 import 'package:anime_figure_shop_lite/models/item.dart';
 import 'package:anime_figure_shop_lite/models/product.dart';
@@ -12,6 +13,7 @@ import 'package:anime_figure_shop_lite/models/shop_order.dart';
 import 'package:anime_figure_shop_lite/models/shop_public.dart';
 import 'package:anime_figure_shop_lite/models/stock_move.dart';
 import 'package:anime_figure_shop_lite/providers/providers.dart';
+import 'package:anime_figure_shop_lite/ui/pages/checkout_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/customer_home_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/item_detail_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/orders_page.dart';
@@ -75,6 +77,16 @@ Shop shop(String id, String name, DateTime? expires) => Shop(
       expiresAt: expires,
       createdAt: now,
     );
+
+/// A cart that starts with [items].
+class _FixedCart extends CartNotifier {
+  _FixedCart(this.items);
+
+  final List<CartItem> items;
+
+  @override
+  List<CartItem> build() => items;
+}
 
 /// One order for the shop 'me', seen by the shop and by the customer.
 final pendingOrder = ShopOrder(
@@ -265,6 +277,53 @@ void main() {
     expect(find.text('Confirm'), findsOneWidget);
     expect(find.text('Call'), findsOneWidget, reason: 'call the customer');
     expect(find.text('Viber'), findsOneWidget);
+  });
+
+  testWidgets("checkout adds the shop's delivery fee, not for pickup",
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 720) * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    stillMotion(tester);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        ...overrides,
+        cartProvider.overrideWith(() => _FixedCart(const [
+              CartItem(
+                product: Product(
+                    id: 'me_1',
+                    name: 'Nendoroid Miku',
+                    description: '',
+                    price: 25000,
+                    stockQuantity: 3,
+                    isActive: true,
+                    shopId: 'me',
+                    shopName: 'Sakura Figures'),
+                quantity: 1,
+              ),
+            ])),
+      ],
+      child: MaterialApp(
+        theme: buildAppTheme(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const CheckoutPage(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(find.text('Total'),
+        find.byType(ListView).first, const Offset(0, -200));
+    expect(find.text('3,000 Ks'), findsOneWidget);
+    expect(find.text('28,000 Ks'), findsOneWidget);
+
+    await tester.dragUntilVisible(find.text('Pick up at shop'),
+        find.byType(ListView).first, const Offset(0, 200));
+    await tester.tap(find.text('Pick up at shop'));
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(find.text('Total'),
+        find.byType(ListView).first, const Offset(0, -200));
+    expect(find.text('None, you pick up'), findsOneWidget);
+    expect(find.text('25,000 Ks'), findsNWidgets(2), reason: 'figures, total');
   });
 
   testWidgets("a customer's order has the shop's Call and Viber",

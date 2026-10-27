@@ -221,6 +221,17 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
                   ],
                 ),
               ),
+            if (order.deliveryFee > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(context.l10n.deliveryMethodDelivery)),
+                    Text(formatMmk(order.deliveryFee),
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
             const Divider(height: 24),
             Text('${order.deliveryMethod.label(context.l10n)} · ${order.phone}'),
             if (order.address.isNotEmpty) Text(order.address),

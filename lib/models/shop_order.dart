@@ -10,10 +10,11 @@ enum DeliveryMethod {
 }
 
 /// Firestore: `orders/{id}`
-/// Fields: user_id, status, items (list of maps), total (int, whole kyats),
-/// phone, delivery_method, address, note, created_at, shop_id (the shop
-/// whose figures these are; empty for the house's own, absent on old
-/// orders). Checkout makes one order per shop.
+/// Fields: user_id, status, items (list of maps), total (int, whole kyats,
+/// delivery included), delivery_fee (int; absent on old orders), phone,
+/// delivery_method, address, note, created_at, shop_id (the shop whose
+/// figures these are; empty for the house's own, absent on old orders).
+/// Checkout makes one order per shop.
 class ShopOrder {
   const ShopOrder({
     required this.id,
@@ -24,13 +25,20 @@ class ShopOrder {
     required this.deliveryMethod,
     required this.address,
     required this.note,
+    this.deliveryFee = 0,
     this.createdAt,
     this.shopId = '',
   });
 
   final String id;
   final String status;
+
+  /// What the customer pays: the figures plus [deliveryFee].
   final int total;
+  final int deliveryFee;
+
+  /// The figures alone.
+  int get subtotal => total - deliveryFee;
   final List<OrderLine> items;
   final String phone;
   final DeliveryMethod deliveryMethod;
@@ -48,6 +56,7 @@ class ShopOrder {
       id: doc.id,
       status: data['status'] as String? ?? 'pending',
       total: (data['total'] as num?)?.toInt() ?? 0,
+      deliveryFee: (data['delivery_fee'] as num?)?.toInt() ?? 0,
       items: rawItems
           .whereType<Map>()
           .map((m) => OrderLine.fromMap(Map<String, dynamic>.from(m)))

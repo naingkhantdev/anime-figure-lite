@@ -98,8 +98,48 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   Widget build(BuildContext context) {
     ref.listen(myOrdersProvider, (_, next) => _prefill(next.valueOrNull));
     final cart = ref.watch(cartProvider);
-    final total = cart.fold<int>(0, (sum, i) => sum + i.subtotal);
+    final figures = cart.fold<int>(0, (sum, i) => sum + i.subtotal);
     final isDelivery = _method == DeliveryMethod.delivery;
+    // One order, and one delivery fee, per shop; the house delivers free.
+    // OrderRepository re-reads the fees when it places the orders.
+    final shopIds = {for (final i in cart) i.product.shopId}..remove('');
+    final delivery = !isDelivery
+        ? 0
+        : shopIds.fold<int>(
+            0,
+            (sum, id) =>
+                sum +
+                (ref.watch(shopPublicProvider(id)).valueOrNull?.deliveryFee ??
+                    0));
+    final total = figures + delivery;
+    final l = context.l10n;
+
+    Widget row(String label, String value, {bool strong = false}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(
+                child: Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: strong ? AppColors.ink : AppColors.inkMuted,
+                        fontWeight:
+                            strong ? FontWeight.w700 : FontWeight.w400)),
+              ),
+              const SizedBox(width: 12),
+              Text(value,
+                  style: strong
+                      ? const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3)
+                      : const TextStyle(fontWeight: FontWeight.w500)),
+            ],
+          ),
+        );
 
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.checkout)),
@@ -161,28 +201,20 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Expanded(
-                        child: Text(context.l10n.estimatedTotal,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: AppColors.inkMuted, fontSize: 13)),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(formatMmk(total),
-                          style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.3)),
-                    ],
-                  ),
+                  row(l.figuresCount(cart.fold(0, (n, i) => n + i.quantity)),
+                      formatMmk(figures)),
+                  row(
+                      l.deliveryMethodDelivery,
+                      !isDelivery
+                          ? l.pickupNoFee
+                          : delivery == 0
+                              ? l.freeDelivery
+                              : formatMmk(delivery)),
+                  const Divider(height: 18),
+                  row(l.total, formatMmk(total), strong: true),
                   const SizedBox(height: 4),
                   Text(
-                    context.l10n.payShopDirectly,
+                    l.payShopDirectly,
                     style: const TextStyle(
                         fontSize: 12, color: AppColors.inkSubtle),
                   ),

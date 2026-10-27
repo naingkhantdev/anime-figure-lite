@@ -328,13 +328,22 @@ service cloud.firestore {
       // the order are written by the client, so staff MUST re-check them
       // against the product prices before confirming. See README.
       // Lengths must match lib/data/order_repository.dart.
+      // The delivery fee, unlike the prices, is checked here: it must be
+      // the shop's own fee (shop_public) for delivery, and 0 for pickup or
+      // the house's figures. total includes it.
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(
              ['user_id', 'shop_id', 'status', 'items', 'total', 'phone',
-              'delivery_method', 'address', 'note', 'created_at'])
+              'delivery_method', 'address', 'note', 'created_at',
+              'delivery_fee'])
         && request.resource.data.keys().hasAll(
              ['user_id', 'shop_id', 'status', 'items', 'total', 'phone',
-              'delivery_method', 'address', 'note', 'created_at'])
+              'delivery_method', 'address', 'note', 'created_at',
+              'delivery_fee'])
+        && wholeNumber(request.resource.data.delivery_fee, 1000000)
+        && request.resource.data.delivery_fee
+             == deliveryFeeFor(request.resource.data)
+        && request.resource.data.total >= request.resource.data.delivery_fee
         && request.resource.data.user_id == request.auth.uid
         && text(request.resource.data.shop_id, 0, 128)
         && request.resource.data.status == 'pending'
@@ -388,6 +397,15 @@ service cloud.firestore {
              && request.resource.data.status in ['shipped', 'cancelled']));
 
       allow delete: if false; // console only
+
+      // What the shop charges to deliver order [d]; a shop that hasn't
+      // saved its settings delivers free.
+      function deliveryFeeFor(d) {
+        let path = /databases/$(database)/documents/shop_public/$(d.shop_id);
+        return d.delivery_method == 'pickup' || d.shop_id == ''
+          ? 0
+          : (exists(path) ? get(path).data.delivery_fee : 0);
+      }
     }
 
     // ---- Photos of shops' items ----
