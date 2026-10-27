@@ -238,6 +238,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get password => 'Password';
 
   @override
+  String get errEmailEmpty => 'Enter your email.';
+
+  @override
+  String get errPasswordEmpty => 'Enter your password.';
+
+  @override
   String get hidePassword => 'Hide password';
 
   @override
@@ -245,12 +251,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createAccount => 'Create account';
-
-  @override
-  String get haveAccountSignIn => 'Already have an account? Sign in';
-
-  @override
-  String get newHereCreateAccount => 'New here? Create an account';
 
   @override
   String get forgotPassword => 'Forgot password?';

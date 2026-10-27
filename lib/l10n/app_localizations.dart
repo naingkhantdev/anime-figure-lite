@@ -481,6 +481,18 @@ abstract class AppLocalizations {
   /// **'Password'**
   String get password;
 
+  /// No description provided for @errEmailEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email.'**
+  String get errEmailEmpty;
+
+  /// No description provided for @errPasswordEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password.'**
+  String get errPasswordEmpty;
+
   /// No description provided for @hidePassword.
   ///
   /// In en, this message translates to:
@@ -498,18 +510,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create account'**
   String get createAccount;
-
-  /// No description provided for @haveAccountSignIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Already have an account? Sign in'**
-  String get haveAccountSignIn;
-
-  /// No description provided for @newHereCreateAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'New here? Create an account'**
-  String get newHereCreateAccount;
 
   /// No description provided for @forgotPassword.
   ///
