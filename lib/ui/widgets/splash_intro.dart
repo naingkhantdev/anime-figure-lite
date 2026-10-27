@@ -186,8 +186,8 @@ class _Combo {
   int get strikes => poses.length > 1 ? poses.length : 3;
 
   /// Snappier the more poses there are, so the whole intro stays under
-  /// about 1.9 s.
-  int get strikeMs => ((1900 - _hold - _settle) ~/ strikes).clamp(160, 380);
+  /// about 2.3 s.
+  int get strikeMs => ((2300 - _hold - _settle) ~/ strikes).clamp(160, 380);
 
   int get comboMs => _hold + strikes * strikeMs;
 

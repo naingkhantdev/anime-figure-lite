@@ -135,18 +135,20 @@ The logo is a red neon fighter, cut out with a transparent background (the
 launcher icon puts it on dark navy). Everything is built from the source
 art in `assets/brand/source/`:
 
-- `logo.jpg`: the logo, square, the tile in the middle of the dark
-  background (as the artist made it).
-- `poses/1.jpg`, `2.jpg`, ...: more fighting poses in the same style, same
-  tile and background. The splash plays them in name order as a quick
-  combo, each strike with after-images, a red flash and a shockwave, then
-  lands on the logo. With none, the fighter strikes three times in the
-  logo's pose.
+- `logo.jpg`: the logo, square, the fighter on its glass tile on dark
+  navy (as the artist made it).
+- `poses/1.jpg`, `2.jpg`, ...: more fighting poses in the same red neon
+  style, on any dark background, with or without a tile (now: stance,
+  high kick, ground smash, jump, made with Gemini). The script cuts out
+  just the fighter and makes every pose the same size. The splash plays
+  them in name order as a quick combo, each strike with after-images, a
+  red flash and a shockwave, then lands on the logo. With none, the
+  fighter strikes three times in the logo's pose.
 
 After adding or changing any of them, from the project folder:
 
 ```
-pip install pillow                           # once
+pip install pillow numpy                     # once
 python tool/brand_assets.py                  # logo, poses, icons, native splash
 dart pub global run flutter_launcher_icons   # launcher icon
 ```

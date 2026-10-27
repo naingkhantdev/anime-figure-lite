@@ -48,7 +48,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1000));
     expect(introShowing(), isTrue, reason: 'still mid-intro');
 
-    await tester.pump(const Duration(milliseconds: 1100)); // intro ends
+    await tester.pump(const Duration(milliseconds: 1400)); // intro ends
     await tester.pump(const Duration(milliseconds: 600)); // fade out
     await tester.pump();
     expect(introShowing(), isFalse);
