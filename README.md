@@ -141,7 +141,7 @@ art in `assets/brand/source/`:
   tile and background. The splash plays them in name order as a quick
   combo, each strike with after-images, a red flash and a shockwave, then
   lands on the logo. With none, the fighter strikes three times in the
-  logo's pose, the middle one mirrored.
+  logo's pose.
 
 After adding or changing any of them, from the project folder:
 

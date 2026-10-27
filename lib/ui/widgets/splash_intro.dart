@@ -25,8 +25,7 @@ const _posesFolder = 'assets/brand/poses/';
 /// combo: each strike winds up, dashes forward trailing after-images and
 /// lands with a red flash, a shockwave and a shake; each extra pose gets
 /// its own strike. Then it settles a little higher as the name fades in
-/// beneath. With only the logo's pose, it strikes three times, the middle
-/// one in the mirrored stance.
+/// beneath. With only the logo's pose, it strikes three times in it.
 ///
 /// It leaves after the intro has played and sign-in state is known, or after
 /// [_maxWait] whatever happens, or at once on a tap. With reduce motion on
@@ -194,16 +193,14 @@ class _Combo {
 
   Duration get length => Duration(milliseconds: comboMs + _settle);
 
-  /// Where the combo is at [ms] into the intro: which pose shows, whether
-  /// mirrored, and how far through its strike (null outside strikes).
-  (String pose, bool mirrored, double? strike) at(int ms) {
-    if (ms < _hold) return (poses.last, false, null);
+  /// Where the combo is at [ms] into the intro: which pose shows, and how
+  /// far through its strike (null outside strikes).
+  (String pose, double? strike) at(int ms) {
+    if (ms < _hold) return (poses.last, null);
     final i = (ms - _hold) ~/ strikeMs;
-    if (i >= strikes) return (poses.last, false, null);
-    final single = poses.length == 1;
+    if (i >= strikes) return (poses.last, null);
     return (
-      single ? poses.last : poses[i],
-      single && i.isOdd,
+      poses.length == 1 ? poses.last : poses[i],
       ((ms - _hold) % strikeMs) / strikeMs,
     );
   }
@@ -261,7 +258,7 @@ class _IntroFrame extends StatelessWidget {
         builder: (context, _) {
           final total = intro.duration?.inMilliseconds ?? 1;
           final ms = (intro.value * total).round();
-          final (pose, mirrored, strike) = combo.at(ms);
+          final (pose, strike) = combo.at(ms);
           // After the combo: lift into place, then the name.
           final settle =
               ((ms - combo.comboMs) / _Combo._settle).clamp(0.0, 1.0);
@@ -269,7 +266,6 @@ class _IntroFrame extends StatelessWidget {
           final name = Curves.easeOutCubic
               .transform(((settle - 0.3) / 0.7).clamp(0.0, 1.0));
 
-          final dir = mirrored ? -1.0 : 1.0;
           final impact = strike == null ? null : _strike(strike).impact;
           final flash = impact == null ? 0.0 : (1 - impact) * (1 - impact);
           // The whole picture shakes for a moment on each hit.
@@ -288,12 +284,11 @@ class _IntroFrame extends StatelessWidget {
             return Opacity(
               opacity: opacity,
               child: Transform.translate(
-                offset: Offset((at?.x ?? 0) * dir, 0),
+                offset: Offset(at?.x ?? 0, 0),
                 child: Transform.rotate(
-                  angle: (at?.turn ?? 0) * dir,
-                  child: Transform(
-                    alignment: Alignment.center,
-                    transform: Matrix4.diagonal3Values(scale * dir, scale, 1),
+                  angle: at?.turn ?? 0,
+                  child: Transform.scale(
+                    scale: scale,
                     child: Image.asset(
                       pose,
                       width: splashLogoSize,
