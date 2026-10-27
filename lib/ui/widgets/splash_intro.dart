@@ -79,7 +79,9 @@ class _SplashIntroState extends ConsumerState<SplashIntro>
     _loadPoses().whenComplete(() {
       _releaseFirstFrame();
       if (!mounted) return;
-      _intro.duration = _combo.length;
+      // Rebuild with the poses: on a phone the intro has usually been
+      // built already, with the logo alone.
+      setState(() => _intro.duration = _combo.length);
       if (reduceMotion) {
         _intro.value = 1;
         Future.delayed(const Duration(milliseconds: 700), _onIntroDone);

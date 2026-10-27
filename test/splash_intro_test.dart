@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -37,7 +38,62 @@ bool introShowing() => find
     .evaluate()
     .isNotEmpty;
 
+/// The app's assets, with the asset list arriving a moment late.
+class _SlowManifestBundle extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) async {
+    if (key.startsWith('AssetManifest')) {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    }
+    return rootBundle.load(key);
+  }
+}
+
+/// The pose images the intro is drawing right now.
+Set<String> posesShown() => find
+    .byType(Image)
+    .evaluate()
+    .map((e) => (e.widget as Image).image)
+    .whereType<AssetImage>()
+    .map((i) => i.assetName)
+    .toSet();
+
 void main() {
+  testWidgets('the combo plays every pose, not just the logo',
+      (tester) async {
+    // On a phone the intro is built before the list of poses has loaded;
+    // a slow bundle makes that happen here too.
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        authStateProvider.overrideWith((ref) => const Stream.empty())
+      ],
+      child: MaterialApp(
+        home: DefaultAssetBundle(
+          bundle: _SlowManifestBundle(),
+          child: const SplashIntro(child: Scaffold(body: Text('APP'))),
+        ),
+      ),
+    ));
+    await tester.pump();
+    // The list arrives (test time), then the poses decode (real time).
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester
+        .runAsync(() => Future.delayed(const Duration(milliseconds: 400)));
+    await tester.pump();
+    final seen = <String>{};
+    for (var ms = 0; ms < 2300; ms += 40) {
+      await tester.pump(const Duration(milliseconds: 40));
+      seen.addAll(posesShown());
+    }
+    expect(seen, containsAll(<String>[
+      'assets/brand/poses/00.png',
+      'assets/brand/poses/01.png',
+      'assets/brand/poses/02.png',
+      'assets/brand/poses/03.png',
+      'assets/brand/poses/04.png',
+    ]));
+  });
+
   testWidgets('plays, then reveals the app once sign-in state is known',
       (tester) async {
     await pumpIntro(tester, auth: Stream.value(null));
