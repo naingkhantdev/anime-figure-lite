@@ -4,12 +4,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/auth_repository.dart';
+import '../data/blacklist_repository.dart';
 import '../data/inventory_repository.dart';
 import '../data/order_repository.dart';
 import '../data/photo_repository.dart';
 import '../data/product_repository.dart';
 import '../data/shop_repository.dart';
 import '../logic/catalog.dart';
+import '../models/blacklist_entry.dart';
 import '../models/cart_item.dart';
 import '../models/customer.dart';
 import '../models/item.dart';
@@ -120,6 +122,21 @@ final isSuperAdminProvider = StreamProvider<bool>((ref) {
   if (user == null) return Stream.value(false);
   return ref.watch(shopRepositoryProvider).watchIsSuperAdmin(user.uid);
 });
+
+final blacklistRepositoryProvider =
+    Provider((ref) => BlacklistRepository(FirebaseFirestore.instance));
+
+/// Whether the super admin has blocked the signed-in account.
+final isBlockedProvider = StreamProvider<bool>((ref) {
+  final email = ref.watch(authStateProvider).valueOrNull?.email;
+  if (email == null || email.isEmpty) return Stream.value(false);
+  return ref.watch(blacklistRepositoryProvider).watchIsBlocked(email);
+});
+
+/// Super admin only.
+final blacklistProvider = StreamProvider<List<BlacklistEntry>>(
+  (ref) => ref.watch(blacklistRepositoryProvider).watchAll(),
+);
 
 /// The signed-in owner's shop, or null before they have created it.
 final myShopProvider = StreamProvider<Shop?>((ref) {

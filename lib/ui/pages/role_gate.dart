@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../logic/subscription.dart';
 import '../../providers/providers.dart';
 import '../widgets/common.dart';
+import 'blocked_page.dart';
 import 'pending_page.dart';
 import 'customer_home_page.dart';
 import 'shop_home_page.dart';
@@ -13,6 +14,7 @@ import 'super_admin_page.dart';
 ///
 /// - guests and customers → the figure shop (browse, cart, orders)
 /// - super admin (`super_admins/{uid}` exists) → every shop and its expiry
+/// - blocked (`blocked/{email}` exists) → only "your account is blocked"
 /// - shop admin (`shops/{uid}` exists) → their own stock, or "waiting for
 ///   approval" until the super admin turns the shop on
 ///
@@ -26,12 +28,15 @@ class RoleGate extends ConsumerWidget {
       if (user == null) return const CustomerHomePage();
       return _gate(ref.watch(isSuperAdminProvider), (isSuperAdmin) {
         if (isSuperAdmin) return const SuperAdminPage();
-        return _gate(ref.watch(myShopProvider), (shop) {
-          if (shop == null) return const CustomerHomePage();
-          if (shop.statusAt(DateTime.now()) == ShopStatus.pending) {
-            return PendingPage(shop: shop);
-          }
-          return const ShopHomePage();
+        return _gate(ref.watch(isBlockedProvider), (isBlocked) {
+          if (isBlocked) return BlockedPage(email: user.email ?? '');
+          return _gate(ref.watch(myShopProvider), (shop) {
+            if (shop == null) return const CustomerHomePage();
+            if (shop.statusAt(DateTime.now()) == ShopStatus.pending) {
+              return PendingPage(shop: shop);
+            }
+            return const ShopHomePage();
+          });
         });
       });
     });

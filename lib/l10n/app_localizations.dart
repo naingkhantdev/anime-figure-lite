@@ -2226,6 +2226,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Customer sent a payment screenshot'**
   String get customerSentPayment;
+
+  /// No description provided for @blacklist.
+  ///
+  /// In en, this message translates to:
+  /// **'Blacklist'**
+  String get blacklist;
+
+  /// No description provided for @blockSomeone.
+  ///
+  /// In en, this message translates to:
+  /// **'Block someone'**
+  String get blockSomeone;
+
+  /// No description provided for @blockThisOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Block this owner'**
+  String get blockThisOwner;
+
+  /// No description provided for @block.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get block;
+
+  /// No description provided for @unblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get unblock;
+
+  /// No description provided for @remark.
+  ///
+  /// In en, this message translates to:
+  /// **'Remark'**
+  String get remark;
+
+  /// No description provided for @remarkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Why are you blocking them? Only you see this.'**
+  String get remarkHint;
+
+  /// No description provided for @blockExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'A blocked account can sign in but can\'t order, open a shop or change anything. Nothing is deleted.'**
+  String get blockExplain;
+
+  /// No description provided for @searchBlacklist.
+  ///
+  /// In en, this message translates to:
+  /// **'Search email or remark'**
+  String get searchBlacklist;
+
+  /// No description provided for @nobodyBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is blocked'**
+  String get nobodyBlocked;
+
+  /// No description provided for @nobodyBlockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts you block show here, with your remark.'**
+  String get nobodyBlockedBody;
+
+  /// No description provided for @blockedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked on {date}'**
+  String blockedOn(String date);
+
+  /// No description provided for @emailBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{email} is blocked.'**
+  String emailBlocked(String email);
+
+  /// No description provided for @emailUnblocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{email} is unblocked.'**
+  String emailUnblocked(String email);
+
+  /// No description provided for @remarkSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Remark saved.'**
+  String get remarkSaved;
+
+  /// No description provided for @unblockQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock {email}?'**
+  String unblockQuestion(String email);
+
+  /// No description provided for @unblockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'They can use the app again straight away, including their shop if it is still open.'**
+  String get unblockBody;
+
+  /// No description provided for @accountBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is blocked'**
+  String get accountBlocked;
+
+  /// No description provided for @accountBlockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This account can no longer use {appName}. If you think this is a mistake, contact us.'**
+  String accountBlockedBody(String appName);
+
+  /// No description provided for @errEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get errEmailInvalid;
+
+  /// No description provided for @errRemarkEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a remark: why you are blocking them.'**
+  String get errRemarkEmpty;
+
+  /// No description provided for @errCannotBlockYourself.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t block your own account.'**
+  String get errCannotBlockYourself;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

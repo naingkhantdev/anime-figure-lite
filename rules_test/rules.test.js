@@ -200,6 +200,111 @@ describe('shops', () => {
   });
 });
 
+describe('blacklist', () => {
+  const seedBoss = () =>
+    seed((db) => setDoc(doc(db, 'super_admins/boss'), {}));
+
+  /** The app's block(): the remark and its empty twin, together. */
+  const block = (db, email, remark = 'Never paid') => {
+    const batch = writeBatch(db);
+    batch.set(doc(db, `blacklist/${email}`), {
+      email,
+      remark,
+      created_at: serverTimestamp(),
+    });
+    batch.set(doc(db, `blocked/${email}`), { created_at: serverTimestamp() });
+    return batch.commit();
+  };
+
+  const unblock = (db, email) => {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, `blacklist/${email}`));
+    batch.delete(doc(db, `blocked/${email}`));
+    return batch.commit();
+  };
+
+  test('super admin blocks with a remark, edits it, and unblocks', async () => {
+    await seedBoss();
+    const db = as('boss');
+    await assertSucceeds(block(db, 'bob@test.com'));
+    await assertSucceeds(getDocs(collection(db, 'blacklist')));
+    await assertSucceeds(
+      updateDoc(doc(db, 'blacklist/bob@test.com'), { remark: 'Rude' }));
+    await assertSucceeds(unblock(db, 'bob@test.com'));
+  });
+
+  test('both documents, or neither', async () => {
+    await seedBoss();
+    const db = as('boss');
+    await assertFails(setDoc(doc(db, 'blocked/bob@test.com'),
+      { created_at: serverTimestamp() }));
+    await assertFails(setDoc(doc(db, 'blacklist/bob@test.com'),
+      { email: 'bob@test.com', remark: 'x', created_at: serverTimestamp() }));
+    await assertSucceeds(block(db, 'bob@test.com'));
+    await assertFails(deleteDoc(doc(db, 'blocked/bob@test.com')));
+  });
+
+  test('a remark is required; the email is lowercase; not yourself',
+    async () => {
+      await seedBoss();
+      const db = as('boss');
+      await assertFails(block(db, 'bob@test.com', ''));
+      await assertFails(block(db, 'Bob@test.com'));
+      await assertFails(block(db, 'not-an-email'));
+      await assertFails(block(db, 'boss@test.com'));
+    });
+
+  test('only the super admin; the blocked person sees no remark',
+    async () => {
+      await seedBoss();
+      await block(as('boss'), 'bob@test.com');
+      await assertFails(block(as('alice'), 'carol@test.com'));
+      await assertFails(unblock(as('bob'), 'bob@test.com'));
+      await assertFails(getDoc(doc(as('bob'), 'blacklist/bob@test.com')));
+      await assertSucceeds(getDoc(doc(as('bob'), 'blocked/bob@test.com')));
+      await assertFails(getDoc(doc(as('alice'), 'blocked/bob@test.com')));
+    });
+
+  test('a blocked account cannot order or open a shop', async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'blocked/bob@test.com'), {});
+      await setDoc(doc(db, 'blocked/alice@test.com'), {});
+    });
+    await assertFails(setDoc(doc(as('bob'), 'orders/o1'), {
+      user_id: 'bob',
+      shop_id: '',
+      status: 'pending',
+      items: [{ product_id: 'p1', name: 'Figure', price: 1, quantity: 1 }],
+      total: 1,
+      phone: '09123456789',
+      delivery_method: 'pickup',
+      address: '',
+      note: '',
+      delivery_fee: 0,
+      created_at: serverTimestamp(),
+    }));
+    await assertFails(setDoc(doc(as('bob'), 'shops/bob'), {
+      ...shopDoc(null),
+      owner_email: 'bob@test.com',
+      created_at: serverTimestamp(),
+    }));
+  });
+
+  test("a blocked owner's open shop changes nothing, and comes back",
+    async () => {
+      await seedBoss();
+      await seedItem(5);
+      await block(as('boss'), 'alice@test.com');
+      const item = doc(as('alice'), 'shops/alice/items/item1');
+      await assertSucceeds(getDoc(item));
+      await assertFails(updateDoc(item,
+        { name: 'New name', updated_at: serverTimestamp() }));
+      await unblock(as('boss'), 'alice@test.com');
+      await assertSucceeds(updateDoc(item,
+        { name: 'New name', updated_at: serverTimestamp() }));
+    });
+});
+
 describe('shop_public', () => {
   const info = (extra = {}) => ({
     phone: '09123456789',

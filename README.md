@@ -48,7 +48,7 @@ The first screen depends on who is signed in (`lib/ui/pages/role_gate.dart`):
 |---|---|---|
 | Guest / customer | Nothing, or any account | The figure shop: browse, cart, checkout, My orders |
 | **Shop admin** | Account menu → **Open a shop**, then you approve it | Their own stock: items, In / Out / Count, history, customers |
-| **Super admin** (you) | A document at `super_admins/{your uid}`, made by hand in the Firebase console | Every shop: turn on, add 1/3/6/12 months, pick an end date, or stop now |
+| **Super admin** (you) | A document at `super_admins/{your uid}`, made by hand in the Firebase console | Every shop: turn on, add 1/3/6/12 months, pick an end date, or stop now. Blacklist: block any account by email, with a private remark |
 
 A shop's life: **Waiting** (just opened, `expires_at` empty, can't change
 anything) → you add time → **Active** → yellow banner 7 days before the end →
@@ -287,6 +287,16 @@ shows, and the phone keeps it.
 
 `super_admins/{uid}`: any fields; only its existence matters.
 
+`blacklist/{email, lowercased}`: blocked accounts, super admin only.
+| field | type | note |
+|---|---|---|
+| email | string | same as the document id |
+| remark | string | why they were blocked; 1–500 letters, never shown to them |
+| created_at | timestamp | |
+
+`blocked/{email}`: an empty twin of each blacklist entry, written and deleted
+with it, so a blocked account can read that it is blocked (and nothing else).
+
 `shops/{owner uid}`
 | field | type | note |
 |---|---|---|
@@ -335,6 +345,9 @@ The Spark plan has no Cloud Functions, so `firestore.rules` does the work:
   count, and stock can't go below zero.
 - Only the super admin can change `expires_at`, and the super admin can't
   touch a shop's stock.
+- A blocked account (`blocked/{its email}` exists) can read but not write:
+  no orders, no payment screenshots, no shop, no stock changes. Unblocking
+  brings everything back; nothing is deleted.
 
 Tests for the rules (both the figure shop and stock) run on the local
 emulator and need Java 11+:

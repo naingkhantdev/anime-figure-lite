@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:anime_figure_shop_lite/l10n/app_localizations.dart';
 import 'package:anime_figure_shop_lite/logic/stock.dart';
+import 'package:anime_figure_shop_lite/models/blacklist_entry.dart';
 import 'package:anime_figure_shop_lite/models/cart_item.dart';
 import 'package:anime_figure_shop_lite/models/customer.dart';
 import 'package:anime_figure_shop_lite/models/item.dart';
@@ -13,6 +14,7 @@ import 'package:anime_figure_shop_lite/models/shop_order.dart';
 import 'package:anime_figure_shop_lite/models/shop_public.dart';
 import 'package:anime_figure_shop_lite/models/stock_move.dart';
 import 'package:anime_figure_shop_lite/providers/providers.dart';
+import 'package:anime_figure_shop_lite/ui/pages/blacklist_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/checkout_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/customer_home_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/item_detail_page.dart';
@@ -164,6 +166,12 @@ List<Override> sampleOverrides({List<ShopOrder>? shopOrders}) => [
             shop('b', 'Mandalay Toys', now.add(const Duration(days: 120))),
             shop('c', 'New Shop', null),
             shop('d', 'Old Shop', now.subtract(const Duration(days: 3))),
+          ])),
+      blacklistProvider.overrideWith((ref) => Stream.value([
+            BlacklistEntry(
+                email: 'spam@example.com',
+                remark: 'Ordered five times and never picked anything up.',
+                createdAt: now),
           ])),
     ];
 
@@ -491,5 +499,17 @@ void main() {
     await tester.tap(find.text('New Shop'));
     await tester.pumpAndSettle();
     expect(find.text('+ 1 month'), findsOneWidget);
+  });
+
+  testWidgets('blacklist shows the remark and blocks with one', (tester) async {
+    await pumpScreen(tester, const BlacklistPage());
+    expect(find.textContaining('never picked anything up'), findsOneWidget);
+    await tester.tap(find.text('Block someone'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(1), 'x@example.com');
+    await tester.tap(find.text('Block'));
+    await tester.pumpAndSettle();
+    expect(find.text('Write a remark: why you are blocking them.'),
+        findsOneWidget);
   });
 }

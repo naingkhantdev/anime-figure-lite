@@ -22,6 +22,9 @@ rules_version = '2';
 // future. A new shop has expires_at == null (pending) until the super admin
 // sets a date. Expired shops can still read everything.
 //
+// The super admin can block an account by email (blacklist, blocked). A
+// blocked account can still read, but writes nothing: no orders, no shop.
+//
 // Numbers here must match lib/logic/stock.dart and lib/data/*.dart.
 //
 // Roles: see lib/ui/pages/role_gate.dart.
@@ -47,7 +50,18 @@ service cloud.firestore {
     }
 
     function canWrite(shopId) {
-      return isOwner(shopId) && shopIsActive(shopId);
+      return isOwner(shopId) && shopIsActive(shopId) && !isBlocked();
+    }
+
+    // The signed-in account's email, as blocked/{email} spells it.
+    function myEmail() {
+      return request.auth.token.get('email', '').lower();
+    }
+
+    // Blocked by the super admin: see blacklist below.
+    function isBlocked() {
+      return signedIn() && myEmail() != ''
+        && exists(/databases/$(database)/documents/blocked/$(myEmail()));
     }
 
     function text(value, min, max) {
@@ -64,11 +78,55 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ---- Blocked accounts, by lowercased email ----
+    // blacklist/{email} holds the super admin's private remark; blocked/
+    // {email} is an empty twin the blocked account may read, so the app can
+    // tell it it is blocked. The two are created and deleted together.
+    // Lengths must match lib/data/blacklist_repository.dart.
+    match /blacklist/{email} {
+      allow read: if isSuperAdmin();
+
+      allow create: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly(['email', 'remark', 'created_at'])
+        && request.resource.data.keys().hasAll(['email', 'remark', 'created_at'])
+        && request.resource.data.email == email
+        && email == email.lower()
+        && email.matches('[^@ ]+@[^@ ]+')
+        && text(email, 3, 254)
+        && email != myEmail()
+        && text(request.resource.data.remark, 1, 500)
+        && request.resource.data.created_at == request.time
+        && existsAfter(/databases/$(database)/documents/blocked/$(email));
+
+      allow update: if isSuperAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['remark'])
+        && text(request.resource.data.remark, 1, 500);
+
+      allow delete: if isSuperAdmin()
+        && !existsAfter(/databases/$(database)/documents/blocked/$(email));
+    }
+
+    match /blocked/{email} {
+      allow read: if isSuperAdmin() || (signedIn() && email == myEmail());
+
+      allow create: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly(['created_at'])
+        && request.resource.data.created_at == request.time
+        && existsAfter(/databases/$(database)/documents/blacklist/$(email));
+
+      allow update: if false;
+
+      allow delete: if isSuperAdmin()
+        && !existsAfter(/databases/$(database)/documents/blacklist/$(email));
+    }
+
     match /shops/{shopId} {
       allow read: if isOwner(shopId) || isSuperAdmin();
 
       // A new shop always starts pending.
       allow create: if isOwner(shopId)
+        && !isBlocked()
         && request.resource.data.keys().hasOnly(
              ['name', 'phone', 'owner_email', 'expires_at', 'created_at'])
         && request.resource.data.keys().hasAll(
@@ -85,6 +143,7 @@ service cloud.firestore {
       // for one the next time they save).
       allow update: if (
           isOwner(shopId)
+          && !isBlocked()
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['name', 'phone'])
           && text(request.resource.data.name, 1, 80)
@@ -332,6 +391,7 @@ service cloud.firestore {
       // the shop's own fee (shop_public) for delivery, and 0 for pickup or
       // the house's figures. total includes it.
       allow create: if request.auth != null
+        && !isBlocked()
         && request.resource.data.keys().hasOnly(
              ['user_id', 'shop_id', 'status', 'items', 'total', 'phone',
               'delivery_method', 'address', 'note', 'created_at',
@@ -367,6 +427,7 @@ service cloud.firestore {
       // A customer may cancel their own order while it is still pending,
       // and change nothing else.
       allow update: if request.auth != null
+        && !isBlocked()
         && resource.data.user_id == request.auth.uid
         && resource.data.status == 'pending'
         && request.resource.data.status == 'cancelled'
@@ -377,6 +438,7 @@ service cloud.firestore {
       // their payment, or replace it: payment_proof_id names a proof
       // created in this same write, for this order (see payment_proofs).
       allow update: if request.auth != null
+        && !isBlocked()
         && resource.data.user_id == request.auth.uid
         && resource.data.status == 'pending'
         && request.resource.data.diff(resource.data).affectedKeys()
@@ -459,6 +521,7 @@ service cloud.firestore {
             || isSuperAdmin());
 
       allow create: if signedIn()
+        && !isBlocked()
         && request.resource.data.keys().hasOnly(
              ['order_id', 'user_id', 'shop_id', 'data', 'created_at'])
         && request.resource.data.keys().hasAll(

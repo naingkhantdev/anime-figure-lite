@@ -1251,4 +1251,80 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get customerSentPayment => 'Customer sent a payment screenshot';
+
+  @override
+  String get blacklist => 'Blacklist';
+
+  @override
+  String get blockSomeone => 'Block someone';
+
+  @override
+  String get blockThisOwner => 'Block this owner';
+
+  @override
+  String get block => 'Block';
+
+  @override
+  String get unblock => 'Unblock';
+
+  @override
+  String get remark => 'Remark';
+
+  @override
+  String get remarkHint => 'Why are you blocking them? Only you see this.';
+
+  @override
+  String get blockExplain => 'A blocked account can sign in but can\'t order, open a shop or change anything. Nothing is deleted.';
+
+  @override
+  String get searchBlacklist => 'Search email or remark';
+
+  @override
+  String get nobodyBlocked => 'Nobody is blocked';
+
+  @override
+  String get nobodyBlockedBody => 'Accounts you block show here, with your remark.';
+
+  @override
+  String blockedOn(String date) {
+    return 'Blocked on $date';
+  }
+
+  @override
+  String emailBlocked(String email) {
+    return '$email is blocked.';
+  }
+
+  @override
+  String emailUnblocked(String email) {
+    return '$email is unblocked.';
+  }
+
+  @override
+  String get remarkSaved => 'Remark saved.';
+
+  @override
+  String unblockQuestion(String email) {
+    return 'Unblock $email?';
+  }
+
+  @override
+  String get unblockBody => 'They can use the app again straight away, including their shop if it is still open.';
+
+  @override
+  String get accountBlocked => 'Your account is blocked';
+
+  @override
+  String accountBlockedBody(String appName) {
+    return 'This account can no longer use $appName. If you think this is a mistake, contact us.';
+  }
+
+  @override
+  String get errEmailInvalid => 'Enter a valid email address.';
+
+  @override
+  String get errRemarkEmpty => 'Write a remark: why you are blocking them.';
+
+  @override
+  String get errCannotBlockYourself => 'You can\'t block your own account.';
 }

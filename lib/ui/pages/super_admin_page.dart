@@ -11,6 +11,7 @@ import '../widgets/effects.dart';
 import '../widgets/glass.dart';
 import '../widgets/brand.dart';
 import '../widgets/common.dart';
+import 'blacklist_page.dart';
 
 /// The super admin's only screen: every shop and when it expires.
 class SuperAdminPage extends ConsumerStatefulWidget {
@@ -32,6 +33,12 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
         titleSpacing: 16,
         title: const AppTitle(),
         actions: [
+          IconButton(
+            tooltip: l.blacklist,
+            icon: const Icon(Icons.block),
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute<void>(builder: (_) => const BlacklistPage())),
+          ),
           IconButton(
             tooltip: l.signOut,
             icon: const Icon(Icons.logout),
@@ -338,6 +345,22 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
                 child: Text(l.stopThisShopNow),
               ),
             ],
+            if (shop.ownerEmail.isNotEmpty)
+              TextButton.icon(
+                style:
+                    TextButton.styleFrom(foregroundColor: AppColors.dangerInk),
+                onPressed: _busy
+                    ? null
+                    : () {
+                        // This sheet's context goes with it; open the next
+                        // one from the page underneath.
+                        final navigator = Navigator.of(context)..pop();
+                        showBlockSheet(navigator.context,
+                            email: shop.ownerEmail);
+                      },
+                icon: const Icon(Icons.block),
+                label: Text(l.blockThisOwner),
+              ),
           ],
         ),
       ),
