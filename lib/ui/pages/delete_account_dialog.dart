@@ -68,6 +68,11 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
       await ref
           .read(orderRepositoryProvider)
           .forgetContactDetails(auth.currentUser!.uid);
+      // Off the super admin's list; never a reason to keep the account.
+      await ref
+          .read(userRepositoryProvider)
+          .forget(auth.currentUser!.uid)
+          .catchError((Object e) => debugPrint('Could not forget user: $e'));
       await auth.deleteAccount();
       navigator.pop();
       messenger.showSnackBar(

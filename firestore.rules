@@ -78,6 +78,31 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ---- Every account that has opened the app ----
+    // Each account's own app writes its email here, so the super admin can
+    // find customers and shop admins (lib/data/user_repository.dart).
+    match /users/{uid} {
+      allow read: if isSuperAdmin() || (signedIn() && request.auth.uid == uid);
+
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(
+             ['email', 'created_at', 'last_seen_at'])
+        && request.resource.data.keys().hasAll(
+             ['email', 'created_at', 'last_seen_at'])
+        && request.resource.data.email == request.auth.token.get('email', '')
+        && request.resource.data.created_at == request.time
+        && request.resource.data.last_seen_at == request.time;
+
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['email', 'last_seen_at'])
+        && request.resource.data.email == request.auth.token.get('email', '')
+        && request.resource.data.last_seen_at == request.time;
+
+      // Before deleting the account itself.
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
     // ---- Blocked accounts, by lowercased email ----
     // blacklist/{email} holds the super admin's private remark; blocked/
     // {email} is an empty twin the blocked account may read, so the app can

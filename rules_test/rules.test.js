@@ -200,6 +200,42 @@ describe('shops', () => {
   });
 });
 
+describe('users', () => {
+  const me = (email = 'alice@test.com') => ({
+    email,
+    created_at: serverTimestamp(),
+    last_seen_at: serverTimestamp(),
+  });
+
+  test('an account records itself, with its own email', async () => {
+    const db = as('alice');
+    await assertSucceeds(setDoc(doc(db, 'users/alice'), me()));
+    await assertSucceeds(updateDoc(doc(db, 'users/alice'),
+      { email: 'alice@test.com', last_seen_at: serverTimestamp() }));
+    await assertSucceeds(getDoc(doc(db, 'users/alice')));
+    await assertSucceeds(deleteDoc(doc(db, 'users/alice')));
+  });
+
+  test("no one else's record, and no made-up email", async () => {
+    await assertFails(setDoc(doc(as('alice'), 'users/bob'),
+      me('bob@test.com')));
+    await assertFails(setDoc(doc(as('alice'), 'users/alice'),
+      me('someone@test.com')));
+    await assertFails(setDoc(doc(as('alice'), 'users/alice'),
+      { ...me(), role: 'admin' }));
+  });
+
+  test('only the super admin lists everyone', async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'super_admins/boss'), {});
+      await setDoc(doc(db, 'users/bob'), { email: 'bob@test.com' });
+    });
+    await assertSucceeds(getDocs(collection(as('boss'), 'users')));
+    await assertFails(getDocs(collection(as('alice'), 'users')));
+    await assertFails(getDoc(doc(as('alice'), 'users/bob')));
+  });
+});
+
 describe('blacklist', () => {
   const seedBoss = () =>
     seed((db) => setDoc(doc(db, 'super_admins/boss'), {}));

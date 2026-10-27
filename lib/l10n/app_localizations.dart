@@ -2358,6 +2358,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can\'t block your own account.'**
   String get errCannotBlockYourself;
+
+  /// No description provided for @users.
+  ///
+  /// In en, this message translates to:
+  /// **'Users'**
+  String get users;
+
+  /// No description provided for @searchUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Search email or shop name'**
+  String get searchUsers;
+
+  /// No description provided for @customers.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers'**
+  String get customers;
+
+  /// No description provided for @shopAdmins.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop admins'**
+  String get shopAdmins;
+
+  /// No description provided for @blockedFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get blockedFilter;
+
+  /// No description provided for @blockedTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get blockedTag;
+
+  /// No description provided for @you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get you;
+
+  /// No description provided for @roleCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer'**
+  String get roleCustomer;
+
+  /// No description provided for @roleShopAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop admin of {shop}'**
+  String roleShopAdmin(String shop);
+
+  /// No description provided for @lastSeenOn.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen {date}'**
+  String lastSeenOn(String date);
+
+  /// No description provided for @noUsersHere.
+  ///
+  /// In en, this message translates to:
+  /// **'No accounts here'**
+  String get noUsersHere;
+
+  /// No description provided for @usersFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'An account shows up here once it opens this version of the app.'**
+  String get usersFootnote;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -12,6 +12,7 @@ import '../widgets/glass.dart';
 import '../widgets/brand.dart';
 import '../widgets/common.dart';
 import 'blacklist_page.dart';
+import 'users_page.dart';
 
 /// The super admin's only screen: every shop and when it expires.
 class SuperAdminPage extends ConsumerStatefulWidget {
@@ -33,6 +34,12 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
         titleSpacing: 16,
         title: const AppTitle(),
         actions: [
+          IconButton(
+            tooltip: l.users,
+            icon: const Icon(Icons.people_outline),
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute<void>(builder: (_) => const UsersPage())),
+          ),
           IconButton(
             tooltip: l.blacklist,
             icon: const Icon(Icons.block),

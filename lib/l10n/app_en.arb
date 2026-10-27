@@ -885,5 +885,31 @@
   },
   "errEmailInvalid": "Enter a valid email address.",
   "errRemarkEmpty": "Write a remark: why you are blocking them.",
-  "errCannotBlockYourself": "You can't block your own account."
+  "errCannotBlockYourself": "You can't block your own account.",
+  "users": "Users",
+  "searchUsers": "Search email or shop name",
+  "customers": "Customers",
+  "shopAdmins": "Shop admins",
+  "blockedFilter": "Blocked",
+  "blockedTag": "Blocked",
+  "you": "You",
+  "roleCustomer": "Customer",
+  "roleShopAdmin": "Shop admin of {shop}",
+  "@roleShopAdmin": {
+    "placeholders": {
+      "shop": {
+        "type": "String"
+      }
+    }
+  },
+  "lastSeenOn": "last seen {date}",
+  "@lastSeenOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noUsersHere": "No accounts here",
+  "usersFootnote": "An account shows up here once it opens this version of the app."
 }

@@ -24,6 +24,7 @@ class RoleGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(userRecorderProvider);
     return _gate(ref.watch(authStateProvider), (user) {
       if (user == null) return const CustomerHomePage();
       return _gate(ref.watch(isSuperAdminProvider), (isSuperAdmin) {

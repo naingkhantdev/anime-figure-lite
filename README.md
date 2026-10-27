@@ -48,7 +48,7 @@ The first screen depends on who is signed in (`lib/ui/pages/role_gate.dart`):
 |---|---|---|
 | Guest / customer | Nothing, or any account | The figure shop: browse, cart, checkout, My orders |
 | **Shop admin** | Account menu → **Open a shop**, then you approve it | Their own stock: items, In / Out / Count, history, customers |
-| **Super admin** (you) | A document at `super_admins/{your uid}`, made by hand in the Firebase console | Every shop: turn on, add 1/3/6/12 months, pick an end date, or stop now. Blacklist: block any account by email, with a private remark |
+| **Super admin** (you) | A document at `super_admins/{your uid}`, made by hand in the Firebase console | Every shop: turn on, add 1/3/6/12 months, pick an end date, or stop now. Users: every customer and shop admin, searchable, with who is blocked. Blacklist: block any account by email, with a private remark |
 
 A shop's life: **Waiting** (just opened, `expires_at` empty, can't change
 anything) → you add time → **Active** → yellow banner 7 days before the end →
@@ -286,6 +286,16 @@ shows, and the phone keeps it.
 ### Stock data (one shop per account)
 
 `super_admins/{uid}`: any fields; only its existence matters.
+
+`users/{uid}`: each account's own app writes it on opening, so the super
+admin can list everyone (Firebase Auth's list isn't readable from the app).
+Accounts appear once they open a version that has this. Deleted with the
+account.
+| field | type | note |
+|---|---|---|
+| email | string | must be the account's own sign-in email |
+| created_at | timestamp | |
+| last_seen_at | timestamp | the last time the app opened |
 
 `blacklist/{email, lowercased}`: blocked accounts, super admin only.
 | field | type | note |

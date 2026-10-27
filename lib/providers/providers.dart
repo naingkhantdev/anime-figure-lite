@@ -10,7 +10,9 @@ import '../data/order_repository.dart';
 import '../data/photo_repository.dart';
 import '../data/product_repository.dart';
 import '../data/shop_repository.dart';
+import '../data/user_repository.dart';
 import '../logic/catalog.dart';
+import '../models/app_user.dart';
 import '../models/blacklist_entry.dart';
 import '../models/cart_item.dart';
 import '../models/customer.dart';
@@ -122,6 +124,31 @@ final isSuperAdminProvider = StreamProvider<bool>((ref) {
   if (user == null) return Stream.value(false);
   return ref.watch(shopRepositoryProvider).watchIsSuperAdmin(user.uid);
 });
+
+final userRepositoryProvider =
+    Provider((ref) => UserRepository(FirebaseFirestore.instance));
+
+/// Records each account that signs in or opens the app in `users`, once per
+/// run, so the super admin can list it. Watched by RoleGate. Failures are
+/// only logged: the list is a convenience, never a reason to stop the app.
+final userRecorderProvider = Provider<void>((ref) {
+  ref.listen(
+      authStateProvider
+          .select((s) => (s.valueOrNull?.uid, s.valueOrNull?.email)),
+      (_, account) {
+    final (uid, email) = account;
+    if (uid == null || email == null || email.isEmpty) return;
+    ref
+        .read(userRepositoryProvider)
+        .record(uid, email)
+        .catchError((Object e) => debugPrint('Could not record user: $e'));
+  }, fireImmediately: true);
+});
+
+/// Super admin only.
+final allUsersProvider = StreamProvider<List<AppUser>>(
+  (ref) => ref.watch(userRepositoryProvider).watchAll(),
+);
 
 final blacklistRepositoryProvider =
     Provider((ref) => BlacklistRepository(FirebaseFirestore.instance));

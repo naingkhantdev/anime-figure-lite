@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:anime_figure_shop_lite/l10n/app_localizations.dart';
 import 'package:anime_figure_shop_lite/logic/stock.dart';
+import 'package:anime_figure_shop_lite/models/app_user.dart';
 import 'package:anime_figure_shop_lite/models/blacklist_entry.dart';
 import 'package:anime_figure_shop_lite/models/cart_item.dart';
 import 'package:anime_figure_shop_lite/models/customer.dart';
@@ -23,7 +24,9 @@ import 'package:anime_figure_shop_lite/ui/pages/product_list_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/shop_home_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/stock_move_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/super_admin_page.dart';
+import 'package:anime_figure_shop_lite/ui/pages/users_page.dart';
 import 'package:anime_figure_shop_lite/ui/theme.dart';
+import 'package:anime_figure_shop_lite/utils/dates.dart';
 
 // Builds each screen from sample data, without Firebase, at a small phone
 // size, so layout overflows and build errors fail here instead of on a phone.
@@ -166,6 +169,11 @@ List<Override> sampleOverrides({List<ShopOrder>? shopOrders}) => [
             shop('b', 'Mandalay Toys', now.add(const Duration(days: 120))),
             shop('c', 'New Shop', null),
             shop('d', 'Old Shop', now.subtract(const Duration(days: 3))),
+          ])),
+      allUsersProvider.overrideWith((ref) => Stream.value([
+            AppUser(id: 'a', email: 'a@example.com', lastSeenAt: now),
+            AppUser(id: 'u1', email: 'mya@example.com', lastSeenAt: now),
+            AppUser(id: 'u2', email: 'spam@example.com', lastSeenAt: now),
           ])),
       blacklistProvider.overrideWith((ref) => Stream.value([
             BlacklistEntry(
@@ -499,6 +507,23 @@ void main() {
     await tester.tap(find.text('New Shop'));
     await tester.pumpAndSettle();
     expect(find.text('+ 1 month'), findsOneWidget);
+  });
+
+  testWidgets('users list finds people by email or shop, and by role',
+      (tester) async {
+    await pumpScreen(tester, const UsersPage());
+    expect(find.text('Shop admin of Sakura Figures · last seen ${formatDate(now)}'),
+        findsOneWidget);
+    expect(find.text('Blocked'), findsWidgets);
+    await tester.enterText(find.byType(TextField), 'sakura');
+    await tester.pump();
+    expect(find.text('a@example.com'), findsOneWidget);
+    expect(find.text('mya@example.com'), findsNothing);
+    await tester.enterText(find.byType(TextField), '');
+    await tester.tap(find.text('Customers'));
+    await tester.pumpAndSettle();
+    expect(find.text('a@example.com'), findsNothing);
+    expect(find.text('mya@example.com'), findsOneWidget);
   });
 
   testWidgets('blacklist shows the remark and blocks with one', (tester) async {

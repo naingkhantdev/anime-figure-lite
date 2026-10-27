@@ -1327,4 +1327,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errCannotBlockYourself => 'You can\'t block your own account.';
+
+  @override
+  String get users => 'Users';
+
+  @override
+  String get searchUsers => 'Search email or shop name';
+
+  @override
+  String get customers => 'Customers';
+
+  @override
+  String get shopAdmins => 'Shop admins';
+
+  @override
+  String get blockedFilter => 'Blocked';
+
+  @override
+  String get blockedTag => 'Blocked';
+
+  @override
+  String get you => 'You';
+
+  @override
+  String get roleCustomer => 'Customer';
+
+  @override
+  String roleShopAdmin(String shop) {
+    return 'Shop admin of $shop';
+  }
+
+  @override
+  String lastSeenOn(String date) {
+    return 'last seen $date';
+  }
+
+  @override
+  String get noUsersHere => 'No accounts here';
+
+  @override
+  String get usersFootnote => 'An account shows up here once it opens this version of the app.';
 }
