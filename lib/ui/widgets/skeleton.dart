@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../theme.dart';
 import 'glass.dart';
 
@@ -38,7 +39,7 @@ class _SkeletonShimmerState extends State<SkeletonShimmer>
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Loading',
+      label: context.l10n.loading,
       child: ExcludeSemantics(
         child: AnimatedBuilder(
           animation: _band,

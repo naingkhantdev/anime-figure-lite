@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -20,16 +21,14 @@ Future<void> showDeleteAccountDialog(BuildContext context) => showDialog<void>(
 Future<void> showCloseShopDialog(BuildContext context) => showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete my account'),
-        content: Text(
-          'Your account holds your shop and its stock history, so we close '
-          'it for you. Contact us to close your shop and delete your '
-          'account${supportContact.isEmpty ? '.' : ': $supportContact'}',
-        ),
+        title: Text(context.l10n.deleteMyAccount),
+        content: Text(supportContact.isEmpty
+            ? context.l10n.closeShopBody
+            : context.l10n.closeShopBodyContact(supportContact)),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(context.l10n.ok),
           ),
         ],
       ),
@@ -62,6 +61,7 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
     final auth = ref.read(authRepositoryProvider);
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final deleted = context.l10n.accountDeleted;
     try {
       // Password first, so a typo stops here before anything is wiped.
       await auth.confirmPassword(_password.text);
@@ -71,15 +71,16 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
       await auth.deleteAccount();
       navigator.pop();
       messenger.showSnackBar(
-          const SnackBar(content: Text('Your account has been deleted.')));
+          SnackBar(content: Text(deleted)));
     } on FirebaseAuthException catch (e) {
       final wrong =
           e.code == 'wrong-password' || e.code == 'invalid-credential';
       if (mounted) {
-        setState(() => _error = wrong ? 'Wrong password.' : friendlyError(e));
+        setState(() => _error =
+            wrong ? context.l10n.wrongPassword : friendlyError(context, e));
       }
     } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -88,22 +89,19 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Delete my account?'),
+      title: Text(context.l10n.deleteMyAccountQuestion),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'This cannot be undone. Pending orders are cancelled. Past orders '
-            'stay with the shop, without your phone number or address.',
-          ),
+          Text(context.l10n.deleteAccountBody),
           const SizedBox(height: 16),
           TextField(
             controller: _password,
             obscureText: true,
             autofocus: true,
             autofillHints: const [AutofillHints.password],
-            decoration: const InputDecoration(labelText: 'Your password'),
+            decoration: InputDecoration(labelText: context.l10n.yourPassword),
             onSubmitted: (_) => _busy ? null : _delete(),
           ),
           if (_error != null) ...[
@@ -115,12 +113,12 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
       actions: [
         TextButton(
           onPressed: _busy ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: AppColors.dangerInk),
           onPressed: _busy ? null : _delete,
-          child: const Text('Delete'),
+          child: Text(context.l10n.delete),
         ),
       ],
     );

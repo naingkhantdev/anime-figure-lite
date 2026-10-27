@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../logic/catalog.dart';
 import '../../models/product.dart';
 import '../../providers/providers.dart';
@@ -18,13 +20,13 @@ String cardKicker(Product p) => [if (p.shopId.isNotEmpty) p.shopName, p.anime]
     .where((s) => s.isNotEmpty)
     .join(' · ');
 
-String priceRangeLabel(int? min, int? max) {
+String priceRangeLabel(AppLocalizations l, int? min, int? max) {
   if (min != null && max != null) {
     return '${formatMmk(min)} – ${formatMmk(max)}';
   }
-  if (min != null) return 'From ${formatMmk(min)}';
-  if (max != null) return 'Up to ${formatMmk(max)}';
-  return 'Any price';
+  if (min != null) return l.priceFrom(formatMmk(min));
+  if (max != null) return l.priceUpTo(formatMmk(max));
+  return l.anyPrice;
 }
 
 /// An icon for each category, so the row reads at a glance.
@@ -39,13 +41,10 @@ IconData categoryIcon(String category) => switch (category) {
     };
 
 const _sortIcons = {
-  CatalogSort.featured: (
-    Icons.auto_awesome_outlined,
-    'In stock first, then A to Z'
-  ),
-  CatalogSort.priceLow: (Icons.south, 'Cheapest first'),
-  CatalogSort.priceHigh: (Icons.north, 'Most expensive first'),
-  CatalogSort.name: (Icons.sort_by_alpha, 'Alphabetical'),
+  CatalogSort.featured: Icons.auto_awesome_outlined,
+  CatalogSort.priceLow: Icons.south,
+  CatalogSort.priceHigh: Icons.north,
+  CatalogSort.name: Icons.sort_by_alpha,
 };
 
 // ---------------------------------------------------------------- search
@@ -91,12 +90,12 @@ class _CatalogSearchRowState extends ConsumerState<CatalogSearchRow> {
               onChanged: _set,
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'Search figures or anime',
+                hintText: context.l10n.searchHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: value.text.isEmpty
                     ? null
                     : IconButton(
-                        tooltip: 'Clear search',
+                        tooltip: context.l10n.clearSearch,
                         icon: const Icon(Icons.cancel, size: 20),
                         color: AppColors.inkSubtle,
                         onPressed: () {
@@ -130,7 +129,7 @@ class _FilterIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final shape = BorderRadius.circular(AppRadius.md + 2);
     return Tooltip(
-      message: 'Filters',
+      message: context.l10n.filters,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -296,14 +295,14 @@ class CatalogCategoryBar extends ConsumerWidget {
     final set = ref.read(catalogFilterProvider.notifier).update;
     final chips = [
       CatalogChip(
-        label: 'All',
+        label: context.l10n.all,
         icon: Icons.apps,
         selected: category.isEmpty,
         onTap: () => set((f) => f.copyWith(category: '')),
       ),
       for (final (c, _) in facet(products, (p) => p.category))
         CatalogChip(
-          label: c,
+          label: categoryLabel(context.l10n, c),
           icon: categoryIcon(c),
           selected: category == c,
           onTap: () =>
@@ -361,7 +360,7 @@ class CatalogActiveFilters extends ConsumerWidget {
         ),
       if (f.hasPrice)
         CatalogChip(
-          label: priceRangeLabel(f.minPrice, f.maxPrice),
+          label: priceRangeLabel(context.l10n, f.minPrice, f.maxPrice),
           icon: Icons.payments_outlined,
           selected: true,
           onTap: open,
@@ -370,7 +369,7 @@ class CatalogActiveFilters extends ConsumerWidget {
         ),
       if (f.inStockOnly)
         CatalogChip(
-          label: 'In stock',
+          label: context.l10n.inStock,
           icon: Icons.inventory_2_outlined,
           selected: true,
           onTap: open,
@@ -496,6 +495,7 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
   @override
   Widget build(BuildContext context) {
     final products = widget.products;
+    final l = context.l10n;
     final count = _priceBackwards ? 0 : _draft.apply(products).length;
     final shops = <String, String>{
       for (final p in products) p.shopId: sellerName(p)
@@ -578,8 +578,8 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: _SheetTitle('Sort & filter',
-                      subtitle: '$count of ${products.length} figures'),
+                  child: _SheetTitle(l.sortAndFilter,
+                      subtitle: l.figuresShownOf(count, products.length)),
                 ),
                 TextButton.icon(
                   onPressed: _draft.activeCount == 0 &&
@@ -591,7 +591,7 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                           _edit((f) => CatalogFilter(query: f.query));
                         },
                   icon: const Icon(Icons.restart_alt, size: 18),
-                  label: const Text('Reset'),
+                  label: Text(l.reset),
                 ),
               ],
             ),
@@ -607,13 +607,13 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.swap_vert,
+                          const Icon(Icons.swap_vert,
                               size: 18, color: AppColors.accent),
-                          SizedBox(width: 8),
-                          Text('Sort by',
-                              style: TextStyle(
+                          const SizedBox(width: 8),
+                          Text(l.sortBy,
+                              style: const TextStyle(
                                   fontWeight: FontWeight.w700, fontSize: 15)),
                         ],
                       ),
@@ -624,8 +624,8 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                         children: [
                           for (final s in CatalogSort.values)
                             CatalogChip(
-                              label: s.label,
-                              icon: _sortIcons[s]!.$1,
+                              label: s.label(l),
+                              icon: _sortIcons[s],
                               selected: _draft.sort == s,
                               onTap: () => _edit((f) => f.copyWith(sort: s)),
                             ),
@@ -647,9 +647,9 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                           borderRadius: BorderRadius.circular(AppRadius.lg)),
                       secondary: const Icon(Icons.inventory_2_outlined,
                           color: AppColors.accent),
-                      title: const Text('In stock only',
-                          style: TextStyle(fontWeight: FontWeight.w700)),
-                      subtitle: const Text('Hide figures that are sold out'),
+                      title: Text(l.inStockOnly,
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: Text(l.inStockOnlyHelp),
                       value: _draft.inStockOnly,
                       onChanged: (on) =>
                           _edit((f) => f.copyWith(inStockOnly: on)),
@@ -658,27 +658,27 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                 ),
                 section(
                   Icons.payments_outlined,
-                  'Price',
+                  l.price,
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Row(
                         children: [
-                          priceBox('Min', _min, _floor),
+                          priceBox(l.min, _min, _floor),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 10),
                             child: Text('–',
                                 style: TextStyle(
                                     fontSize: 18, color: AppColors.inkMuted)),
                           ),
-                          priceBox('Max', _max, _ceil),
+                          priceBox(l.max, _max, _ceil),
                         ],
                       ),
                       if (_priceBackwards)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 6),
-                          child: Text('Min is more than max.',
-                              style: TextStyle(
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(l.minMoreThanMax,
+                              style: const TextStyle(
                                   color: AppColors.dangerInk, fontSize: 13)),
                         ),
                       const SizedBox(height: 8),
@@ -698,11 +698,11 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          for (final (label, lo, hi) in const [
-                            ('Under 200K', null, 200000),
+                          for (final (label, lo, hi) in [
+                            (l.priceUnder('200K'), null, 200000),
                             ('200K – 500K', 200000, 500000),
                             ('500K – 1M', 500000, 1000000),
-                            ('Over 1M', 1000000, null),
+                            (l.priceOver('1M'), 1000000, null),
                           ])
                             CatalogChip(
                               label: label,
@@ -717,11 +717,11 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                 ),
                 section(
                   Icons.category_outlined,
-                  'Category',
+                  l.category,
                   choices(
                     [
                       for (final (c, n) in facet(products, (p) => p.category))
-                        (c, c, n)
+                        (c, categoryLabel(l, c), n)
                     ],
                     _draft.category,
                     (c) => _edit((f) => f.copyWith(category: c)),
@@ -730,7 +730,7 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                 ),
                 section(
                   Icons.movie_outlined,
-                  'Anime',
+                  l.anime,
                   choices(
                     [
                       for (final (a, n) in facet(products, (p) => p.anime))
@@ -742,7 +742,7 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                 ),
                 section(
                   Icons.storefront_outlined,
-                  'Shop',
+                  l.tabShop,
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -783,10 +783,10 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                             Navigator.pop(context);
                           },
                     child: Text(_priceBackwards
-                        ? 'Check the price range'
+                        ? l.checkPriceRange
                         : count == 0
-                            ? 'No figures match'
-                            : 'Show $count ${count == 1 ? 'figure' : 'figures'}'),
+                            ? l.noFiguresMatch
+                            : l.showFigures(count)),
                   ),
                 ),
               ),

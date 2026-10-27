@@ -1,0 +1,9 @@
+# The app's text. Edit lib/l10n/app_en.arb; to add a language, copy it to
+# app_<code>.arb (Burmese: app_my.arb) and translate the values.
+# `flutter pub get` or any build regenerates app_localizations*.dart.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-dir: lib/l10n
+output-localization-file: app_localizations.dart
+synthetic-package: false
+nullable-getter: false

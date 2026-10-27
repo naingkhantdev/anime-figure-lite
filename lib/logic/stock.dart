@@ -1,16 +1,17 @@
+import '../l10n/l10n.dart';
+
 /// Kinds of stock movement. [code] is what is stored in Firestore and must
 /// match firestore.rules.
 enum MoveType {
-  stockIn('in', 'Stock in'),
-  stockOut('out', 'Stock out'),
+  stockIn('in'),
+  stockOut('out'),
 
   /// A stock count: sets the quantity to what is actually on the shelf.
-  adjust('adjust', 'Count');
+  adjust('adjust');
 
-  const MoveType(this.code, this.label);
+  const MoveType(this.code);
 
   final String code;
-  final String label;
 
   static MoveType fromCode(String? code) =>
       values.firstWhere((t) => t.code == code, orElse: () => adjust);
@@ -20,19 +21,16 @@ enum MoveType {
 /// match firestore.rules.
 const maxQuantity = 1000000;
 
-class StockException implements Exception {
-  StockException(this.message);
-  final String message;
-  @override
-  String toString() => message;
+class StockException extends AppException {
+  StockException(super.message);
 }
 
 /// The quantity after applying a movement, or a [StockException] explaining
 /// why it can't be applied. firestore.rules repeat this check.
 int quantityAfter(int current, MoveType type, int quantity) {
-  if (quantity < 0) throw StockException('Quantity cannot be negative.');
+  if (quantity < 0) throw StockException((l) => l.errQuantityNegative);
   if (type != MoveType.adjust && quantity < 1) {
-    throw StockException('Enter a quantity of at least 1.');
+    throw StockException((l) => l.errQuantityAtLeastOne);
   }
   final after = switch (type) {
     MoveType.stockIn => current + quantity,
@@ -40,10 +38,10 @@ int quantityAfter(int current, MoveType type, int quantity) {
     MoveType.adjust => quantity,
   };
   if (after < 0) {
-    throw StockException('Only $current in stock.');
+    throw StockException((l) => l.errOnlyInStock(current));
   }
   if (after > maxQuantity) {
-    throw StockException('Quantity is too large.');
+    throw StockException((l) => l.errQuantityTooLarge);
   }
   return after;
 }

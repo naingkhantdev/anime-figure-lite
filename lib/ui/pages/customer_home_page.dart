@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../theme.dart';
 import '../widgets/brand.dart';
@@ -86,7 +87,7 @@ class CustomerHomePage extends ConsumerWidget {
                     groupAlignment: -0.9,
                     destinations: [
                       for (final (i, (outlined, selected, label))
-                          in _sections.indexed)
+                          in _sections(context.l10n).indexed)
                         NavigationRailDestination(
                           icon: icon(outlined, i),
                           selectedIcon: icon(selected, i),
@@ -108,7 +109,7 @@ class CustomerHomePage extends ConsumerWidget {
                 onDestinationSelected: select,
                 destinations: [
                   for (final (i, (outlined, selected, label))
-                      in _sections.indexed)
+                      in _sections(context.l10n).indexed)
                     NavigationDestination(
                       icon: icon(outlined, i),
                       selectedIcon: icon(selected, i),
@@ -122,12 +123,12 @@ class CustomerHomePage extends ConsumerWidget {
 }
 
 /// The four sections, in [CustomerTab] order: icon, selected icon, label.
-const _sections = [
-  (Icons.storefront_outlined, Icons.storefront, 'Shop'),
-  (Icons.shopping_cart_outlined, Icons.shopping_cart, 'Cart'),
-  (Icons.receipt_long_outlined, Icons.receipt_long, 'Orders'),
-  (Icons.account_circle_outlined, Icons.account_circle, 'Account'),
-];
+List<(IconData, IconData, String)> _sections(AppLocalizations l) => [
+      (Icons.storefront_outlined, Icons.storefront, l.tabShop),
+      (Icons.shopping_cart_outlined, Icons.shopping_cart, l.tabCart),
+      (Icons.receipt_long_outlined, Icons.receipt_long, l.tabOrders),
+      (Icons.account_circle_outlined, Icons.account_circle, l.tabAccount),
+    ];
 
 class _OrdersTab extends ConsumerWidget {
   const _OrdersTab({required this.onSignIn});
@@ -139,20 +140,19 @@ class _OrdersTab extends ConsumerWidget {
     final signedIn = ref.watch(authStateProvider).valueOrNull != null;
     if (signedIn) return const OrdersPage();
     return Scaffold(
-      appBar: AppBar(title: const Text('My orders')),
+      appBar: AppBar(title: Text(context.l10n.myOrders)),
       body: EmptyState(
         icon: Icons.receipt_long_outlined,
-        title: 'Sign in to see your orders',
-        message: 'Orders you place show up here, with what the shop '
-            'is doing with them.',
+        title: context.l10n.signInToSeeOrders,
+        message: context.l10n.signInToSeeOrdersBody,
         action: FilledButton(
           onPressed: onSignIn,
-          child: const Text('Go to Account'),
+          child: Text(context.l10n.goToAccount),
         ),
         secondary: TextButton(
           onPressed: () =>
               ref.read(customerTabProvider.notifier).state = CustomerTab.shop,
-          child: const Text('Browse figures'),
+          child: Text(context.l10n.browseFigures),
         ),
       ),
     );
@@ -169,7 +169,7 @@ class _AccountTab extends ConsumerWidget {
     final user = ref.watch(authStateProvider).valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Account')),
+      appBar: AppBar(title: Text(context.l10n.tabAccount)),
       body: user == null
           ? const _GuestWelcome()
           : ListView(
@@ -195,10 +195,10 @@ class _AccountTab extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Signed in as',
-                                style: TextStyle(
+                            Text(context.l10n.signedInAs,
+                                style: const TextStyle(
                                     color: AppColors.inkMuted, fontSize: 13)),
-                            Text(user.email ?? 'Signed in',
+                            Text(user.email ?? context.l10n.signedIn,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -216,8 +216,8 @@ class _AccountTab extends ConsumerWidget {
                     children: [
                       ListTile(
                         leading: const Icon(Icons.storefront_outlined),
-                        title: const Text('Open a shop'),
-                        subtitle: const Text('Sell and track your own stock'),
+                        title: Text(context.l10n.openAShop),
+                        subtitle: Text(context.l10n.openAShopSubtitle),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () async {
                           final navigator = Navigator.of(context);
@@ -236,7 +236,7 @@ class _AccountTab extends ConsumerWidget {
                       const Divider(indent: 56),
                       ListTile(
                         leading: const Icon(Icons.logout),
-                        title: const Text('Sign out'),
+                        title: Text(context.l10n.signOut),
                         onTap: () => ref.read(authRepositoryProvider).signOut(),
                       ),
                     ],
@@ -248,8 +248,8 @@ class _AccountTab extends ConsumerWidget {
                   child: ListTile(
                     leading: const Icon(Icons.delete_outline,
                         color: AppColors.dangerInk),
-                    title: const Text('Delete my account',
-                        style: TextStyle(color: AppColors.dangerInk)),
+                    title: Text(context.l10n.deleteMyAccount,
+                        style: const TextStyle(color: AppColors.dangerInk)),
                     onTap: () => showDeleteAccountDialog(context),
                   ),
                 ),
@@ -284,33 +284,32 @@ class _GuestWelcome extends ConsumerWidget {
                     children: [
                       const Center(child: AppLogo(size: 64)),
                       const SizedBox(height: 16),
-                      Text('You are browsing as a guest',
+                      Text(context.l10n.browsingAsGuest,
                           textAlign: TextAlign.center,
                           style: theme.textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w700)),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Look around as much as you like. An account '
-                        'lets you:',
+                      Text(
+                        context.l10n.guestIntro,
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.inkMuted),
+                        style: const TextStyle(color: AppColors.inkMuted),
                       ),
                       const SizedBox(height: 20),
-                      for (final (i, (icon, title, line)) in const [
+                      for (final (i, (icon, title, line)) in [
                         (
                           Icons.shopping_bag_outlined,
-                          'Check out in a few taps',
-                          'Your phone and address are remembered.'
+                          context.l10n.benefitCheckout,
+                          context.l10n.benefitCheckoutLine
                         ),
                         (
                           Icons.local_shipping_outlined,
-                          'Follow every order',
-                          'See when the shop confirms and sends it.'
+                          context.l10n.benefitFollow,
+                          context.l10n.benefitFollowLine
                         ),
                         (
                           Icons.storefront_outlined,
-                          'Open your own shop',
-                          'Track stock and sell your figures here.'
+                          context.l10n.benefitShop,
+                          context.l10n.benefitShopLine
                         ),
                       ].indexed)
                         Reveal(
@@ -320,13 +319,13 @@ class _GuestWelcome extends ConsumerWidget {
                       const SizedBox(height: 20),
                       FilledButton(
                         onPressed: () => ensureSignedIn(context, ref),
-                        child: const Text('Sign in'),
+                        child: Text(context.l10n.signIn),
                       ),
                       const SizedBox(height: 10),
                       OutlinedButton(
                         onPressed: () =>
                             ensureSignedIn(context, ref, signUp: true),
-                        child: const Text('Create an account'),
+                        child: Text(context.l10n.createAnAccount),
                       ),
                     ],
                   ),
@@ -336,7 +335,7 @@ class _GuestWelcome extends ConsumerWidget {
                   onPressed: () => ref
                       .read(customerTabProvider.notifier)
                       .state = CustomerTab.shop,
-                  child: const Text('Keep browsing'),
+                  child: Text(context.l10n.keepBrowsing),
                 ),
               ],
             ),

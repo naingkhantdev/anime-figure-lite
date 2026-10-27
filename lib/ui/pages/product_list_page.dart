@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/photo_repository.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../logic/catalog.dart';
 import '../../models/product.dart';
 import '../../providers/providers.dart';
@@ -37,10 +39,10 @@ class ProductListPage extends ConsumerWidget {
       body: products.when(
         data: (all) {
           if (all.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.storefront_outlined,
-              title: 'No figures yet',
-              message: 'New figures appear here as soon as a shop adds them.',
+              title: context.l10n.noFiguresYet,
+              message: context.l10n.noFiguresYetBody,
             );
           }
           final shown = filter.apply(all);
@@ -69,8 +71,8 @@ class ProductListPage extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '${narrowed ? '${shown.length} of ${all.length}' : '${all.length}'} '
-                            'figures · ${filter.sort.label}',
+                            '${narrowed ? context.l10n.figuresShownOf(shown.length, all.length) : context.l10n.figuresCountPlain(all.length)}'
+                            ' · ${filter.sort.label(context.l10n)}',
                             style: const TextStyle(
                                 color: AppColors.inkMuted, fontSize: 13),
                           ),
@@ -84,8 +86,8 @@ class ProductListPage extends ConsumerWidget {
                             onPressed: () => ref
                                 .read(catalogFilterProvider.notifier)
                                 .update((f) => f.cleared()),
-                            child: const Text('Clear all',
-                                style: TextStyle(fontSize: 13)),
+                            child: Text(context.l10n.clearAll,
+                                style: const TextStyle(fontSize: 13)),
                           ),
                       ],
                     ),
@@ -96,13 +98,13 @@ class ProductListPage extends ConsumerWidget {
                     hasScrollBody: false,
                     child: EmptyState(
                       icon: Icons.search_off,
-                      title: 'No figures match',
-                      message: 'Try another word, or fewer filters.',
+                      title: context.l10n.noFiguresMatch,
+                      message: context.l10n.noFiguresMatchBody,
                       action: OutlinedButton(
                         onPressed: () => ref
                             .read(catalogFilterProvider.notifier)
                             .state = const CatalogFilter(),
-                        child: const Text('Show all figures'),
+                        child: Text(context.l10n.showAllFigures),
                       ),
                     ),
                   )
@@ -126,8 +128,8 @@ class ProductListPage extends ConsumerWidget {
         loading: () => const ProductGridSkeleton(gridDelegate: _grid),
         error: (e, _) => EmptyState(
           icon: Icons.cloud_off_outlined,
-          title: 'Could not load the figures',
-          message: friendlyError(e),
+          title: context.l10n.couldNotLoadFigures,
+          message: friendlyError(context, e),
         ),
       ),
     );
@@ -170,10 +172,10 @@ class _ProductCard extends StatelessWidget {
                       ),
                     ),
                     if (!product.inStock)
-                      const Positioned(
+                      Positioned(
                         left: 8,
                         top: 8,
-                        child: Pill.danger('Sold out'),
+                        child: Pill.danger(context.l10n.soldOut),
                       ),
                   ],
                 ),
@@ -310,15 +312,20 @@ class _StockLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final n = product.stockQuantity;
+    final l = context.l10n;
     final (text, color, icon) = !product.inStock
-        ? ('Sold out', AppColors.dangerInk, Icons.remove_circle_outline)
+        ? (l.soldOut, AppColors.dangerInk, Icons.remove_circle_outline)
         : n <= 3
             ? (
-                'Only $n left',
+                l.onlyLeft(n),
                 AppColors.warnInk,
                 Icons.local_fire_department_outlined
               )
-            : ('$n in stock', AppColors.successInk, Icons.check_circle_outline);
+            : (
+                l.inStockCount(n),
+                AppColors.successInk,
+                Icons.check_circle_outline
+              );
     return Row(
       children: [
         Icon(icon, size: 14, color: color),

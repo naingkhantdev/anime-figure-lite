@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../logic/stock.dart';
 import '../../models/stock_move.dart';
 import '../../utils/dates.dart';
@@ -41,13 +43,13 @@ class MoveTile extends StatelessWidget {
     };
     final change = move.change;
     final details = [
-      if (!showItem) move.type.label,
+      if (!showItem) move.type.label(context.l10n),
       if (move.customerName.isNotEmpty) move.customerName,
       if (move.total > 0)
         '${move.quantity} × ${formatMmk(move.unitPrice)} = ${formatMmk(move.total)}',
       if (move.note.isNotEmpty) move.note,
       if (move.createdAt == null)
-        'Saving…'
+        context.l10n.saving
       else
         showDay ? formatDateTime(move.createdAt!) : formatTime(move.createdAt!),
     ];

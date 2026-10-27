@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/order_repository.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../models/shop_order.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
@@ -63,6 +65,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     setState(() => _placing = true);
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final l = context.l10n;
     try {
       final orders = await ref.read(orderRepositoryProvider).placeOrder(
             userId: user.uid,
@@ -75,19 +78,16 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       ref.read(cartProvider.notifier).clear();
       messenger.showSnackBar(
         SnackBar(
-          content: Text(orders == 1
-              ? 'Order placed. The shop will confirm it soon.'
-              : 'Placed $orders orders, one for each shop. Each shop '
-                  'confirms its own.'),
+          content: Text(l.ordersPlaced(orders)),
         ),
       );
       showCustomerTab(navigator, ref.read(customerTabProvider.notifier),
           CustomerTab.orders);
     } on OrderException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      messenger.showSnackBar(SnackBar(content: Text(e.message(l))));
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not place order: $e')),
+        SnackBar(content: Text(l.couldNotPlaceOrder('$e'))),
       );
     } finally {
       if (mounted) setState(() => _placing = false);
@@ -102,7 +102,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     final isDelivery = _method == DeliveryMethod.delivery;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Checkout')),
+      appBar: AppBar(title: Text(context.l10n.checkout)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -112,19 +112,19 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               controller: _phone,
               keyboardType: TextInputType.phone,
               autofillHints: const [AutofillHints.telephoneNumber],
-              decoration: const InputDecoration(
-                labelText: 'Phone',
+              decoration: InputDecoration(
+                labelText: context.l10n.phone,
                 hintText: '09xxxxxxxxx',
               ),
               validator: (v) => normalizePhone(v ?? '') == null
-                  ? 'Enter a phone number like 09xxxxxxxxx.'
+                  ? context.l10n.errPhoneFormat
                   : null,
             ),
             const SizedBox(height: 16),
             SegmentedButton<DeliveryMethod>(
               segments: [
                 for (final m in DeliveryMethod.values)
-                  ButtonSegment(value: m, label: Text(m.label)),
+                  ButtonSegment(value: m, label: Text(m.label(context.l10n))),
               ],
               selected: {_method},
               onSelectionChanged: (s) => setState(() => _method = s.first),
@@ -137,12 +137,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 maxLines: 4,
                 maxLength: maxTextLength,
                 autofillHints: const [AutofillHints.fullStreetAddress],
-                decoration: const InputDecoration(
-                  labelText: 'Delivery address',
-                  hintText: 'Township, street, landmark',
+                decoration: InputDecoration(
+                  labelText: context.l10n.deliveryAddress,
+                  hintText: context.l10n.deliveryAddressHint,
                 ),
                 validator: (v) => (v ?? '').trim().isEmpty
-                    ? 'Enter a delivery address.'
+                    ? context.l10n.errAddressEmpty
                     : null,
               ),
             ],
@@ -151,7 +151,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               controller: _note,
               maxLines: 3,
               maxLength: maxTextLength,
-              decoration: const InputDecoration(labelText: 'Note (optional)'),
+              decoration: InputDecoration(labelText: context.l10n.noteOptional),
             ),
             const SizedBox(height: 8),
             Glass(
@@ -165,11 +165,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      const Expanded(
-                        child: Text('Estimated total',
+                      Expanded(
+                        child: Text(context.l10n.estimatedTotal,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 color: AppColors.inkMuted, fontSize: 13)),
                       ),
                       const SizedBox(width: 12),
@@ -181,10 +181,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Pay the shop directly. The shop confirms the final price '
-                    'and any delivery fee.',
-                    style: TextStyle(fontSize: 12, color: AppColors.inkSubtle),
+                  Text(
+                    context.l10n.payShopDirectly,
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.inkSubtle),
                   ),
                   const SizedBox(height: 12),
                   FilledButton(
@@ -195,7 +195,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Place order'),
+                        : Text(context.l10n.placeOrder),
                   ),
                 ],
               ),

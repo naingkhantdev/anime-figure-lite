@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config.dart';
+import '../../l10n/l10n.dart';
 import '../../logic/subscription.dart';
 import '../../models/shop.dart';
 import '../../utils/dates.dart';
@@ -10,15 +11,17 @@ import '../theme.dart';
 import 'glass.dart';
 import 'skeleton.dart';
 
-/// A message a person can act on, for any error the app's code may throw.
-String friendlyError(Object error) {
+/// A message a person can act on, for any error the app's code may throw,
+/// in the app's language.
+String friendlyError(BuildContext context, Object error) {
+  final l = context.l10n;
+  if (error is AppException) return error.message(l);
   // Before FirebaseException, which it extends.
   if (error is FirebaseAuthException) return error.message ?? error.code;
   if (error is FirebaseException) {
     return switch (error.code) {
-      'permission-denied' =>
-        'Not allowed. If your shop has expired, contact the owner to renew.',
-      'unavailable' => 'No internet connection. Try again when online.',
+      'permission-denied' => l.errNotAllowed,
+      'unavailable' => l.errOffline,
       _ => error.message ?? error.code,
     };
   }
@@ -52,8 +55,8 @@ class AsyncBody<T> extends StatelessWidget {
       loading: () => loading,
       error: (e, _) => EmptyState(
         icon: Icons.cloud_off_outlined,
-        title: 'Could not load this',
-        message: friendlyError(e),
+        title: context.l10n.couldNotLoad,
+        message: friendlyError(context, e),
       ),
     );
   }
@@ -224,12 +227,13 @@ class ShopStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return switch (shop.statusAt(now)) {
-      ShopStatus.pending => const Pill.info('Waiting'),
-      ShopStatus.active => const Pill.success('Active'),
+      ShopStatus.pending => Pill.info(l.shopStatusWaiting),
+      ShopStatus.active => Pill.success(l.shopStatusActive),
       ShopStatus.expiringSoon =>
-        Pill.warn('${daysLeft(shop.expiresAt!, now)}d left'),
-      ShopStatus.expired => const Pill.danger('Expired'),
+        Pill.warn(l.shopDaysLeftShort(daysLeft(shop.expiresAt!, now))),
+      ShopStatus.expired => Pill.danger(l.shopStatusExpired),
     };
   }
 }
@@ -251,13 +255,11 @@ class ExpiryBanner extends StatelessWidget {
     final expired = status == ShopStatus.expired;
     final days = daysLeft(shop.expiresAt!, now);
     final contact = supportContact.isEmpty ? '' : ' $supportContact';
-    final text = expired
-        ? 'Your shop expired on ${formatDate(shop.expiresAt!)}. You can still '
-            'look at everything, but not change it. Contact the owner to '
-            'renew.$contact'
-        : 'Your shop expires in $days ${days == 1 ? 'day' : 'days'} '
-            '(${formatDate(shop.expiresAt!)}). Contact the owner to renew.'
-            '$contact';
+    final date = formatDate(shop.expiresAt!);
+    final text = (expired
+            ? context.l10n.shopExpiredBanner(date)
+            : context.l10n.shopExpiresBanner(days, date)) +
+        contact;
     return Material(
       color: (expired ? AppColors.dangerSoft : AppColors.warnSoft)
           .withOpacity(0.88),
@@ -336,14 +338,14 @@ Future<void> confirmSignOut(
   final ok = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Sign out?'),
+      title: Text(context.l10n.signOutQuestion),
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel')),
+            child: Text(context.l10n.cancel)),
         FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sign out')),
+            child: Text(context.l10n.signOut)),
       ],
     ),
   );

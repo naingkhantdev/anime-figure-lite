@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../logic/stock.dart';
 import '../../models/customer.dart';
 import '../../models/stock_move.dart';
@@ -52,7 +53,7 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
           );
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -63,16 +64,16 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${customer.name}?'),
-        content: const Text('Past stock outs keep their name.'),
+        title: Text(context.l10n.deleteNameQuestion(customer.name)),
+        content: Text(context.l10n.deleteCustomerBody),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+              child: Text(context.l10n.cancel)),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.dangerInk),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -82,7 +83,7 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
       await ref.read(inventoryRepositoryProvider).deleteCustomer(customer.id);
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) showMessage(context, friendlyError(e));
+      if (mounted) showMessage(context, friendlyError(context, e));
     }
   }
 
@@ -97,14 +98,15 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
                 m.type == MoveType.stockOut && m.customerId == customer.id)
             .toList();
     final spent = bought.fold(0, (s, m) => s + m.total);
+    final l = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(customer == null ? 'New customer' : customer.name),
+        title: Text(customer == null ? l.newCustomer : customer.name),
         actions: [
           if (customer != null && canWrite)
             IconButton(
-              tooltip: 'Delete',
+              tooltip: l.delete,
               icon: const Icon(Icons.delete_outline),
               onPressed: _busy ? null : _delete,
             ),
@@ -118,29 +120,29 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
             enabled: canWrite,
             autofocus: customer == null,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(labelText: 'Name'),
+            decoration: InputDecoration(labelText: l.name),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _phone,
             enabled: canWrite,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-                labelText: 'Phone (optional)', hintText: '09xxxxxxxxx'),
+            decoration: InputDecoration(
+                labelText: l.phoneOptional, hintText: '09xxxxxxxxx'),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _address,
             enabled: canWrite,
             maxLines: 2,
-            decoration: const InputDecoration(labelText: 'Address (optional)'),
+            decoration: InputDecoration(labelText: l.addressOptional),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _note,
             enabled: canWrite,
             maxLines: 2,
-            decoration: const InputDecoration(labelText: 'Note (optional)'),
+            decoration: InputDecoration(labelText: l.noteOptional),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
@@ -150,14 +152,14 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _busy ? null : _save,
-              child: Text(customer == null ? 'Add customer' : 'Save'),
+              child: Text(customer == null ? l.addCustomer : l.save),
             ),
           ],
           if (bought.isNotEmpty) ...[
             const SizedBox(height: 24),
             Row(
               children: [
-                Text('Recent purchases',
+                Text(l.recentPurchases,
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium

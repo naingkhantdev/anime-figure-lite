@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../theme.dart';
 import '../widgets/effects.dart';
@@ -36,22 +37,22 @@ class _CustomersTabState extends ConsumerState<CustomersTab> {
           padding: pagePadding(context, bottom: 96),
           children: [
             TextField(
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: 'Search name or phone',
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                hintText: context.l10n.searchNameOrPhone,
               ),
               onChanged: (v) => setState(() => _query = v),
             ),
             const SizedBox(height: 12),
             if (customers.isEmpty)
-              const EmptyState(
+              EmptyState(
                 icon: Icons.people_outline,
-                title: 'No customers yet',
-                message: 'Add regulars here, then pick them when you record '
-                    'a stock out.',
+                title: context.l10n.noCustomersYet,
+                message: context.l10n.noCustomersYetBody,
               )
             else if (visible.isEmpty)
-              const EmptyState(icon: Icons.search_off, title: 'Nothing matches')
+              EmptyState(
+                  icon: Icons.search_off, title: context.l10n.nothingMatches)
             else
               Card(
                 clipBehavior: Clip.antiAlias,

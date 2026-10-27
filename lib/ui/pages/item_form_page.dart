@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../data/inventory_repository.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../logic/catalog.dart';
 import '../../logic/stock.dart';
 import '../../models/item.dart';
@@ -71,7 +73,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   int _read(TextEditingController c, String label) {
     if (c.text.trim().isEmpty) return 0;
     return parseWholeNumber(c.text) ??
-        (throw InventoryException('$label must be a whole number.'));
+        (throw InventoryException((l) => l.errMustBeWholeNumber(label)));
   }
 
   Future<void> _save() async {
@@ -79,14 +81,15 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
       _busy = true;
       _error = null;
     });
+    final l = context.l10n;
     try {
       final draft = ItemDraft(
         name: _name.text,
         code: _code.text,
         unit: _unit.text,
-        price: _read(_price, 'Selling price'),
-        cost: _read(_cost, 'Cost price'),
-        lowStockAt: _read(_lowAt, 'Low stock level'),
+        price: _read(_price, l.sellingPrice),
+        cost: _read(_cost, l.costPrice),
+        lowStockAt: _read(_lowAt, l.lowStockLevel),
         listed: _listed,
         category: _category,
         anime: _anime.text,
@@ -97,13 +100,13 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
       final item = widget.item;
       if (item == null) {
         await repo.createItem(draft,
-            initialQuantity: _read(_quantity, 'Starting quantity'));
+            initialQuantity: _read(_quantity, l.startingQuantity));
       } else {
         await repo.updateItem(item.id, draft);
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -112,9 +115,10 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   @override
   Widget build(BuildContext context) {
     final isNew = widget.item == null;
+    final l = context.l10n;
     const numberKeyboard = TextInputType.numberWithOptions();
     return Scaffold(
-      appBar: AppBar(title: Text(isNew ? 'New item' : 'Edit item')),
+      appBar: AppBar(title: Text(isNew ? l.newItem : l.editItem)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -124,7 +128,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
             controller: _name,
             autofocus: isNew,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(labelText: 'Name'),
+            decoration: InputDecoration(labelText: l.name),
           ),
           const SizedBox(height: 12),
           Row(
@@ -133,8 +137,8 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                 flex: 3,
                 child: TextField(
                   controller: _code,
-                  decoration: const InputDecoration(
-                      labelText: 'Code (optional)', hintText: 'SKU / barcode'),
+                  decoration: InputDecoration(
+                      labelText: l.codeOptional, hintText: l.codeHint),
                 ),
               ),
               const SizedBox(width: 12),
@@ -142,8 +146,8 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                 flex: 2,
                 child: TextField(
                   controller: _unit,
-                  decoration: const InputDecoration(
-                      labelText: 'Unit', hintText: 'pcs, box, kg'),
+                  decoration: InputDecoration(
+                      labelText: l.unit, hintText: l.unitHint),
                 ),
               ),
             ],
@@ -155,8 +159,8 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                 child: TextField(
                   controller: _price,
                   keyboardType: numberKeyboard,
-                  decoration: const InputDecoration(
-                      labelText: 'Selling price', suffixText: 'Ks'),
+                  decoration: InputDecoration(
+                      labelText: l.sellingPrice, suffixText: 'Ks'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -164,8 +168,8 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                 child: TextField(
                   controller: _cost,
                   keyboardType: numberKeyboard,
-                  decoration: const InputDecoration(
-                      labelText: 'Cost price', suffixText: 'Ks'),
+                  decoration: InputDecoration(
+                      labelText: l.costPrice, suffixText: 'Ks'),
                 ),
               ),
             ],
@@ -178,8 +182,8 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                   child: TextField(
                     controller: _quantity,
                     keyboardType: numberKeyboard,
-                    decoration: const InputDecoration(
-                        labelText: 'Starting quantity', hintText: '0'),
+                    decoration: InputDecoration(
+                        labelText: l.startingQuantity, hintText: '0'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -189,17 +193,16 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                   controller: _lowAt,
                   keyboardType: numberKeyboard,
                   decoration:
-                      const InputDecoration(labelText: 'Warn when at or below'),
+                      InputDecoration(labelText: l.warnAtOrBelow),
                 ),
               ),
             ],
           ),
           if (!isNew) ...[
             const SizedBox(height: 12),
-            const Text(
-              'To change the quantity, use In, Out or Count on the item page, '
-              'so the history stays right.',
-              style: TextStyle(color: AppColors.inkMuted, fontSize: 13),
+            Text(
+              l.changeQuantityHelp,
+              style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
             ),
           ],
           const SizedBox(height: 20),
@@ -211,7 +214,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
           const SizedBox(height: 20),
           FilledButton(
             onPressed: _busy || _savingPhoto ? null : _save,
-            child: Text(isNew ? 'Add item' : 'Save'),
+            child: Text(isNew ? l.addItem : l.save),
           ),
         ],
       ),
@@ -263,12 +266,13 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(url.isEmpty ? 'Add a photo' : 'Photo',
+                    Text(
+                        url.isEmpty
+                            ? context.l10n.addAPhoto
+                            : context.l10n.photo,
                         style: const TextStyle(fontWeight: FontWeight.w700)),
-                    const Text(
-                        'Customers see it in the shop. It is made smaller '
-                        'before it is saved.',
-                        style: TextStyle(
+                    Text(context.l10n.photoHelp,
+                        style: const TextStyle(
                             color: AppColors.inkMuted, fontSize: 12.5)),
                     const SizedBox(height: 8),
                     Wrap(
@@ -280,7 +284,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                               : () => _pickPhoto(ImageSource.camera),
                           icon:
                               const Icon(Icons.photo_camera_outlined, size: 18),
-                          label: const Text('Camera'),
+                          label: Text(context.l10n.camera),
                         ),
                         TextButton.icon(
                           onPressed: uploading
@@ -288,14 +292,14 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                               : () => _pickPhoto(ImageSource.gallery),
                           icon: const Icon(Icons.photo_library_outlined,
                               size: 18),
-                          label: const Text('Gallery'),
+                          label: Text(context.l10n.gallery),
                         ),
                         if (url.isNotEmpty && !uploading)
                           TextButton(
                             onPressed: () => _image.clear(),
                             style: TextButton.styleFrom(
                                 foregroundColor: AppColors.dangerInk),
-                            child: const Text('Remove'),
+                            child: Text(context.l10n.remove),
                           ),
                       ],
                     ),
@@ -322,7 +326,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
       });
       _image.text = await photos.save(shopId, picked);
     } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _savingPhoto = false);
     }
@@ -335,6 +339,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
           ref.watch(productsProvider).valueOrNull ?? const [], (p) => p.anime))
         name,
     ];
+    final l = context.l10n;
     return Glass(
       radius: AppRadius.lg,
       shadow: false,
@@ -346,12 +351,9 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
             contentPadding: EdgeInsets.zero,
             value: _listed,
             onChanged: (on) => setState(() => _listed = on),
-            title: const Text('Sell in the app',
-                style: TextStyle(fontWeight: FontWeight.w700)),
-            subtitle: Text(_listed
-                ? 'Customers see it in the shop, with your shop name. '
-                    'Its stock follows this item.'
-                : 'Turn on to show it to customers in the app.'),
+            title: Text(l.sellInApp,
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text(_listed ? l.sellInAppOn : l.sellInAppOff),
           ),
           AnimatedSize(
             duration: const Duration(milliseconds: 250),
@@ -366,10 +368,11 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                       DropdownButtonFormField<String>(
                         value: _category.isEmpty ? null : _category,
                         decoration:
-                            const InputDecoration(labelText: 'Category'),
+                            InputDecoration(labelText: l.category),
                         items: [
                           for (final c in productCategories)
-                            DropdownMenuItem(value: c, child: Text(c)),
+                            DropdownMenuItem(
+                                value: c, child: Text(categoryLabel(l, c))),
                         ],
                         onChanged: (c) => setState(() => _category = c ?? ''),
                       ),
@@ -391,8 +394,8 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                           controller: controller,
                           focusNode: focus,
                           textCapitalization: TextCapitalization.words,
-                          decoration: const InputDecoration(
-                              labelText: 'Anime', hintText: 'One Piece'),
+                          decoration: InputDecoration(
+                              labelText: l.anime, hintText: 'One Piece'),
                         ),
                         optionsViewBuilder: (context, onSelected, options) =>
                             Align(
@@ -427,10 +430,9 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                         maxLines: 5,
                         maxLength: maxTextLength,
                         textCapitalization: TextCapitalization.sentences,
-                        decoration: const InputDecoration(
-                          labelText: 'Description (optional)',
-                          hintText:
-                              'Size, maker, condition, what is in the box',
+                        decoration: InputDecoration(
+                          labelText: l.descriptionOptional,
+                          hintText: l.descriptionHint,
                         ),
                       ),
                     ],

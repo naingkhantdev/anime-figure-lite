@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../logic/subscription.dart';
 import '../../models/shop.dart';
 import '../../providers/providers.dart';
@@ -25,13 +26,14 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
         title: const AppTitle(),
         actions: [
           IconButton(
-            tooltip: 'Sign out',
+            tooltip: l.signOut,
             icon: const Icon(Icons.logout),
             onPressed: () => confirmSignOut(
                 context, ref.read(authRepositoryProvider).signOut),
@@ -64,7 +66,7 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
           return ListView(
             padding: pagePadding(context),
             children: [
-              Text('Shops',
+              Text(l.shops,
                   style: Theme.of(context)
                       .textTheme
                       .headlineSmall
@@ -77,18 +79,18 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
                     children: [
                       Expanded(
                           child: Stat(
-                              label: 'Waiting',
+                              label: l.shopStatusWaiting,
                               value: '${count(ShopStatus.pending)}',
                               color: AppColors.infoInk)),
                       Expanded(
                           child: Stat(
-                              label: 'Active',
+                              label: l.shopStatusActive,
                               value:
                                   '${count(ShopStatus.active) + count(ShopStatus.expiringSoon)}',
                               color: AppColors.successInk)),
                       Expanded(
                           child: Stat(
-                              label: 'Expired',
+                              label: l.shopStatusExpired,
                               value: '${count(ShopStatus.expired)}',
                               color: AppColors.dangerInk)),
                     ],
@@ -97,9 +99,9 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
               ),
               const SizedBox(height: 12),
               TextField(
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.search),
-                  hintText: 'Search name, email or phone',
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  hintText: l.searchShops,
                 ),
                 onChanged: (v) => setState(() => _query = v),
               ),
@@ -108,10 +110,10 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
                 spacing: 8,
                 children: [
                   for (final (label, status) in [
-                    ('All', null),
-                    ('Waiting', ShopStatus.pending),
-                    ('Expiring', ShopStatus.expiringSoon),
-                    ('Expired', ShopStatus.expired),
+                    (l.all, null),
+                    (l.shopStatusWaiting, ShopStatus.pending),
+                    (l.expiring, ShopStatus.expiringSoon),
+                    (l.shopStatusExpired, ShopStatus.expired),
                   ])
                     ChoiceChip(
                       label: Text(label),
@@ -122,10 +124,10 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
               ),
               const SizedBox(height: 8),
               if (visible.isEmpty)
-                const EmptyState(
+                EmptyState(
                   icon: Icons.storefront_outlined,
-                  title: 'No shops here',
-                  message: 'New shops appear when someone signs up in the app.',
+                  title: l.noShopsHere,
+                  message: l.noShopsHereBody,
                 )
               else
                 for (final (i, shop) in visible.indexed) ...[
@@ -149,15 +151,17 @@ class _ShopTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final expires = shop.expiresAt;
+    final l = context.l10n;
     final subtitle = [
       shop.ownerEmail,
       if (shop.phone.isNotEmpty) shop.phone,
       if (expires == null)
-        'Signed up ${shop.createdAt == null ? '' : formatDate(shop.createdAt!)}'
+        l.signedUpOn(
+            shop.createdAt == null ? '' : formatDate(shop.createdAt!))
       else if (expires.isAfter(now))
-        'Until ${formatDate(expires)} · ${daysLeft(expires, now)} days left'
+        l.untilDaysLeft(formatDate(expires), daysLeft(expires, now))
       else
-        'Expired ${formatDate(expires)}',
+        l.expiredOn(formatDate(expires)),
     ].join('\n');
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -204,7 +208,7 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
       Navigator.pop(context);
       messenger.showSnackBar(SnackBar(content: Text(done)));
     } catch (e) {
-      if (mounted) showMessage(context, friendlyError(e));
+      if (mounted) showMessage(context, friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -213,6 +217,7 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final current = widget.shop.expiresAt;
+    final l = context.l10n;
     final picked = await showDatePicker(
       context: context,
       initialDate: current != null && current.isAfter(now)
@@ -220,36 +225,35 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
           : now.add(const Duration(days: 30)),
       firstDate: now,
       lastDate: DateTime(now.year + 10),
-      helpText: 'Shop works until the end of',
+      helpText: l.shopWorksUntil,
     );
     if (picked == null) return;
     // Through the end of the chosen day.
     final end = DateTime(picked.year, picked.month, picked.day, 23, 59);
-    await _set(end, '${widget.shop.name} now runs until ${formatDate(end)}.');
+    await _set(end, l.shopNowRunsUntil(widget.shop.name, formatDate(end)));
   }
 
   Future<void> _stop() async {
+    final l = context.l10n;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Stop ${widget.shop.name} now?'),
-        content: const Text(
-            'The shop becomes read-only straight away. Its data is kept, and '
-            'renewing turns it back on.'),
+        title: Text(l.stopShopQuestion(widget.shop.name)),
+        content: Text(l.stopShopBody),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+              child: Text(l.cancel)),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.dangerInk),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Stop now'),
+            child: Text(l.stopNow),
           ),
         ],
       ),
     );
     if (ok == true) {
-      await _set(DateTime.now(), '${widget.shop.name} has been stopped.');
+      await _set(DateTime.now(), l.shopStopped(widget.shop.name));
     }
   }
 
@@ -258,8 +262,7 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
     final shop = widget.shop;
     final now = DateTime.now();
     final status = shop.statusAt(now);
-    final from =
-        status.canWrite ? 'from ${formatDate(shop.expiresAt!)}' : 'from today';
+    final l = context.l10n;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -282,13 +285,17 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
             const SizedBox(height: 4),
             Text(
               shop.expiresAt == null
-                  ? 'Waiting for you to turn it on.'
-                  : '${status.canWrite ? 'Runs until' : 'Expired on'} '
-                      '${formatDateTime(shop.expiresAt!)}',
+                  ? l.waitingForYou
+                  : status.canWrite
+                      ? l.runsUntil(formatDateTime(shop.expiresAt!))
+                      : l.expiredOn(formatDateTime(shop.expiresAt!)),
               style: const TextStyle(color: AppColors.inkMuted),
             ),
             const SizedBox(height: 20),
-            Text('Add time $from',
+            Text(
+                status.canWrite
+                    ? l.addTimeFrom(formatDate(shop.expiresAt!))
+                    : l.addTimeFromToday,
                 style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Wrap(
@@ -296,10 +303,10 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
               runSpacing: 8,
               children: [
                 for (final (label, months) in [
-                  ('1 month', 1),
-                  ('3 months', 3),
-                  ('6 months', 6),
-                  ('1 year', 12),
+                  (l.addMonths(1), 1),
+                  (l.addMonths(3), 3),
+                  (l.addMonths(6), 6),
+                  (l.addOneYear, 12),
                 ])
                   OutlinedButton(
                     onPressed: _busy
@@ -307,10 +314,12 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
                         : () {
                             final until = extendExpiry(
                                 shop.expiresAt, DateTime.now(), months);
-                            _set(until,
-                                '${shop.name} now runs until ${formatDate(until)}.');
+                            _set(
+                                until,
+                                l.shopNowRunsUntil(
+                                    shop.name, formatDate(until)));
                           },
-                    child: Text('+ $label'),
+                    child: Text(label),
                   ),
               ],
             ),
@@ -318,7 +327,7 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
             FilledButton.icon(
               onPressed: _busy ? null : _pickDate,
               icon: const Icon(Icons.event),
-              label: const Text('Pick an end date'),
+              label: Text(l.pickEndDate),
             ),
             if (status.canWrite) ...[
               const SizedBox(height: 8),
@@ -326,7 +335,7 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
                 style:
                     TextButton.styleFrom(foregroundColor: AppColors.dangerInk),
                 onPressed: _busy ? null : _stop,
-                child: const Text('Stop this shop now'),
+                child: Text(l.stopThisShopNow),
               ),
             ],
           ],

@@ -2,11 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// How the customer gets the order. Stored as its [name] in `delivery_method`.
 enum DeliveryMethod {
-  delivery('Delivery'),
-  pickup('Pick up at shop');
-
-  const DeliveryMethod(this.label);
-  final String label;
+  delivery,
+  pickup;
 
   static DeliveryMethod fromName(String? name) => DeliveryMethod.values
       .firstWhere((m) => m.name == name, orElse: () => DeliveryMethod.delivery);

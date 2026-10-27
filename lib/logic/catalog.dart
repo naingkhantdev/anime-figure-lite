@@ -1,7 +1,8 @@
 import '../models/product.dart';
 
-/// The kinds of figure a product can be. Stored as written; a shop picks one
-/// when it lists an item, and the catalog filters by it.
+/// The kinds of figure a product can be. Stored as written (in English, in
+/// every language); a shop picks one when it lists an item, and the catalog
+/// filters by it. Shown through categoryLabel (l10n/labels.dart).
 const productCategories = [
   'Scale figure',
   'Nendoroid',
@@ -12,15 +13,7 @@ const productCategories = [
   'Other',
 ];
 
-enum CatalogSort {
-  featured('Recommended'),
-  priceLow('Lowest price'),
-  priceHigh('Highest price'),
-  name('Name A to Z');
-
-  const CatalogSort(this.label);
-  final String label;
-}
+enum CatalogSort { featured, priceLow, priceHigh, name }
 
 /// What the customer has asked the catalog to show. Empty strings and null
 /// prices mean "any".

@@ -5,17 +5,15 @@ import '../models/cart_item.dart';
 import '../models/shop_order.dart';
 import 'inventory_repository.dart';
 import '../utils/phone.dart';
+import '../l10n/l10n.dart';
 
 // These must match firestore.rules.
 const maxOrderLines = 20;
 const maxPhoneLength = 20;
 const maxTextLength = 500;
 
-class OrderException implements Exception {
-  OrderException(this.message);
-  final String message;
-  @override
-  String toString() => message;
+class OrderException extends AppException {
+  OrderException(super.message);
 }
 
 class OrderRepository {
@@ -43,19 +41,19 @@ class OrderRepository {
     required String address,
     required String note,
   }) async {
-    if (cart.isEmpty) throw OrderException('Your cart is empty.');
+    if (cart.isEmpty) throw OrderException((l) => l.errCartEmpty);
     if (cart.length > maxOrderLines) {
       throw OrderException(
-          'An order can have at most $maxOrderLines products.');
+          (l) => l.errTooManyOrderLines(maxOrderLines));
     }
     final cleanPhone = normalizePhone(phone);
     if (cleanPhone == null) {
-      throw OrderException('Enter a phone number like 09xxxxxxxxx.');
+      throw OrderException((l) => l.errPhoneFormat);
     }
     final cleanAddress =
         deliveryMethod == DeliveryMethod.delivery ? address.trim() : '';
     if (deliveryMethod == DeliveryMethod.delivery && cleanAddress.isEmpty) {
-      throw OrderException('Enter a delivery address.');
+      throw OrderException((l) => l.errAddressEmpty);
     }
 
     return _db.runTransaction((tx) async {
@@ -67,12 +65,12 @@ class OrderRepository {
             await tx.get(_db.collection('products').doc(item.product.id));
         final data = snap.data();
         if (data == null || data['is_active'] != true) {
-          throw OrderException('${item.product.name} is no longer available.');
+          throw OrderException((l) => l.errProductUnavailable(item.product.name));
         }
         final stock = (data['stock_quantity'] as num?)?.toInt() ?? 0;
         if (stock < item.quantity) {
           throw OrderException(
-              'Only $stock of ${item.product.name} left in stock.');
+              (l) => l.errOnlyLeftOf(stock, item.product.name));
         }
         final price = (data['price'] as num?)?.toInt() ?? 0;
         final shopId = data['shop_id'] as String? ?? '';

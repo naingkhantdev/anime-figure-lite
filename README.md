@@ -106,6 +106,20 @@ The phone shows white with the logo from the first instant (native splash),
 then `lib/ui/widgets/splash_intro.dart` lets the logo settle and the name
 fade in (~1.4 s) while the app loads underneath. A tap skips it.
 
+### Languages
+
+Every word the app shows lives in `lib/l10n/app_en.arb` (English). The app
+follows the phone's language when it has a file for it, else English.
+
+- **Add a language** (Burmese is `my`): copy `app_en.arb` to `app_my.arb`,
+  set `"@@locale": "my"`, translate the values (not the keys, and keep
+  `{placeholders}` as they are), then run `flutter gen-l10n`.
+- **New text in code:** add a key to `app_en.arb`, run `flutter gen-l10n`,
+  and use `context.l10n.yourKey`. Errors from `lib/data` and `lib/logic`
+  carry `(l) => l.yourKey`, so they need no `BuildContext`.
+- Stored values stay English in every language: categories, the `in` /
+  `out` / `adjust` move types, and notes the app writes into History.
+
 ### Changing the logo
 
 The logo is the cat-ear figure on its stand, on pink (source art:

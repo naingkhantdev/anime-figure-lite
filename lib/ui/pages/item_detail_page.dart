@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../logic/stock.dart';
 import '../../models/item.dart';
 import '../../providers/providers.dart';
@@ -26,6 +27,7 @@ class ItemDetailPage extends ConsumerWidget {
     final canWrite = ref.watch(canWriteProvider);
     final itemValue = ref.watch(itemProvider(itemId));
     final item = itemValue.valueOrNull;
+    final l = context.l10n;
 
     void move(MoveType type) {
       if (!canWrite) return explainReadOnly(context);
@@ -46,11 +48,11 @@ class ItemDetailPage extends ConsumerWidget {
           showMessage(
               context,
               item.isActive
-                  ? '${item.name} is hidden.'
-                  : '${item.name} is back.');
+                  ? l.itemHidden(item.name)
+                  : l.itemBack(item.name));
         }
       } catch (e) {
-        if (context.mounted) showMessage(context, friendlyError(e));
+        if (context.mounted) showMessage(context, friendlyError(context, e));
       }
     }
 
@@ -60,7 +62,7 @@ class ItemDetailPage extends ConsumerWidget {
         actions: [
           if (item != null) ...[
             IconButton(
-              tooltip: 'Edit',
+              tooltip: l.edit,
               icon: const Icon(Icons.edit_outlined),
               onPressed: canWrite
                   ? () => Navigator.push(
@@ -74,8 +76,8 @@ class ItemDetailPage extends ConsumerWidget {
                 PopupMenuItem(
                   onTap: toggleHidden,
                   child: Text(item.isActive
-                      ? 'Hide from stock list'
-                      : 'Show in stock list again'),
+                      ? l.hideFromStockList
+                      : l.showInStockListAgain),
                 ),
               ],
             ),
@@ -86,8 +88,8 @@ class ItemDetailPage extends ConsumerWidget {
         value: itemValue,
         data: (item) {
           if (item == null) {
-            return const EmptyState(
-                icon: Icons.help_outline, title: 'This item is gone');
+            return EmptyState(
+                icon: Icons.help_outline, title: l.itemIsGone);
           }
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -101,7 +103,7 @@ class ItemDetailPage extends ConsumerWidget {
                       style: FilledButton.styleFrom(padding: _tight),
                       onPressed: () => move(MoveType.stockIn),
                       icon: const Icon(Icons.south_west),
-                      label: const Text('In'),
+                      label: Text(l.moveInShort),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -111,7 +113,7 @@ class ItemDetailPage extends ConsumerWidget {
                       onPressed:
                           item.isOut ? null : () => move(MoveType.stockOut),
                       icon: const Icon(Icons.north_east),
-                      label: const Text('Out'),
+                      label: Text(l.statOut),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -120,7 +122,7 @@ class ItemDetailPage extends ConsumerWidget {
                       style: OutlinedButton.styleFrom(padding: _tight),
                       onPressed: () => move(MoveType.adjust),
                       icon: const Icon(Icons.tune),
-                      label: const Text('Count'),
+                      label: Text(l.moveCount),
                     ),
                   ),
                 ],
@@ -128,7 +130,7 @@ class ItemDetailPage extends ConsumerWidget {
               const SizedBox(height: 12),
               _DetailsCard(item: item),
               const SizedBox(height: 20),
-              Text('History',
+              Text(l.tabHistory,
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
@@ -137,10 +139,10 @@ class ItemDetailPage extends ConsumerWidget {
               AsyncBody(
                 value: ref.watch(itemMovesProvider(itemId)),
                 data: (moves) => moves.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('No stock movements yet.',
-                            style: TextStyle(color: AppColors.inkMuted)),
+                    ? Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(l.noMovesYet,
+                            style: const TextStyle(color: AppColors.inkMuted)),
                       )
                     : Card(
                         clipBehavior: Clip.antiAlias,
@@ -193,8 +195,8 @@ class _QuantityCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('IN STOCK',
-                      style: TextStyle(
+                  Text(context.l10n.inStock.toUpperCase(),
+                      style: const TextStyle(
                           fontSize: 11,
                           letterSpacing: 0.66,
                           fontWeight: FontWeight.w600,
@@ -222,11 +224,11 @@ class _QuantityCard extends StatelessWidget {
               ),
             ),
             if (!item.isActive)
-              const Pill.info('Hidden')
+              Pill.info(context.l10n.hidden)
             else if (item.isOut)
-              const Pill.danger('Out of stock')
+              Pill.danger(context.l10n.outOfStock)
             else if (item.isLow)
-              const Pill.warn('Low stock'),
+              Pill.warn(context.l10n.lowStock),
           ],
         ),
       ),
@@ -241,13 +243,14 @@ class _DetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final rows = [
-      ('Selling price', formatMmk(item.price)),
-      ('Cost price', formatMmk(item.cost)),
+      (l.sellingPrice, formatMmk(item.price)),
+      (l.costPrice, formatMmk(item.cost)),
       if (item.price > 0 && item.cost > 0)
-        ('Profit each', formatMmk(item.price - item.cost)),
-      ('Low stock at', '${item.lowStockAt}'),
-      if (item.code.isNotEmpty) ('Code', item.code),
+        (l.profitEach, formatMmk(item.price - item.cost)),
+      (l.lowStockAt, '${item.lowStockAt}'),
+      if (item.code.isNotEmpty) (l.code, item.code),
     ];
     return Card(
       child: Padding(

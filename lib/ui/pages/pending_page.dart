@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config.dart';
+import '../../l10n/l10n.dart';
 import '../../models/shop.dart';
 import '../../providers/providers.dart';
 import '../theme.dart';
@@ -38,7 +39,7 @@ class PendingPage extends ConsumerWidget {
                           size: 40, color: AppColors.inkMuted),
                       const SizedBox(height: 12),
                       Text(
-                        '${shop.name} is waiting for approval',
+                        context.l10n.shopWaitingForApproval(shop.name),
                         textAlign: TextAlign.center,
                         style: Theme.of(context)
                             .textTheme
@@ -47,22 +48,23 @@ class PendingPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'The owner of $appName will turn your shop on. This page '
-                        'opens your shop by itself as soon as they do.'
-                        '${supportContact.isEmpty ? '' : '\n\nContact: $supportContact'}',
+                        context.l10n.shopWaitingBody(appName) +
+                            (supportContact.isEmpty
+                                ? ''
+                                : '\n\n${context.l10n.contactLine(supportContact)}'),
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: AppColors.inkMuted),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Account: ${shop.ownerEmail}',
+                        context.l10n.accountLine(shop.ownerEmail),
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: AppColors.inkSubtle),
                       ),
                       const SizedBox(height: 24),
                       OutlinedButton(
                         onPressed: auth.signOut,
-                        child: const Text('Sign out'),
+                        child: Text(context.l10n.signOut),
                       ),
                     ],
                   ),

@@ -2,15 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/shop.dart';
 import '../utils/phone.dart';
+import '../l10n/l10n.dart';
 
 // These must match firestore.rules.
 const maxShopNameLength = 80;
 
-class ShopException implements Exception {
-  ShopException(this.message);
-  final String message;
-  @override
-  String toString() => message;
+class ShopException extends AppException {
+  ShopException(super.message);
 }
 
 /// Shops and the super admin's view of them. A shop's id is its owner's uid,
@@ -74,15 +72,15 @@ class ShopRepository {
 
   Map<String, Object> _validate(String name, String phone) {
     final cleanName = name.trim();
-    if (cleanName.isEmpty) throw ShopException('Enter the shop name.');
+    if (cleanName.isEmpty) throw ShopException((l) => l.errShopNameEmpty);
     if (cleanName.length > maxShopNameLength) {
       throw ShopException(
-          'Keep the shop name under $maxShopNameLength letters.');
+          (l) => l.errShopNameTooLong(maxShopNameLength));
     }
     var cleanPhone = '';
     if (phone.trim().isNotEmpty) {
       cleanPhone = normalizePhone(phone) ??
-          (throw ShopException('Enter a phone number like 09xxxxxxxxx.'));
+          (throw ShopException((l) => l.errPhoneFormat));
     }
     return {'name': cleanName, 'phone': cleanPhone};
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/inventory_repository.dart';
+import '../../l10n/l10n.dart';
 import '../../logic/stock.dart';
 import '../../models/stock_move.dart';
 import '../../providers/providers.dart';
@@ -27,6 +28,7 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return AsyncBody(
       value: ref.watch(recentMovesProvider),
       data: (moves) {
@@ -65,25 +67,25 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Today',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    Text(l.today,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
                             child: Stat(
-                          label: 'In',
+                          label: l.moveInShort,
                           value: '${sumQty(MoveType.stockIn)}',
                         )),
                         Expanded(
                             child: Stat(
-                          label: 'Out',
+                          label: l.statOut,
                           value: '${sumQty(MoveType.stockOut)}',
                         )),
                         Expanded(
                             flex: 2,
                             child:
-                                Stat(label: 'Sales', value: formatMmk(sales))),
+                                Stat(label: l.sales, value: formatMmk(sales))),
                       ],
                     ),
                   ],
@@ -95,10 +97,10 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
               spacing: 8,
               children: [
                 for (final (label, type) in [
-                  ('All', null),
-                  ('In', MoveType.stockIn),
-                  ('Out', MoveType.stockOut),
-                  ('Counts', MoveType.adjust),
+                  (l.all, null),
+                  (l.moveInShort, MoveType.stockIn),
+                  (l.statOut, MoveType.stockOut),
+                  (l.counts, MoveType.adjust),
                 ])
                   ChoiceChip(
                     label: Text(label),
@@ -108,16 +110,16 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
               ],
             ),
             if (groups.isEmpty)
-              const EmptyState(
+              EmptyState(
                 icon: Icons.swap_vert,
-                title: 'No movements yet',
-                message: 'Open an item and tap In, Out or Count.',
+                title: l.noMovementsYet,
+                message: l.noMovementsYetBody,
               ),
             for (final (g, (day, dayMoves)) in groups.indexed) ...[
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
                 child: Text(
-                  isSameDay(day, now) ? 'Today' : formatDate(day),
+                  isSameDay(day, now) ? l.today : formatDate(day),
                   style: const TextStyle(
                       fontWeight: FontWeight.w600, color: AppColors.inkMuted),
                 ),
@@ -146,13 +148,13 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
               ),
             ],
             if (moves.length >= recentMovesLimit)
-              const Padding(
-                padding: EdgeInsets.all(16),
+              Padding(
+                padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Showing the latest $recentMovesLimit. Open an item to see '
-                  'all of its history.',
+                  l.showingLatest(recentMovesLimit),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.inkSubtle, fontSize: 13),
+                  style:
+                      const TextStyle(color: AppColors.inkSubtle, fontSize: 13),
                 ),
               ),
           ],

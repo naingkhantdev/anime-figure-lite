@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../widgets/glass.dart';
 import '../widgets/brand.dart';
@@ -46,13 +47,13 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
           onPressed: () => Navigator.push(
               context, MaterialPageRoute(builder: (_) => const ItemFormPage())),
           icon: const Icon(Icons.add),
-          label: const Text('New item'),
+          label: Text(context.l10n.newItem),
         ),
       3 => FloatingActionButton.extended(
           onPressed: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const CustomerFormPage())),
           icon: const Icon(Icons.person_add_alt),
-          label: const Text('New customer'),
+          label: Text(context.l10n.newCustomer),
         ),
       _ => null,
     };
@@ -117,7 +118,7 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
                   groupAlignment: -0.9,
                   destinations: [
                     for (final (i, (outlined, selected, label))
-                        in _sections.indexed)
+                        in _sections(context.l10n).indexed)
                       NavigationRailDestination(
                         icon: icon(outlined, i),
                         selectedIcon: icon(selected, i),
@@ -139,7 +140,7 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
                 onDestinationSelected: select,
                 destinations: [
                   for (final (i, (outlined, selected, label))
-                      in _sections.indexed)
+                      in _sections(context.l10n).indexed)
                     NavigationDestination(
                       icon: icon(outlined, i),
                       selectedIcon: icon(selected, i),
@@ -153,14 +154,14 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
 }
 
 /// The sections, in tab order: icon, selected icon, label.
-const _sections = [
-  (Icons.inventory_2_outlined, Icons.inventory_2, 'Stock'),
-  (Icons.receipt_long_outlined, Icons.receipt_long, 'Orders'),
-  (Icons.swap_vert, Icons.swap_vert, 'History'),
-  (Icons.people_outline, Icons.people, 'Customers'),
-  (Icons.storefront_outlined, Icons.storefront, 'Shop'),
-];
+List<(IconData, IconData, String)> _sections(AppLocalizations l) => [
+      (Icons.inventory_2_outlined, Icons.inventory_2, l.tabStock),
+      (Icons.receipt_long_outlined, Icons.receipt_long, l.tabOrders),
+      (Icons.swap_vert, Icons.swap_vert, l.tabHistory),
+      (Icons.people_outline, Icons.people, l.tabCustomers),
+      (Icons.storefront_outlined, Icons.storefront, l.tabShop),
+    ];
 
 /// Shown instead of an action when the shop is read-only.
 void explainReadOnly(BuildContext context) =>
-    showMessage(context, 'Your shop is read-only until the owner renews it.');
+    showMessage(context, context.l10n.shopReadOnly);

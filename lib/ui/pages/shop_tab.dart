@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config.dart';
+import '../../l10n/l10n.dart';
 import '../../logic/subscription.dart';
 import '../../models/shop.dart';
 import '../../providers/providers.dart';
@@ -45,7 +46,7 @@ class ShopTab extends ConsumerWidget {
                                   ?.copyWith(fontWeight: FontWeight.w700)),
                         ),
                         IconButton(
-                          tooltip: 'Edit',
+                          tooltip: context.l10n.edit,
                           icon: const Icon(Icons.edit_outlined),
                           onPressed: () => showDialog<void>(
                             context: context,
@@ -73,34 +74,34 @@ class ShopTab extends ConsumerWidget {
                       : AppColors.dangerInk,
                 ),
                 title: Text(status.canWrite
-                    ? 'Active until ${formatDate(shop.expiresAt!)}'
-                    : 'Expired on ${formatDate(shop.expiresAt!)}'),
+                    ? context.l10n.activeUntil(formatDate(shop.expiresAt!))
+                    : context.l10n.expiredOn(formatDate(shop.expiresAt!))),
                 subtitle: Text(
                   status.canWrite
-                      ? '${daysLeft(shop.expiresAt!, now)} days left. '
-                          'Contact the owner to renew.'
-                      : 'Read-only. Contact the owner to renew.',
+                      ? context.l10n
+                          .daysLeftRenew(daysLeft(shop.expiresAt!, now))
+                      : context.l10n.readOnlyRenew,
                 ),
                 trailing: ShopStatusPill(shop: shop, now: now),
               ),
             ),
             if (supportContact.isNotEmpty) ...[
               const SizedBox(height: 8),
-              const Text('Contact: $supportContact',
+              Text(context.l10n.contactLine(supportContact),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.inkMuted)),
+                  style: const TextStyle(color: AppColors.inkMuted)),
             ],
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => confirmSignOut(
                   context, ref.read(authRepositoryProvider).signOut),
               icon: const Icon(Icons.logout),
-              label: const Text('Sign out'),
+              label: Text(context.l10n.signOut),
             ),
             TextButton(
               onPressed: () => showCloseShopDialog(context),
               style: TextButton.styleFrom(foregroundColor: AppColors.dangerInk),
-              child: const Text('Delete my account'),
+              child: Text(context.l10n.deleteMyAccount),
             ),
             const SizedBox(height: 32),
             const Center(child: AppLogo(size: 56)),
@@ -146,7 +147,7 @@ class _EditShopDialogState extends ConsumerState<_EditShopDialog> {
           .updateShop(widget.shop.id, name: _name.text, phone: _phone.text);
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -155,19 +156,20 @@ class _EditShopDialogState extends ConsumerState<_EditShopDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Shop details'),
+      title: Text(context.l10n.shopDetails),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _name,
-            decoration: const InputDecoration(labelText: 'Shop name'),
+            decoration: InputDecoration(labelText: context.l10n.shopName),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _phone,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(labelText: 'Phone (optional)'),
+            decoration:
+                InputDecoration(labelText: context.l10n.phoneOptional),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
@@ -178,9 +180,10 @@ class _EditShopDialogState extends ConsumerState<_EditShopDialog> {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
+            child: Text(context.l10n.cancel)),
         FilledButton(
-            onPressed: _busy ? null : _save, child: const Text('Save')),
+            onPressed: _busy ? null : _save,
+            child: Text(context.l10n.save)),
       ],
     );
   }

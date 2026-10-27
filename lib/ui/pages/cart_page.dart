@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../models/cart_item.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
@@ -29,16 +30,16 @@ class CartPage extends ConsumerWidget {
     final count = cart.fold<int>(0, (sum, i) => sum + i.quantity);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Cart')),
+      appBar: AppBar(title: Text(context.l10n.tabCart)),
       body: cart.isEmpty
           ? EmptyState(
               icon: Icons.shopping_cart_outlined,
-              title: 'Your cart is empty',
-              message: 'Figures you add show up here.',
+              title: context.l10n.cartEmpty,
+              message: context.l10n.cartEmptyBody,
               action: OutlinedButton(
                 onPressed: () => ref.read(customerTabProvider.notifier).state =
                     CustomerTab.shop,
-                child: const Text('Browse figures'),
+                child: Text(context.l10n.browseFigures),
               ),
             )
           : RevealScope(
@@ -48,7 +49,7 @@ class CartPage extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
                     child: Text(
-                      '$count ${count == 1 ? 'item' : 'items'}',
+                      context.l10n.itemCount(count),
                       style: const TextStyle(
                           color: AppColors.inkMuted, fontSize: 13),
                     ),
@@ -77,7 +78,7 @@ class CartPage extends ConsumerWidget {
                       onPressed: () => ref
                           .read(customerTabProvider.notifier)
                           .state = CustomerTab.shop,
-                      child: const Text('Continue shopping'),
+                      child: Text(context.l10n.continueShopping),
                     ),
                   ),
                 ],
@@ -130,30 +131,28 @@ class _Summary extends StatelessWidget {
           ),
         );
 
+    final l = context.l10n;
     return Glass(
       radius: AppRadius.xl,
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Order summary',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          Text(l.orderSummary,
+              style:
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
           const SizedBox(height: 8),
-          row('Figures ($count)', formatMmk(total)),
-          row('Delivery', 'Set by the shop'),
+          row(l.figuresCount(count), formatMmk(total)),
+          row(l.deliveryMethodDelivery, l.setByShop),
           const Divider(height: 20),
-          row('Estimated total', formatMmk(total), strong: true),
+          row(l.estimatedTotal, formatMmk(total), strong: true),
           const SizedBox(height: 6),
           Text(
-            shops > 1
-                ? 'These come from $shops shops, so you will get one order '
-                    'from each. Each shop confirms its price and any '
-                    'delivery fee.'
-                : 'The shop confirms the final price and any delivery fee.',
+            shops > 1 ? l.cartManyShops(shops) : l.cartOneShop,
             style: const TextStyle(fontSize: 12, color: AppColors.inkSubtle),
           ),
           const SizedBox(height: 14),
-          FilledButton(onPressed: onCheckout, child: const Text('Checkout')),
+          FilledButton(onPressed: onCheckout, child: Text(l.checkout)),
         ],
       ),
     );
@@ -195,7 +194,7 @@ class _CartLine extends ConsumerWidget {
                     style: const TextStyle(
                         color: AppColors.accent, fontWeight: FontWeight.w700)),
                 if (item.quantity > 1)
-                  Text('${formatMmk(p.price)} each',
+                  Text(context.l10n.priceEach(formatMmk(p.price)),
                       style: const TextStyle(
                           color: AppColors.inkSubtle, fontSize: 12)),
               ],
@@ -215,7 +214,9 @@ class _CartLine extends ConsumerWidget {
               children: [
                 IconButton(
                   visualDensity: VisualDensity.compact,
-                  tooltip: item.quantity == 1 ? 'Remove' : 'Decrease',
+                  tooltip: item.quantity == 1
+                      ? context.l10n.remove
+                      : context.l10n.decrease,
                   icon: Icon(
                       item.quantity == 1 ? Icons.delete_outline : Icons.remove,
                       size: 20),
@@ -232,7 +233,7 @@ class _CartLine extends ConsumerWidget {
                 ),
                 IconButton(
                   visualDensity: VisualDensity.compact,
-                  tooltip: 'Increase',
+                  tooltip: context.l10n.increase,
                   icon: const Icon(Icons.add, size: 20),
                   onPressed: item.quantity >= p.stockQuantity
                       ? null

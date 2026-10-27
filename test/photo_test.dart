@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:anime_figure_shop_lite/l10n/app_localizations.dart';
 import 'package:anime_figure_shop_lite/providers/providers.dart';
 import 'package:anime_figure_shop_lite/ui/pages/product_list_page.dart';
 
@@ -28,9 +29,13 @@ void main() {
           return _png;
         }),
       ],
-      child: const Directionality(
-        textDirection: TextDirection.ltr,
-        child: ProductImage(url: 'photo:abc123'),
+      child: Localizations(
+        locale: const Locale('en'),
+        delegates: AppLocalizations.localizationsDelegates,
+        child: const Directionality(
+          textDirection: TextDirection.ltr,
+          child: ProductImage(url: 'photo:abc123'),
+        ),
       ),
     ));
     await tester.pump();

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../logic/catalog.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
@@ -24,6 +26,7 @@ class ProductDetailPage extends ConsumerWidget {
         );
     final p = (product == null || product.isEmpty) ? null : product.first;
     final theme = Theme.of(context);
+    final l = context.l10n;
 
     /// Back to the catalog, showing what [change] asks for.
     void browse(CatalogFilter Function(CatalogFilter) change) {
@@ -40,9 +43,9 @@ class ProductDetailPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(),
       body: p == null
-          ? const EmptyState(
+          ? EmptyState(
               icon: Icons.search_off,
-              title: 'This figure is no longer available',
+              title: l.figureGone,
             )
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -79,9 +82,9 @@ class ProductDetailPage extends ConsumerWidget {
                           const SizedBox(width: 12),
                           p.inStock
                               ? (p.stockQuantity <= 3
-                                  ? Pill.warn('Only ${p.stockQuantity} left')
-                                  : Pill.success('${p.stockQuantity} in stock'))
-                              : const Pill.danger('Sold out'),
+                                  ? Pill.warn(l.onlyLeft(p.stockQuantity))
+                                  : Pill.success(l.inStockCount(p.stockQuantity)))
+                              : Pill.danger(l.soldOut),
                         ],
                       ),
                       if (p.category.isNotEmpty || p.anime.isNotEmpty) ...[
@@ -95,7 +98,7 @@ class ProductDetailPage extends ConsumerWidget {
                                 avatar:
                                     const Icon(Icons.movie_outlined, size: 18),
                                 label: Text(p.anime),
-                                tooltip: 'More from ${p.anime}',
+                                tooltip: l.moreFrom(p.anime),
                                 onPressed: () => browse((f) =>
                                     f.cleared().copyWith(anime: p.anime)),
                               ),
@@ -103,8 +106,9 @@ class ProductDetailPage extends ConsumerWidget {
                               ActionChip(
                                 avatar: const Icon(Icons.category_outlined,
                                     size: 18),
-                                label: Text(p.category),
-                                tooltip: 'More ${p.category}s',
+                                label: Text(categoryLabel(l, p.category)),
+                                tooltip: l.moreOfCategory(
+                                    categoryLabel(l, p.category)),
                                 onPressed: () => browse((f) =>
                                     f.cleared().copyWith(category: p.category)),
                               ),
@@ -123,7 +127,7 @@ class ProductDetailPage extends ConsumerWidget {
                           title: Text(sellerName(p),
                               style:
                                   const TextStyle(fontWeight: FontWeight.w600)),
-                          subtitle: const Text('See everything from this shop'),
+                          subtitle: Text(l.seeEverythingFromShop),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => browse((f) =>
                               f.cleared().copyWith(shopId: () => p.shopId)),
@@ -164,7 +168,7 @@ class ProductDetailPage extends ConsumerWidget {
                                   fontWeight: FontWeight.w700, fontSize: 17)),
                           if (inCart > 0)
                             Text(
-                              '$inCart in your cart',
+                              l.inYourCart(inCart),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -175,7 +179,7 @@ class ProductDetailPage extends ConsumerWidget {
                     ),
                     FilledButton.icon(
                       icon: const Icon(Icons.add_shopping_cart, size: 20),
-                      label: const Text('Add to cart'),
+                      label: Text(l.addToCart),
                       onPressed: p.inStock && inCart < p.stockQuantity
                           ? () {
                               ref.read(cartProvider.notifier).add(p);
@@ -188,9 +192,9 @@ class ProductDetailPage extends ConsumerWidget {
                                 ..hideCurrentSnackBar()
                                 ..showSnackBar(
                                   SnackBar(
-                                    content: Text('Added ${p.name}'),
+                                    content: Text(l.addedToCart(p.name)),
                                     action: SnackBarAction(
-                                      label: 'View cart',
+                                      label: l.viewCart,
                                       onPressed: () => showCustomerTab(
                                           navigator, tabs, CustomerTab.cart),
                                     ),

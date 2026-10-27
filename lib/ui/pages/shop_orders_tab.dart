@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../models/shop_order.dart';
 import '../../providers/providers.dart';
 import '../../utils/dates.dart';
@@ -28,6 +30,7 @@ class _ShopOrdersTabState extends ConsumerState<ShopOrdersTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return AsyncBody(
       value: ref.watch(shopOrdersProvider),
       loading: const SkeletonList(header: false, rows: 4),
@@ -49,8 +52,9 @@ class _ShopOrdersTabState extends ConsumerState<ShopOrdersTab> {
               segments: [
                 ButtonSegment(
                     value: _Show.open,
-                    label: Text(waiting > 0 ? 'To do · $waiting' : 'To do')),
-                const ButtonSegment(value: _Show.done, label: Text('Done')),
+                    label: Text(
+                        waiting > 0 ? '${l.toDo} · $waiting' : l.toDo)),
+                ButtonSegment(value: _Show.done, label: Text(l.done)),
               ],
               selected: {_show},
               showSelectedIcon: false,
@@ -61,12 +65,11 @@ class _ShopOrdersTabState extends ConsumerState<ShopOrdersTab> {
               EmptyState(
                 icon: Icons.receipt_long_outlined,
                 title: _show == _Show.open
-                    ? 'No orders to handle'
-                    : 'No finished orders yet',
+                    ? l.noOrdersToHandle
+                    : l.noFinishedOrders,
                 message: _show == _Show.open
-                    ? 'When a customer orders something you sell in the '
-                        'app, it shows up here.'
-                    : 'Shipped and cancelled orders are kept here.',
+                    ? l.noOrdersToHandleBody
+                    : l.noFinishedOrdersBody,
               )
             else
               for (final (i, o) in visible.indexed) ...[
@@ -98,26 +101,26 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
       await step();
       if (mounted) showMessage(context, done);
     } catch (e) {
-      if (mounted) showMessage(context, friendlyError(e));
+      if (mounted) showMessage(context, friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _cancel() async {
+    final cancelled = context.l10n.orderCancelled;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancel this order?'),
-        content: const Text('The customer sees it as cancelled. Stock you '
-            'already took out stays out; record a Stock in to put it back.'),
+        title: Text(context.l10n.cancelOrderQuestion),
+        content: Text(context.l10n.shopCancelOrderBody),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Keep it')),
+              child: Text(context.l10n.keepIt)),
           FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Cancel order')),
+              child: Text(context.l10n.cancelOrder)),
         ],
       ),
     );
@@ -126,7 +129,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
         () => ref
             .read(orderRepositoryProvider)
             .setShopOrderStatus(widget.order.id, 'cancelled'),
-        'Order cancelled.');
+        cancelled);
   }
 
   @override
@@ -134,6 +137,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
     final o = widget.order;
     final canWrite = ref.watch(canWriteProvider);
     final date = o.createdAt?.toLocal();
+    final l = context.l10n;
 
     return Glass(
       radius: AppRadius.lg,
@@ -176,7 +180,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
               icon: o.deliveryMethod == DeliveryMethod.pickup
                   ? Icons.storefront_outlined
                   : Icons.local_shipping_outlined,
-              text: o.deliveryMethod.label),
+              text: o.deliveryMethod.label(l)),
           if (o.phone.isNotEmpty)
             _Detail(icon: Icons.call_outlined, text: o.phone),
           if (o.address.isNotEmpty)
@@ -192,7 +196,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                     onPressed: _busy ? null : _cancel,
                     style: TextButton.styleFrom(
                         foregroundColor: AppColors.dangerInk),
-                    child: const Text('Cancel'),
+                    child: Text(l.cancel),
                   ),
                   const Spacer(),
                   if (o.status == 'pending')
@@ -204,10 +208,9 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                                   .read(orderRepositoryProvider)
                                   .confirmShopOrder(
                                       o, ref.read(inventoryRepositoryProvider)),
-                              'Confirmed. The stock went out and is in '
-                              'History.'),
+                              l.orderConfirmedDone),
                       icon: const Icon(Icons.check),
-                      label: const Text('Confirm'),
+                      label: Text(l.confirm),
                     )
                   else
                     FilledButton.icon(
@@ -217,11 +220,11 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                               () => ref
                                   .read(orderRepositoryProvider)
                                   .setShopOrderStatus(o.id, 'shipped'),
-                              'Marked as on its way.'),
+                              l.markedOnItsWay),
                       icon: const Icon(Icons.local_shipping_outlined),
                       label: Text(o.deliveryMethod == DeliveryMethod.pickup
-                          ? 'Picked up'
-                          : 'Shipped'),
+                          ? l.statusPickedUp
+                          : l.shipped),
                     ),
                 ],
               ),

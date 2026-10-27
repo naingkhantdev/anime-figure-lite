@@ -8,6 +8,7 @@ import '../models/shop.dart';
 import '../models/stock_move.dart';
 import '../utils/phone.dart';
 import 'photo_repository.dart';
+import '../l10n/l10n.dart';
 
 // These must match firestore.rules.
 const maxNameLength = 100;
@@ -20,11 +21,8 @@ const maxAnimeLength = 60;
 /// How many recent movements the History tab loads.
 const recentMovesLimit = 300;
 
-class InventoryException implements Exception {
-  InventoryException(this.message);
-  final String message;
-  @override
-  String toString() => message;
+class InventoryException extends AppException {
+  InventoryException(super.message);
 }
 
 /// The fields of an item a person types in. Quantity is not here: it only
@@ -62,45 +60,45 @@ class ItemDraft {
 
   Map<String, Object> toFields() {
     final cleanName = name.trim();
-    if (cleanName.isEmpty) throw InventoryException('Enter the item name.');
+    if (cleanName.isEmpty) throw InventoryException((l) => l.errItemNameEmpty);
     if (cleanName.length > maxNameLength) {
-      throw InventoryException('Keep the name under $maxNameLength letters.');
+      throw InventoryException((l) => l.errNameTooLong(maxNameLength));
     }
     if (code.trim().length > maxCodeLength) {
-      throw InventoryException('Keep the code under $maxCodeLength letters.');
+      throw InventoryException((l) => l.errCodeTooLong(maxCodeLength));
     }
     if (unit.trim().length > maxUnitLength) {
-      throw InventoryException('Keep the unit under $maxUnitLength letters.');
+      throw InventoryException((l) => l.errUnitTooLong(maxUnitLength));
     }
     if (price > maxPrice || cost > maxPrice) {
-      throw InventoryException('That price is too large.');
+      throw InventoryException((l) => l.errPriceTooLarge);
     }
     if (lowStockAt > maxQuantity) {
-      throw InventoryException('The low stock level is too large.');
+      throw InventoryException((l) => l.errLowStockTooLarge);
     }
     final cleanAnime = anime.trim();
     final cleanDescription = description.trim();
     final cleanImage = imageUrl.trim();
     if (category.isNotEmpty && !productCategories.contains(category)) {
-      throw InventoryException('Pick a category from the list.');
+      throw InventoryException((l) => l.errPickCategory);
     }
     if (cleanAnime.length > maxAnimeLength) {
       throw InventoryException(
-          'Keep the anime name under $maxAnimeLength letters.');
+          (l) => l.errAnimeTooLong(maxAnimeLength));
     }
     if (cleanDescription.length > maxTextLength ||
         cleanImage.length > maxTextLength) {
-      throw InventoryException('Keep it under $maxTextLength letters.');
+      throw InventoryException((l) => l.errTextTooLong(maxTextLength));
     }
     if (cleanImage.isNotEmpty &&
         !cleanImage.startsWith('https://') &&
         !cleanImage.startsWith('assets/') &&
         !cleanImage.startsWith(photoUrlPrefix)) {
-      throw InventoryException('That photo address is not one the app knows.');
+      throw InventoryException((l) => l.errPhotoAddressUnknown);
     }
     if (listed && price <= 0) {
       throw InventoryException(
-          'Set a selling price to sell this item in the app.');
+          (l) => l.errListedNeedsPrice);
     }
     return {
       'name': cleanName,
@@ -149,7 +147,7 @@ class InventoryRepository {
   /// item). firestore.rules checks every value against the item and shop.
   Map<String, Object?> _listing(String itemId, Map<String, Object?> fields) {
     final shop = this.shop();
-    if (shop == null) throw InventoryException('Your shop is still loading.');
+    if (shop == null) throw InventoryException((l) => l.errShopLoading);
     return {
       'name': fields['name'],
       'description': fields['description'] ?? '',
@@ -238,7 +236,7 @@ class InventoryRepository {
       final snap = await tx.get(itemRef);
       final stored = snap.data();
       if (stored == null) {
-        throw InventoryException('This item no longer exists.');
+        throw InventoryException((l) => l.errItemGone);
       }
       final after = {...stored, ...changes};
       tx.update(itemRef, {
@@ -265,16 +263,16 @@ class InventoryRepository {
     String note = '',
   }) async {
     if (unitPrice < 0 || unitPrice > maxPrice) {
-      throw InventoryException('That price is too large.');
+      throw InventoryException((l) => l.errPriceTooLarge);
     }
     if (note.trim().length > maxTextLength) {
-      throw InventoryException('Keep the note under $maxTextLength letters.');
+      throw InventoryException((l) => l.errNoteTooLong(maxTextLength));
     }
     final itemRef = _items.doc(itemId);
     final moveRef = _moves.doc();
     await _db.runTransaction((tx) async {
       final snap = await tx.get(itemRef);
-      if (!snap.exists) throw InventoryException('This item no longer exists.');
+      if (!snap.exists) throw InventoryException((l) => l.errItemGone);
       final item = Item.fromDoc(snap);
       final after = quantityAfter(item.quantity, type, quantity);
       tx.set(
@@ -360,18 +358,18 @@ class InventoryRepository {
     required String note,
   }) async {
     final cleanName = name.trim();
-    if (cleanName.isEmpty) throw InventoryException('Enter the name.');
+    if (cleanName.isEmpty) throw InventoryException((l) => l.errNameEmpty);
     if (cleanName.length > maxNameLength) {
-      throw InventoryException('Keep the name under $maxNameLength letters.');
+      throw InventoryException((l) => l.errNameTooLong(maxNameLength));
     }
     var cleanPhone = '';
     if (phone.trim().isNotEmpty) {
       cleanPhone = normalizePhone(phone) ??
-          (throw InventoryException('Enter a phone number like 09xxxxxxxxx.'));
+          (throw InventoryException((l) => l.errPhoneFormat));
     }
     if (address.trim().length > maxTextLength ||
         note.trim().length > maxTextLength) {
-      throw InventoryException('Keep it under $maxTextLength letters.');
+      throw InventoryException((l) => l.errTextTooLong(maxTextLength));
     }
     final fields = {
       'name': cleanName,

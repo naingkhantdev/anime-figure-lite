@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../models/item.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
@@ -26,6 +27,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return AsyncBody(
       value: ref.watch(itemsProvider),
       data: (allItems) {
@@ -57,16 +59,16 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
                 child: Row(
                   children: [
                     Expanded(
-                        child: Stat(label: 'Items', value: '${active.length}')),
+                        child: Stat(label: l.statItems, value: '${active.length}')),
                     Expanded(
                         child: Stat(
-                            label: 'Low',
+                            label: l.statLow,
                             value: '$low',
                             color:
                                 low > 0 ? AppColors.warnInk : AppColors.ink)),
                     Expanded(
                         child: Stat(
-                            label: 'Out',
+                            label: l.statOut,
                             value: '$out',
                             color:
                                 out > 0 ? AppColors.dangerInk : AppColors.ink)),
@@ -78,16 +80,16 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
                 child: Text(
-                  'Stock worth ${formatMmk(value)} at cost',
+                  l.stockWorthAtCost(formatMmk(value)),
                   style:
                       const TextStyle(color: AppColors.inkMuted, fontSize: 13),
                 ),
               ),
             const SizedBox(height: 12),
             TextField(
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: 'Search name or code',
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                hintText: l.searchNameOrCode,
               ),
               onChanged: (v) => setState(() => _query = v),
             ),
@@ -96,10 +98,10 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
               spacing: 8,
               children: [
                 for (final (label, filter) in [
-                  ('All', _ItemFilter.all),
-                  ('Low stock', _ItemFilter.low),
-                  ('Out of stock', _ItemFilter.out),
-                  ('Hidden', _ItemFilter.hidden),
+                  (l.all, _ItemFilter.all),
+                  (l.lowStock, _ItemFilter.low),
+                  (l.outOfStock, _ItemFilter.out),
+                  (l.hidden, _ItemFilter.hidden),
                 ])
                   ChoiceChip(
                     label: Text(label),
@@ -110,13 +112,13 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
             ),
             const SizedBox(height: 8),
             if (allItems.isEmpty)
-              const EmptyState(
+              EmptyState(
                 icon: Icons.inventory_2_outlined,
-                title: 'No items yet',
-                message: 'Tap "New item" to add the first thing you sell.',
+                title: l.noItemsYet,
+                message: l.noItemsYetBody,
               )
             else if (visible.isEmpty)
-              const EmptyState(icon: Icons.search_off, title: 'Nothing matches')
+              EmptyState(icon: Icons.search_off, title: l.nothingMatches)
             else
               RevealScope(
                 child: Card(
@@ -151,7 +153,7 @@ class _ItemRow extends StatelessWidget {
     final sub = [
       if (item.code.isNotEmpty) item.code,
       formatMmk(item.price),
-      if (item.listed && item.isActive) 'In the app',
+      if (item.listed && item.isActive) context.l10n.inTheApp,
     ].join(' · ');
     return ListTile(
       contentPadding: const EdgeInsets.fromLTRB(12, 4, 16, 4),
@@ -183,12 +185,15 @@ class _QuantityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!item.isActive) return Pill.info('Hidden · ${item.quantity}');
-    if (item.isOut) return const Pill.danger('Out');
+    final l = context.l10n;
+    if (!item.isActive) return Pill.info('${l.hidden} · ${item.quantity}');
+    if (item.isOut) return Pill.danger(l.statOut);
     final text = Text(
       item.quantityLabel,
       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
     );
-    return item.isLow ? Pill.warn('Low · ${item.quantityLabel}') : text;
+    return item.isLow
+        ? Pill.warn('${l.statLow} · ${item.quantityLabel}')
+        : text;
   }
 }

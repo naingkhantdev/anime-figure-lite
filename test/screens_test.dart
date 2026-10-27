@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:anime_figure_shop_lite/l10n/app_localizations.dart';
 import 'package:anime_figure_shop_lite/logic/stock.dart';
 import 'package:anime_figure_shop_lite/models/customer.dart';
 import 'package:anime_figure_shop_lite/models/item.dart';
@@ -149,7 +150,12 @@ Future<void> pumpScreen(WidgetTester tester, Widget screen) async {
   stillMotion(tester);
   await tester.pumpWidget(ProviderScope(
     overrides: overrides,
-    child: MaterialApp(theme: buildAppTheme(), home: screen),
+    child: MaterialApp(
+      theme: buildAppTheme(),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: screen,
+    ),
   ));
   await tester.pumpAndSettle();
 }
@@ -303,7 +309,12 @@ void main() {
     stillMotion(tester);
     await tester.pumpWidget(ProviderScope(
       overrides: overrides,
-      child: MaterialApp(theme: buildAppTheme(), home: const ShopHomePage()),
+      child: MaterialApp(
+        theme: buildAppTheme(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const ShopHomePage(),
+      ),
     ));
     await tester.pumpAndSettle();
     expect(find.byType(NavigationRail), findsOneWidget);

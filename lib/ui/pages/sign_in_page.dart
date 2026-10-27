@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../theme.dart';
 import '../widgets/brand.dart';
@@ -63,7 +64,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       }
       if (mounted) Navigator.of(context).pop(true);
     } on FirebaseAuthException catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -72,14 +73,14 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   Future<void> _resetPassword() async {
     final email = _email.text.trim();
     if (email.isEmpty) {
-      setState(() => _error = 'Type your email first, then tap this again.');
+      setState(() => _error = context.l10n.typeEmailFirst);
       return;
     }
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      if (mounted) showMessage(context, 'Password reset email sent to $email.');
+      if (mounted) showMessage(context, context.l10n.passwordResetSent(email));
     } on FirebaseAuthException catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(context, e));
     }
   }
 
@@ -118,7 +119,9 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                               ],
                             ),
                             child: Text(
-                              _isSignUp ? 'Create an account' : 'Welcome back',
+                              _isSignUp
+                                  ? context.l10n.createAnAccount
+                                  : context.l10n.welcomeBack,
                               key: ValueKey(_isSignUp),
                               style: Theme.of(context)
                                   .textTheme
@@ -129,8 +132,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                           const SizedBox(height: 4),
                           Text(
                             _isSignUp
-                                ? 'One account to shop, track orders and run a shop.'
-                                : 'Sign in to check out and see your orders.',
+                                ? context.l10n.signUpSubtitle
+                                : context.l10n.signInSubtitle,
                             style: const TextStyle(color: AppColors.inkMuted),
                           ),
                           const SizedBox(height: 20),
@@ -139,8 +142,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                             keyboardType: TextInputType.emailAddress,
                             autofillHints: const [AutofillHints.email],
                             textInputAction: TextInputAction.next,
-                            decoration:
-                                const InputDecoration(labelText: 'Email'),
+                            decoration: InputDecoration(
+                                labelText: context.l10n.email),
                           ),
                           const SizedBox(height: 12),
                           TextField(
@@ -152,11 +155,11 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                   : AutofillHints.password
                             ],
                             decoration: InputDecoration(
-                              labelText: 'Password',
+                              labelText: context.l10n.password,
                               suffixIcon: IconButton(
                                 tooltip: _showPassword
-                                    ? 'Hide password'
-                                    : 'Show password',
+                                    ? context.l10n.hidePassword
+                                    : context.l10n.showPassword,
                                 icon: Icon(_showPassword
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined),
@@ -181,8 +184,9 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                     child: CircularProgressIndicator(
                                         strokeWidth: 2, color: Colors.white),
                                   )
-                                : Text(
-                                    _isSignUp ? 'Create account' : 'Sign in'),
+                                : Text(_isSignUp
+                                    ? context.l10n.createAccount
+                                    : context.l10n.signIn),
                           ),
                           const SizedBox(height: 4),
                           TextButton(
@@ -193,13 +197,13 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                       _error = null;
                                     }),
                             child: Text(_isSignUp
-                                ? 'Already have an account? Sign in'
-                                : 'New here? Create an account'),
+                                ? context.l10n.haveAccountSignIn
+                                : context.l10n.newHereCreateAccount),
                           ),
                           if (!_isSignUp)
                             TextButton(
                               onPressed: _busy ? null : _resetPassword,
-                              child: const Text('Forgot password?'),
+                              child: Text(context.l10n.forgotPassword),
                             ),
                         ],
                       ),

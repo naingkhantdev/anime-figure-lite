@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:anime_figure_shop_lite/l10n/app_localizations.dart';
 import 'package:anime_figure_shop_lite/ui/pages/sign_in_page.dart';
 import 'package:anime_figure_shop_lite/ui/theme.dart';
 
 void main() {
   testWidgets('the eye icon shows and hides the password', (tester) async {
     await tester.pumpWidget(ProviderScope(
-      child: MaterialApp(theme: buildAppTheme(), home: const SignInPage()),
+      child: MaterialApp(
+        theme: buildAppTheme(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const SignInPage(),
+      ),
     ));
     await tester.pump();
 

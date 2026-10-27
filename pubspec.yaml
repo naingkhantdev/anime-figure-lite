@@ -30,7 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  # Translations: the app's text lives in lib/l10n/app_*.arb (see l10n.yaml).
+  flutter_localizations:
+    sdk: flutter
+  intl: any
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -69,6 +72,8 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+  # Builds lib/l10n/app_localizations*.dart from the .arb files.
+  generate: true
 
   # The logo, transparent PNG, square. Replace this one file to change the
   # logo in the app (lib/ui/widgets/brand.dart). The launcher icon and the

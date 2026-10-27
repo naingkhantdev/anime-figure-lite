@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../theme.dart';
 import '../widgets/brand.dart';
@@ -45,7 +46,7 @@ class _CreateShopPageState extends ConsumerState<CreateShopPage> {
       // RoleGate underneath has already switched to the waiting screen.
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -62,35 +63,35 @@ class _CreateShopPageState extends ConsumerState<CreateShopPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const BrandHeader(tagline: 'One last step'),
+            BrandHeader(tagline: context.l10n.oneLastStep),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Name your shop',
+                  Text(context.l10n.nameYourShop,
                       style: Theme.of(context)
                           .textTheme
                           .titleLarge
                           ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
-                  const Text(
-                    'You can change these later. The shop opens once the owner '
-                    'approves it.',
-                    style: TextStyle(color: AppColors.inkMuted),
+                  Text(
+                    context.l10n.nameYourShopHelp,
+                    style: const TextStyle(color: AppColors.inkMuted),
                   ),
                   const SizedBox(height: 20),
                   TextField(
                     controller: _name,
                     textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(labelText: 'Shop name'),
+                    decoration: InputDecoration(labelText: context.l10n.shopName),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _phone,
                     keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                        labelText: 'Phone (optional)', hintText: '09xxxxxxxxx'),
+                    decoration: InputDecoration(
+                        labelText: context.l10n.phoneOptional,
+                        hintText: '09xxxxxxxxx'),
                     onSubmitted: (_) => _busy ? null : _submit(),
                   ),
                   if (_error != null) ...[
@@ -101,7 +102,7 @@ class _CreateShopPageState extends ConsumerState<CreateShopPage> {
                   const SizedBox(height: 20),
                   FilledButton(
                     onPressed: _busy ? null : _submit,
-                    child: const Text('Create shop'),
+                    child: Text(context.l10n.createShop),
                   ),
                 ],
               ),

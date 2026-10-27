@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../models/shop_order.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
@@ -18,13 +20,13 @@ class OrdersPage extends ConsumerWidget {
     final orders = ref.watch(myOrdersProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My orders')),
+      appBar: AppBar(title: Text(context.l10n.myOrders)),
       body: orders.when(
         data: (list) => list.isEmpty
-            ? const EmptyState(
+            ? EmptyState(
                 icon: Icons.receipt_long_outlined,
-                title: 'No orders yet',
-                message: 'When you check out, your order shows up here.',
+                title: context.l10n.noOrdersYet,
+                message: context.l10n.noOrdersYetBody,
               )
             : RevealScope(
                 child: ListView.separated(
@@ -73,8 +75,10 @@ class OrdersPage extends ConsumerWidget {
                                     overflow: TextOverflow.ellipsis),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '$itemCount ${itemCount == 1 ? 'item' : 'items'}'
-                                  '${date == null ? '' : ' · ${_formatDate(date)}'}',
+                                  context.l10n.itemCount(itemCount) +
+                                      (date == null
+                                          ? ''
+                                          : ' · ${_formatDate(date)}'),
                                   style: const TextStyle(
                                       color: AppColors.inkMuted, fontSize: 13),
                                 ),
@@ -90,8 +94,8 @@ class OrdersPage extends ConsumerWidget {
         loading: () => const SkeletonList(header: false, rows: 4),
         error: (e, _) => EmptyState(
           icon: Icons.cloud_off_outlined,
-          title: 'Could not load your orders',
-          message: friendlyError(e),
+          title: context.l10n.couldNotLoadOrders,
+          message: friendlyError(context, e),
         ),
       ),
     );
@@ -109,13 +113,17 @@ class OrderStatusPill extends StatelessWidget {
   final bool pickup;
 
   @override
-  Widget build(BuildContext context) => switch (status) {
-        'pending' => const Pill.info('Waiting for shop'),
-        'confirmed' => const Pill.success('Confirmed'),
-        'shipped' => Pill.success(pickup ? 'Picked up' : 'On its way'),
-        'cancelled' => const Pill.danger('Cancelled'),
-        _ => Pill.info(status),
-      };
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return switch (status) {
+      'pending' => Pill.info(l.statusWaitingForShop),
+      'confirmed' => Pill.success(l.statusConfirmed),
+      'shipped' =>
+        Pill.success(pickup ? l.statusPickedUp : l.statusOnItsWay),
+      'cancelled' => Pill.danger(l.statusCancelled),
+      _ => Pill.info(status),
+    };
+  }
 }
 
 String _formatDate(DateTime d) {
@@ -139,15 +147,15 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Cancel this order?'),
+        title: Text(context.l10n.cancelOrderQuestion),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Keep order'),
+            child: Text(context.l10n.keepOrder),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Cancel order'),
+            child: Text(context.l10n.cancelOrder),
           ),
         ],
       ),
@@ -157,14 +165,15 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
     setState(() => _cancelling = true);
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final l = context.l10n;
     try {
       await ref.read(orderRepositoryProvider).cancelOrder(widget.order.id);
       navigator.pop();
-      messenger.showSnackBar(const SnackBar(content: Text('Order cancelled.')));
+      messenger.showSnackBar(SnackBar(content: Text(l.orderCancelled)));
     } catch (e) {
       // Most likely the shop confirmed it in the meantime.
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not cancel this order: $e')),
+        SnackBar(content: Text(l.couldNotCancelOrder('$e'))),
       );
       if (mounted) setState(() => _cancelling = false);
     }
@@ -208,11 +217,12 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
                 ),
               ),
             const Divider(height: 24),
-            Text('${order.deliveryMethod.label} · ${order.phone}'),
+            Text('${order.deliveryMethod.label(context.l10n)} · ${order.phone}'),
             if (order.address.isNotEmpty) Text(order.address),
             if (order.note.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Text('Note: ${order.note}', style: theme.textTheme.bodySmall),
+              Text(context.l10n.noteLine(order.note),
+                  style: theme.textTheme.bodySmall),
             ],
             if (order.canCancel) ...[
               const SizedBox(height: 16),
@@ -220,7 +230,7 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: _cancelling ? null : _cancel,
-                  child: const Text('Cancel order'),
+                  child: Text(context.l10n.cancelOrder),
                 ),
               ),
             ],

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import '../l10n/l10n.dart';
 
 /// Biggest side of a photo, in pixels, and its JPEG quality. A phone photo
 /// (often 4000px, 3–5 MB) comes out around 60–150 KB: sharp on a phone
@@ -16,11 +17,8 @@ const maxPhotoBytes = 400 * 1024;
 /// `photo:{id}` for `photos/{id}`.
 const photoUrlPrefix = 'photo:';
 
-class PhotoException implements Exception {
-  PhotoException(this.message);
-  final String message;
-  @override
-  String toString() => message;
+class PhotoException extends AppException {
+  PhotoException(super.message);
 }
 
 /// Photos of shops' items, kept in Firestore because Firebase Storage needs
@@ -51,8 +49,7 @@ class PhotoRepository {
   Future<String> save(String shopId, XFile photo) async {
     final bytes = await photo.readAsBytes();
     if (bytes.length > maxPhotoBytes) {
-      throw PhotoException('That photo is still too big after shrinking. '
-          'Try another one.');
+      throw PhotoException((l) => l.errPhotoTooBig);
     }
     final ref = _photos.doc();
     await ref.set({

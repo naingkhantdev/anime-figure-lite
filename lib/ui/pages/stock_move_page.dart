@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../logic/stock.dart';
 import '../../models/customer.dart';
 import '../../models/item.dart';
@@ -70,15 +72,16 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
   }
 
   Future<void> _save() async {
+    final l = context.l10n;
     final quantity = parseWholeNumber(_quantity.text);
     final price =
         _price.text.trim().isEmpty ? 0 : parseWholeNumber(_price.text);
     if (quantity == null) {
-      setState(() => _error = 'Quantity must be a whole number.');
+      setState(() => _error = l.errQuantityWhole);
       return;
     }
     if (price == null) {
-      setState(() => _error = 'Price must be a whole number of kyats.');
+      setState(() => _error = l.errPriceWhole);
       return;
     }
     setState(() {
@@ -98,9 +101,9 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
       messenger.showSnackBar(SnackBar(
-          content: Text('${_type.label} saved for ${widget.item.name}.')));
+          content: Text(l.moveSaved(_type.label(l), widget.item.name))));
     } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -113,15 +116,16 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
     final quantity = parseWholeNumber(_quantity.text);
     final price =
         _price.text.trim().isEmpty ? 0 : parseWholeNumber(_price.text) ?? 0;
+    final l = context.l10n;
 
     String preview;
     var previewOk = true;
     try {
-      if (quantity == null) throw StockException('Enter a whole number.');
+      if (quantity == null) throw StockException((l) => l.errEnterWholeNumber);
       final after = quantityAfter(item.quantity, _type, quantity);
       preview = '${item.quantity} → $after';
     } on StockException catch (e) {
-      preview = e.message;
+      preview = e.message(l);
       previewOk = false;
     }
 
@@ -132,19 +136,19 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
         children: [
           SegmentedButton<MoveType>(
             showSelectedIcon: false,
-            segments: const [
+            segments: [
               ButtonSegment(
                   value: MoveType.stockIn,
-                  label: Text('In'),
-                  icon: Icon(Icons.south_west)),
+                  label: Text(l.moveInShort),
+                  icon: const Icon(Icons.south_west)),
               ButtonSegment(
                   value: MoveType.stockOut,
-                  label: Text('Out'),
-                  icon: Icon(Icons.north_east)),
+                  label: Text(l.statOut),
+                  icon: const Icon(Icons.north_east)),
               ButtonSegment(
                   value: MoveType.adjust,
-                  label: Text('Count'),
-                  icon: Icon(Icons.tune)),
+                  label: Text(l.moveCount),
+                  icon: const Icon(Icons.tune)),
             ],
             selected: {_type},
             onSelectionChanged: (s) => _setType(s.first),
@@ -152,10 +156,9 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
           const SizedBox(height: 8),
           Text(
             switch (_type) {
-              MoveType.stockIn => 'New stock arrived.',
-              MoveType.stockOut => 'Sold or taken out.',
-              MoveType.adjust =>
-                'You counted the shelf. Enter how many are really there.',
+              MoveType.stockIn => l.moveInHelp,
+              MoveType.stockOut => l.moveOutHelp,
+              MoveType.adjust => l.moveCountHelp,
             },
             style: const TextStyle(color: AppColors.inkMuted),
           ),
@@ -176,7 +179,7 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
                       fontSize: 28, fontWeight: FontWeight.w700),
                   decoration: InputDecoration(
                     labelText:
-                        _type == MoveType.adjust ? 'Counted' : 'Quantity',
+                        _type == MoveType.adjust ? l.counted : l.quantity,
                     suffixText: item.unit,
                   ),
                   onChanged: (_) => setState(() {}),
@@ -206,11 +209,11 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
               keyboardType: const TextInputType.numberWithOptions(),
               decoration: InputDecoration(
                 labelText: _type == MoveType.stockIn
-                    ? 'Cost each'
-                    : 'Selling price each',
+                    ? l.costEach
+                    : l.sellingPriceEach,
                 suffixText: 'Ks',
                 helperText: quantity != null && quantity > 0 && price > 0
-                    ? 'Total ${formatMmk(price * quantity)}'
+                    ? l.totalLine(formatMmk(price * quantity))
                     : null,
               ),
               onChanged: (_) => setState(() {}),
@@ -226,7 +229,7 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
           const SizedBox(height: 12),
           TextField(
             controller: _note,
-            decoration: const InputDecoration(labelText: 'Note (optional)'),
+            decoration: InputDecoration(labelText: l.noteOptional),
             maxLines: 2,
           ),
           if (_error != null) ...[
@@ -236,7 +239,11 @@ class _StockMovePageState extends ConsumerState<StockMovePage> {
           const SizedBox(height: 20),
           FilledButton(
             onPressed: _busy || !previewOk ? null : _save,
-            child: Text('Save ${_type.label.toLowerCase()}'),
+            child: Text(switch (_type) {
+              MoveType.stockIn => l.saveStockIn,
+              MoveType.stockOut => l.saveStockOut,
+              MoveType.adjust => l.saveCount,
+            }),
           ),
         ],
       ),
@@ -256,9 +263,11 @@ class _CustomerPicker extends ConsumerWidget {
     return DropdownButtonFormField<String>(
       value: value?.id ?? '',
       isExpanded: true,
-      decoration: const InputDecoration(labelText: 'Customer (optional)'),
+      decoration:
+          InputDecoration(labelText: context.l10n.customerOptional),
       items: [
-        const DropdownMenuItem(value: '', child: Text('Walk-in customer')),
+        DropdownMenuItem(
+            value: '', child: Text(context.l10n.walkInCustomer)),
         for (final c in customers)
           DropdownMenuItem(
             value: c.id,
