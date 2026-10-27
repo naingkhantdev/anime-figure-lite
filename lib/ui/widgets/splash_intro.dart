@@ -154,16 +154,21 @@ class _SplashIntroState extends ConsumerState<SplashIntro>
       fit: StackFit.expand,
       children: [
         widget.child,
+        // On the way out it grows a little as it fades, as if the app
+        // came forward through it.
         FadeTransition(
           opacity: ReverseAnimation(reveal),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _leave,
-            child: AnnotatedRegion<SystemUiOverlayStyle>(
-              value: SystemUiOverlayStyle.light,
-              child: Semantics(
-                label: appName,
-                child: _IntroFrame(intro: _intro, combo: _combo),
+          child: ScaleTransition(
+            scale: Tween(begin: 1.0, end: 1.08).animate(reveal),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _leave,
+              child: AnnotatedRegion<SystemUiOverlayStyle>(
+                value: SystemUiOverlayStyle.light,
+                child: Semantics(
+                  label: appName,
+                  child: _IntroFrame(intro: _intro, combo: _combo),
+                ),
               ),
             ),
           ),
@@ -195,18 +200,25 @@ class _Combo {
 
   Duration get length => Duration(milliseconds: comboMs + _settle);
 
-  /// Where the combo is at [ms] into the intro: which pose shows, and how
-  /// far through its strike (null outside strikes).
-  (String pose, double? strike) at(int ms) {
-    if (ms < _hold) return (poses.last, null);
+  /// Where the combo is at [ms] into the intro: the pose striking, the one
+  /// before it (which it blends out of), and how far through its strike
+  /// (null outside strikes).
+  (String pose, String before, double? strike) at(int ms) {
+    final last = poses.last;
+    if (ms < _hold) return (last, last, null);
     final i = (ms - _hold) ~/ strikeMs;
-    if (i >= strikes) return (poses.last, null);
+    if (i >= strikes) return (last, last, null);
+    final single = poses.length == 1;
     return (
-      poses.length == 1 ? poses.last : poses[i],
+      single ? last : poses[i],
+      single || i == 0 ? last : poses[i - 1],
       ((ms - _hold) % strikeMs) / strikeMs,
     );
   }
 }
+
+/// How long a new pose takes to blend in, as a share of its strike.
+const _blend = 0.2;
 
 /// The fighter's place in one strike, [u] from 0 to 1: a wind-up back, a
 /// dash forward, then a recovery to the middle. [impact] is how far past
@@ -215,24 +227,24 @@ class _Combo {
   double lerp(double a, double b, double t) => a + (b - a) * t;
   const windUp = 0.22, hit = 0.42;
   if (u < windUp) {
-    final w = Curves.easeOut.transform(u / windUp);
-    return (x: -16 * w, scale: 1 - 0.06 * w, turn: -0.05 * w, impact: null);
+    final w = Curves.easeInOutSine.transform(u / windUp);
+    return (x: -14 * w, scale: 1 - 0.05 * w, turn: -0.045 * w, impact: null);
   }
   if (u < hit) {
-    final d = Curves.easeIn.transform((u - windUp) / (hit - windUp));
+    final d = Curves.easeInCubic.transform((u - windUp) / (hit - windUp));
     return (
-      x: lerp(-16, 30, d),
-      scale: lerp(0.94, 1.16, d),
-      turn: lerp(-0.05, 0.04, d),
+      x: lerp(-14, 28, d),
+      scale: lerp(0.95, 1.14, d),
+      turn: lerp(-0.045, 0.035, d),
       impact: null,
     );
   }
   final p = (u - hit) / (1 - hit);
-  final r = Curves.easeOutCubic.transform(p);
+  final r = Curves.easeOutQuart.transform(p);
   return (
-    x: lerp(30, 0, r),
-    scale: lerp(1.16, 1, r),
-    turn: lerp(0.04, 0, r),
+    x: lerp(28, 0, r),
+    scale: lerp(1.14, 1, r),
+    turn: lerp(0.035, 0, r),
     impact: p,
   );
 }
@@ -259,40 +271,48 @@ class _IntroFrame extends StatelessWidget {
         animation: intro,
         builder: (context, _) {
           final total = intro.duration?.inMilliseconds ?? 1;
-          final ms = (intro.value * total).round();
-          final (pose, strike) = combo.at(ms);
-          // After the combo: lift into place, then the name.
+          final ms = intro.value * total;
+          final (pose, before, strike) = combo.at(ms.round());
+
+          // After the combo: lift into place with a soft bounce, then the
+          // name.
           final settle =
               ((ms - combo.comboMs) / _Combo._settle).clamp(0.0, 1.0);
           final lift = Curves.easeInOutCubic.transform(settle);
+          final land = math.sin(math.pi * Curves.easeOut.transform(settle));
           final name = Curves.easeOutCubic
               .transform(((settle - 0.3) / 0.7).clamp(0.0, 1.0));
 
-          final impact = strike == null ? null : _strike(strike).impact;
-          final flash = impact == null ? 0.0 : (1 - impact) * (1 - impact);
-          // The whole picture shakes for a moment on each hit.
+          final at = strike == null ? null : _strike(strike);
+          final impact = at?.impact;
+          // Strong at the hit, gone by the end of the strike.
+          final hit = impact == null ? 0.0 : math.pow(1 - impact, 2.2) * 1.0;
+          // A brief, low shake that dies away smoothly.
           final shake = impact == null
               ? 0.0
-              : math.sin(impact * math.pi * 9) * 4 * (1 - impact);
-          // After-images trail the dash and fade soon after the hit.
+              : math.sin(impact * math.pi * 6) * 3 * math.pow(1 - impact, 2);
+          // After-images and speed lines: the dash and just after the hit.
           final trail = strike == null || strike < 0.2 || strike > 0.62
               ? 0.0
-              : 1 - ((strike - 0.2) / 0.42 - 0.5).abs() * 2;
+              : math.sin(math.pi * (strike - 0.2) / 0.42);
+          // The new pose blends in over the start of its strike.
+          final blend = strike == null
+              ? 1.0
+              : Curves.easeOut.transform((strike / _blend).clamp(0.0, 1.0));
 
-          Widget fighter(double opacity, {double lag = 0}) {
-            final at =
+          Widget fighter(String image, double opacity, {double lag = 0}) {
+            final p =
                 strike == null ? null : _strike((strike - lag).clamp(0.0, 1.0));
-            final scale = at?.scale ?? 1;
             return Opacity(
-              opacity: opacity,
+              opacity: opacity.clamp(0.0, 1.0),
               child: Transform.translate(
-                offset: Offset(at?.x ?? 0, 0),
+                offset: Offset(p?.x ?? 0, 0),
                 child: Transform.rotate(
-                  angle: at?.turn ?? 0,
+                  angle: p?.turn ?? 0,
                   child: Transform.scale(
-                    scale: scale,
+                    scale: (p?.scale ?? 1) * (1 + 0.04 * land),
                     child: Image.asset(
-                      pose,
+                      image,
                       width: splashLogoSize,
                       height: splashLogoSize,
                       gaplessPlayback: true,
@@ -304,46 +324,61 @@ class _IntroFrame extends StatelessWidget {
             );
           }
 
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Transform.translate(
-                  // Starts _below/2 lower: exactly the screen centre.
-                  offset: Offset(shake, (1 - lift) * _below / 2 + shake / 2),
-                  child: SizedBox.square(
-                    dimension: splashLogoSize,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      alignment: Alignment.center,
-                      children: [
-                        if (flash > 0.01)
-                          _Glow(strength: flash, spread: impact!),
-                        if (impact != null && impact < 1)
-                          _Shockwave(progress: impact),
-                        if (trail > 0.01) ...[
-                          fighter(0.12 * trail, lag: 0.15),
-                          fighter(0.22 * trail, lag: 0.1),
-                          fighter(0.35 * trail, lag: 0.05),
-                        ],
-                        fighter(1),
-                      ],
-                    ),
-                  ),
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              CustomPaint(
+                painter: _Atmosphere(
+                  ms: ms,
+                  hit: hit,
+                  landing: land,
+                  trail: trail,
+                  dashX: at?.x ?? 0,
+                  impact: impact,
+                  lift: (1 - lift) * _below / 2 - _below / 2,
                 ),
-                const SizedBox(height: _gap),
-                SizedBox(
-                  height: _nameHeight,
-                  child: Opacity(
-                    opacity: name,
-                    child: Transform.translate(
-                      offset: Offset(0, 6 * (1 - name)),
-                      child: const Wordmark(size: 13, color: Colors.white),
+              ),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Transform.translate(
+                      // Starts _below/2 lower: exactly the screen centre.
+                      offset:
+                          Offset(shake, (1 - lift) * _below / 2 + shake / 2),
+                      child: SizedBox.square(
+                        dimension: splashLogoSize,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.center,
+                          children: [
+                            if (trail > 0.01) ...[
+                              fighter(pose, 0.1 * trail, lag: 0.16),
+                              fighter(pose, 0.18 * trail, lag: 0.11),
+                              fighter(pose, 0.3 * trail, lag: 0.06),
+                            ],
+                            if (blend < 1) fighter(before, 1 - blend),
+                            fighter(pose, blend),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: _gap),
+                    SizedBox(
+                      height: _nameHeight,
+                      child: Opacity(
+                        opacity: name,
+                        child: Transform.translate(
+                          offset: Offset(0, 6 * (1 - name)),
+                          child: const Wordmark(
+                              size: 13, color: Colors.white, shine: true),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
@@ -351,53 +386,153 @@ class _IntroFrame extends StatelessWidget {
   }
 }
 
-/// The red light thrown off by a hit, fading as it spreads.
-class _Glow extends StatelessWidget {
-  const _Glow({required this.strength, required this.spread});
+/// Everything around the fighter, in one paint: red embers drifting up the
+/// screen, a glow on the ground under him, and on each strike speed lines,
+/// a flash of red light, a shockwave ring and a burst of sparks.
+class _Atmosphere extends CustomPainter {
+  _Atmosphere({
+    required this.ms,
+    required this.hit,
+    required this.landing,
+    required this.trail,
+    required this.dashX,
+    required this.impact,
+    required this.lift,
+  });
 
-  final double strength;
-  final double spread;
+  final double ms;
+
+  /// 1 at a hit, fading to 0.
+  final double hit;
+
+  /// 0 to 1 and back as the fighter lands at the end.
+  final double landing;
+
+  /// How strong the speed lines are.
+  final double trail;
+
+  /// The fighter's sideways place in the dash.
+  final double dashX;
+
+  /// How far past the latest hit it is, null before one.
+  final double? impact;
+
+  /// How far above the screen centre the fighter is drawn.
+  final double lift;
+
+  static const _embers = 26;
+  static final _seeds = List.generate(_embers * 4, (i) {
+    // A fixed, even scatter, the same on every frame and every launch.
+    final x = math.sin(i * 12.9898 + 78.233) * 43758.5453;
+    return x - x.floorToDouble();
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return Transform.scale(
-      scale: 1.5 + 0.7 * spread,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(colors: [
-            AppColors.splashNeon.withOpacity(0.8 * strength),
-            AppColors.splashNeon.withOpacity(0),
-          ]),
-        ),
-        child: const SizedBox.square(dimension: splashLogoSize),
-      ),
+  void paint(Canvas canvas, Size size) {
+    final centre = size.center(Offset(0, lift));
+    const neon = AppColors.splashNeon;
+    final fadeIn = (ms / 300).clamp(0.0, 1.0);
+
+    // Embers: each rises at its own pace, sways, and flickers.
+    final ember = Paint()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    for (var i = 0; i < _embers; i++) {
+      final sx = _seeds[i * 4], speed = _seeds[i * 4 + 1];
+      final r = 0.8 + _seeds[i * 4 + 2] * 1.8, phase = _seeds[i * 4 + 3];
+      final travel = (phase + ms / 1000 * (0.12 + speed * 0.22)) % 1.0;
+      final y = size.height * (1.05 - travel * 1.1);
+      final x = size.width * sx + math.sin(travel * 6 + i) * 10;
+      final flicker = 0.5 + 0.5 * math.sin(ms / 140 + i * 1.7);
+      final edgeFade = math.sin(math.pi * travel);
+      ember.color =
+          neon.withOpacity(0.55 * fadeIn * edgeFade * (0.4 + 0.6 * flicker));
+      canvas.drawCircle(Offset(x, y), r, ember);
+    }
+
+    // Ground glow under the fighter, brighter on each hit and the landing.
+    final ground = centre + const Offset(0, splashLogoSize * 0.46);
+    final glowStrength = 0.22 + 0.35 * hit + 0.25 * landing;
+    canvas.drawOval(
+      Rect.fromCenter(
+          center: ground,
+          width: splashLogoSize * (1.1 + 0.3 * hit),
+          height: splashLogoSize * 0.18),
+      Paint()
+        ..shader = RadialGradient(colors: [
+          neon.withOpacity(glowStrength.clamp(0.0, 1.0)),
+          neon.withOpacity(0),
+        ]).createShader(Rect.fromCenter(
+            center: ground,
+            width: splashLogoSize * 1.4,
+            height: splashLogoSize * 0.3))
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
     );
+
+    // The flash of a hit, and the soft pulse of the landing.
+    final flash = math.max(hit, 0.6 * landing);
+    if (flash > 0.01) {
+      final radius = splashLogoSize * (0.8 + 0.5 * (impact ?? 0.5));
+      canvas.drawCircle(
+        centre,
+        radius,
+        Paint()
+          ..shader = RadialGradient(colors: [
+            neon.withOpacity(0.7 * flash),
+            neon.withOpacity(0),
+          ]).createShader(Rect.fromCircle(center: centre, radius: radius)),
+      );
+    }
+
+    // Speed lines streaming behind the dash.
+    if (trail > 0.01) {
+      final line = Paint()
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 2;
+      for (var i = 0; i < 7; i++) {
+        final dy = (i - 3) * splashLogoSize * 0.11 + _seeds[i] * 8;
+        final length = splashLogoSize * (0.35 + 0.45 * _seeds[i + 7]) * trail;
+        final start = centre + Offset(dashX - splashLogoSize * 0.42, dy);
+        line.shader = LinearGradient(colors: [
+          neon.withOpacity(0),
+          neon.withOpacity(0.7 * trail),
+        ]).createShader(Rect.fromPoints(start - Offset(length, 0), start));
+        canvas.drawLine(start - Offset(length, 0), start, line);
+      }
+    }
+
+    final p = impact;
+    if (p != null && p < 1) {
+      // Shockwave: a thin ring racing out and thinning.
+      final grow = Curves.easeOutCubic.transform(p);
+      canvas.drawCircle(
+        centre,
+        splashLogoSize * (0.3 + 0.9 * grow),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3 * (1 - p) + 0.5
+          ..color = neon.withOpacity(0.85 * (1 - p)),
+      );
+
+      // Sparks: short streaks flying out from the hit, fading as they go.
+      if (p < 0.6) {
+        final s = p / 0.6;
+        final spark = Paint()
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = 3.2 * (1 - s) + 1
+          ..color =
+              Color.lerp(Colors.white, neon, s)!.withOpacity(0.95 * (1 - s));
+        final from = centre + const Offset(splashLogoSize * 0.2, -4);
+        for (var i = 0; i < 12; i++) {
+          final angle = i / 12 * 2 * math.pi + _seeds[i + 20] * 0.4;
+          final reach = splashLogoSize * (0.35 + 0.45 * _seeds[i + 40]);
+          final dir = Offset(math.cos(angle), math.sin(angle));
+          final head = from + dir * (reach * Curves.easeOutCubic.transform(s));
+          canvas.drawLine(head - dir * (24 * (1 - s) + 6), head, spark);
+        }
+      }
+    }
   }
-}
-
-/// A thin ring of neon racing outwards from a hit.
-class _Shockwave extends StatelessWidget {
-  const _Shockwave({required this.progress});
-
-  final double progress;
 
   @override
-  Widget build(BuildContext context) {
-    final grow = Curves.easeOutCubic.transform(progress);
-    return Transform.scale(
-      scale: 0.6 + 1.6 * grow,
-      child: Container(
-        width: splashLogoSize,
-        height: splashLogoSize,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: AppColors.splashNeon.withOpacity(0.9 * (1 - progress)),
-            width: 3 * (1 - progress) + 0.5,
-          ),
-        ),
-      ),
-    );
-  }
+  bool shouldRepaint(_Atmosphere old) => true;
 }
