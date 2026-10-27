@@ -131,23 +131,28 @@ follows the phone's language when it has a file for it, else English.
 
 ### Changing the logo
 
-The logo is the cat-ear figure on its stand, on pink (source art:
-`assets/brand/icon.svg`).
+The logo is a red neon fighter on a glass tile, on dark navy. Everything is
+built from the source art in `assets/brand/source/`:
 
-- **In the app and on the splash:** `assets/brand/logo.png` (square PNG,
-  transparent outside the logo, at least 1024x1024). After replacing it:
-  ```
-  pip install pillow            # once
-  python tool/brand_assets.py   # rebuilds the Android/iOS splash logo
-  ```
-- **Launcher icon:** `assets/brand/icon.png` (full square) and
-  `icon_foreground.png` (Android adaptive layer, transparent), rendered from
-  the `.svg` files beside them, with the adaptive background colour in
-  `pubspec.yaml`. After replacing them:
-  `dart pub global run flutter_launcher_icons`.
+- `logo.jpg`: the logo, square, the tile in the middle of the dark
+  background (as the artist made it).
+- `poses/1.jpg`, `2.jpg`, ...: more fighting poses in the same style, same
+  tile and background. The splash plays them in name order as a quick
+  combo, each with a red flash, then lands on the logo. With none, the
+  fighter strikes twice in the logo's pose.
+
+After adding or changing any of them, from the project folder:
+
+```
+pip install pillow                           # once
+python tool/brand_assets.py                  # logo, poses, icons, native splash
+dart pub global run flutter_launcher_icons   # launcher icon
+```
 
 Then stop the app and `flutter run` again; hot restart doesn't pick up
-images.
+images. The splash's navy is `AppColors.splash`, and the same colour is in
+`android/app/src/main/res/values/colors.xml` and
+`ios/Runner/Base.lproj/LaunchScreen.storyboard`; change all three together.
 
 ### Demo accounts (seed)
 

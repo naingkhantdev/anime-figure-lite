@@ -41,9 +41,8 @@ abstract final class AppColors {
   static const inkMuted = Color(0xFF5B5A66);
   static const inkSubtle = Color(0xFF6E6C79);
 
-  // The accent. The logo's own pink (#FF2E7E, used for the launcher icon) is
-  // too light for text on white, so the UI uses this deeper pink, which
-  // passes WCAG AA (5.1:1) for normal text and white text on it.
+  // The accent: a deep pink that passes WCAG AA (5.1:1) for normal text on
+  // white and white text on it.
   static const accent = Color(0xFFE0115F);
   static const accentSoft = Color(0xFFFFE3EC);
 
@@ -51,6 +50,12 @@ abstract final class AppColors {
   // the logo pink, then a lilac from the aurora.
   static const glow = Color(0xFFFF2E7E);
   static const glowLilac = Color(0xFF9B7BFF);
+
+  // The splash, in the logo's own colours: its dark navy (also the native
+  // splash, android/.../colors.xml and LaunchScreen.storyboard) and the
+  // fighter's red neon.
+  static const splash = Color(0xFF12182C);
+  static const splashNeon = Color(0xFFFF3B4E);
 
   // Semantics: soft = tint background, line = its border, ink = text on the
   // tint. Every pair is at least 5.7:1.

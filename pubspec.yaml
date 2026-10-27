@@ -58,8 +58,8 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^3.0.0
 
-# Launcher icon. Source art is assets/brand/icon.svg and icon_foreground.svg;
-# re-render the PNGs from them, then run:
+# Launcher icon. The PNGs are built from assets/brand/source/logo.jpg by
+# tool/brand_assets.py; then run:
 #   dart pub global activate flutter_launcher_icons
 #   dart pub global run flutter_launcher_icons
 flutter_launcher_icons:
@@ -67,7 +67,7 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   image_path: "assets/brand/icon.png"
-  adaptive_icon_background: "#FF2E7E"
+  adaptive_icon_background: "assets/brand/icon_background.png"
   adaptive_icon_foreground: "assets/brand/icon_foreground.png"
   # The art already keeps to the adaptive-icon safe zone; no extra padding.
   adaptive_icon_foreground_inset: 0
@@ -77,11 +77,12 @@ flutter:
   # Builds lib/l10n/app_localizations*.dart from the .arb files.
   generate: true
 
-  # The logo, transparent PNG, square. Replace this one file to change the
-  # logo in the app (lib/ui/widgets/brand.dart). The launcher icon and the
-  # native splash are generated from it; see README "Changing the logo".
+  # The logo and the splash's fighting poses, built from assets/brand/source
+  # by tool/brand_assets.py (the source art itself is not bundled); see
+  # README "Changing the logo".
   assets:
     - assets/brand/logo.png
+    - assets/brand/poses/
     # Product photos from the old shop; products.image_url points here
     # (tool/seed/seed_products.js).
     - assets/products/

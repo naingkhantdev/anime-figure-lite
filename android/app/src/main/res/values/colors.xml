@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FF2E7E</color>
-    <!-- AppColors.surface. The splash, and the window behind Flutter, so
-         nothing flashes between the splash and the first frame. -->
-    <color name="splash_background">#FFFFFF</color>
+    <!-- AppColors.splash: the logo's dark navy. The native splash, and the
+         window behind Flutter, so nothing flashes between the splash and
+         the first frame of splash_intro.dart. -->
+    <color name="splash_background">#12182C</color>
 </resources>
