@@ -5,3 +5,10 @@ String? normalizePhone(String input) {
   final phone = input.replaceAll(RegExp(r'[\s-]'), '');
   return RegExp(r'^(09|\+959)\d{7,9}$').hasMatch(phone) ? phone : null;
 }
+
+/// A Myanmar number as `+959…`, the form Viber looks people up by.
+/// Anything already international, or not Myanmar, comes back cleaned only.
+String internationalPhone(String phone) {
+  final clean = phone.replaceAll(RegExp(r'[\s-]'), '');
+  return clean.startsWith('0') ? '+95${clean.substring(1)}' : clean;
+}

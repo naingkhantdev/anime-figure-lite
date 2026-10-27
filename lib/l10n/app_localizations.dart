@@ -2130,6 +2130,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No ways to pay yet'**
   String get noWaysToPay;
+
+  /// No description provided for @call.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get call;
+
+  /// No description provided for @cannotCall.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone can\'t make calls. The number is {phone}.'**
+  String cannotCall(String phone);
+
+  /// No description provided for @viberNotInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Viber isn\'t on this phone.'**
+  String get viberNotInstalled;
+
+  /// No description provided for @contactTheShop.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact the shop'**
+  String get contactTheShop;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

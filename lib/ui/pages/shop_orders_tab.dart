@@ -9,6 +9,7 @@ import '../../utils/dates.dart';
 import '../../utils/money.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/contact_buttons.dart';
 import '../widgets/effects.dart';
 import '../widgets/glass.dart';
 import '../widgets/skeleton.dart';
@@ -187,6 +188,11 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
             _Detail(icon: Icons.place_outlined, text: o.address),
           if (o.note.isNotEmpty)
             _Detail(icon: Icons.sticky_note_2_outlined, text: o.note),
+          // Blank once the customer has deleted their account.
+          if (o.phone.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            ContactButtons(phone: o.phone),
+          ],
           if (canWrite && (o.status == 'pending' || o.status == 'confirmed'))
             Padding(
               padding: const EdgeInsets.only(top: 14),

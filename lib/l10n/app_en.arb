@@ -791,5 +791,16 @@
       }
     }
   },
-  "noWaysToPay": "No ways to pay yet"
+  "noWaysToPay": "No ways to pay yet",
+  "call": "Call",
+  "cannotCall": "This phone can't make calls. The number is {phone}.",
+  "@cannotCall": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "viberNotInstalled": "Viber isn't on this phone.",
+  "contactTheShop": "Contact the shop"
 }

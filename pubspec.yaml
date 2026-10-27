@@ -44,6 +44,8 @@ dependencies:
   flutter_riverpod: ^2.6.1
   firebase_crashlytics: ^5.2.0
   image_picker: ^1.1.2
+  # Call and Viber buttons on orders.
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

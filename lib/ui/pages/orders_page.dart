@@ -8,6 +8,7 @@ import '../../providers/providers.dart';
 import '../../utils/money.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/contact_buttons.dart';
 import '../widgets/effects.dart';
 import '../widgets/glass.dart';
 import '../widgets/skeleton.dart';
@@ -183,6 +184,10 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
   Widget build(BuildContext context) {
     final order = widget.order;
     final theme = Theme.of(context);
+    // The house's own figures (no shop) are handled by staff, not a shop.
+    final shopPhone = order.shopId.isEmpty
+        ? ''
+        : ref.watch(shopPublicProvider(order.shopId)).valueOrNull?.phone ?? '';
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -223,6 +228,13 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
               const SizedBox(height: 4),
               Text(context.l10n.noteLine(order.note),
                   style: theme.textTheme.bodySmall),
+            ],
+            if (shopPhone.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(context.l10n.contactTheShop,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              ContactButtons(phone: shopPhone),
             ],
             if (order.canCancel) ...[
               const SizedBox(height: 16),

@@ -1197,4 +1197,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noWaysToPay => 'No ways to pay yet';
+
+  @override
+  String get call => 'Call';
+
+  @override
+  String cannotCall(String phone) {
+    return 'This phone can\'t make calls. The number is $phone.';
+  }
+
+  @override
+  String get viberNotInstalled => 'Viber isn\'t on this phone.';
+
+  @override
+  String get contactTheShop => 'Contact the shop';
 }

@@ -28,4 +28,10 @@ void main() {
       expect(normalizePhone('959123456789'), isNull);
     });
   });
+
+  test('internationalPhone gives Viber the +95 form', () {
+    expect(internationalPhone('09123456789'), '+959123456789');
+    expect(internationalPhone('09 123-456-789'), '+959123456789');
+    expect(internationalPhone('+959123456789'), '+959123456789');
+  });
 }

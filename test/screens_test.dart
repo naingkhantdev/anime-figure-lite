@@ -14,6 +14,7 @@ import 'package:anime_figure_shop_lite/models/stock_move.dart';
 import 'package:anime_figure_shop_lite/providers/providers.dart';
 import 'package:anime_figure_shop_lite/ui/pages/customer_home_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/item_detail_page.dart';
+import 'package:anime_figure_shop_lite/ui/pages/orders_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/product_list_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/shop_home_page.dart';
 import 'package:anime_figure_shop_lite/ui/pages/stock_move_page.dart';
@@ -75,6 +76,23 @@ Shop shop(String id, String name, DateTime? expires) => Shop(
       createdAt: now,
     );
 
+/// One order for the shop 'me', seen by the shop and by the customer.
+final pendingOrder = ShopOrder(
+  id: 'order1',
+  status: 'pending',
+  total: 25000,
+  items: const [
+    OrderLine(
+        productId: 'me_1', name: 'Nendoroid Miku', price: 25000, quantity: 1),
+  ],
+  phone: '09123456789',
+  deliveryMethod: DeliveryMethod.delivery,
+  address: 'Yangon',
+  note: '',
+  createdAt: now,
+  shopId: 'me',
+);
+
 final overrides = [
   authStateProvider.overrideWith((ref) => Stream.value(null)),
   productsProvider.overrideWith((ref) => Stream.value(const [
@@ -108,26 +126,8 @@ final overrides = [
             address: 'Yangon',
             note: ''),
       ])),
-  shopOrdersProvider.overrideWith((ref) => Stream.value([
-        ShopOrder(
-          id: 'order1',
-          status: 'pending',
-          total: 25000,
-          items: const [
-            OrderLine(
-                productId: 'me_1',
-                name: 'Nendoroid Miku',
-                price: 25000,
-                quantity: 1),
-          ],
-          phone: '09123456789',
-          deliveryMethod: DeliveryMethod.delivery,
-          address: 'Yangon',
-          note: '',
-          createdAt: now,
-          shopId: 'me',
-        ),
-      ])),
+  shopOrdersProvider.overrideWith((ref) => Stream.value([pendingOrder])),
+  myOrdersProvider.overrideWith((ref) => Stream.value([pendingOrder])),
   shopPublicProvider.overrideWith((ref, id) => Stream.value(ShopPublic(
         shopId: id,
         phone: '09123456789',
@@ -263,6 +263,18 @@ void main() {
     expect(find.text('To do · 1'), findsOneWidget);
     expect(find.text('1 × Nendoroid Miku'), findsOneWidget);
     expect(find.text('Confirm'), findsOneWidget);
+    expect(find.text('Call'), findsOneWidget, reason: 'call the customer');
+    expect(find.text('Viber'), findsOneWidget);
+  });
+
+  testWidgets("a customer's order has the shop's Call and Viber",
+      (tester) async {
+    await pumpScreen(tester, const OrdersPage());
+    await tester.tap(find.text('Nendoroid Miku'));
+    await tester.pumpAndSettle();
+    expect(find.text('Contact the shop'), findsOneWidget);
+    expect(find.text('Call'), findsOneWidget);
+    expect(find.text('Viber'), findsOneWidget);
   });
 
   testWidgets('"View cart" after adding closes the product, opens Cart',
