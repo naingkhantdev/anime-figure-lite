@@ -131,9 +131,11 @@ follows the phone's language when it has a file for it, else English.
 
 ### Changing the logo
 
-The logo is a red neon fighter, cut out with a transparent background (the
-launcher icon puts it on dark navy). Everything is built from the source
-art in `assets/brand/source/`:
+The logo is a badge: the red neon fighter breaking out of a glowing
+shockwave ring, with sparks and red light behind him, on navy, the
+splash's hit in one picture. It is the launcher icon and the logo in the
+app; the splash itself uses the fighter alone and draws the effects live.
+Everything is built from the source art in `assets/brand/source/`:
 
 - `logo.jpg`: the logo, square, the fighter on its glass tile on dark
   navy (as the artist made it).

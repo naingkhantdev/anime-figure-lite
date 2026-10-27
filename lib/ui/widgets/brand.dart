@@ -4,7 +4,7 @@ import '../../config.dart';
 import '../theme.dart';
 import 'effects.dart';
 
-/// The shop's logo: the red neon fighter, transparent around it
+/// The shop's logo: the fighter in his neon ring on a navy disc
 /// (`assets/brand/logo.png`, built from assets/brand/source by
 /// tool/brand_assets.py; README "Changing the logo").
 class AppLogo extends StatelessWidget {

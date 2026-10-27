@@ -17,25 +17,27 @@ After changing any of them, run from the project folder:
 
 It writes:
 
-    assets/brand/logo.png         the glowing fighter alone, transparent
-                                  around it; the logo everywhere in the app
-    assets/brand/poses/NN.png     each pose cut out the same way, all the
-                                  same apparent size and centred, the
+    assets/brand/logo.png         the badge: the fighter breaking out of a
+                                  neon shockwave ring, sparks and glow
+                                  behind, on a navy disc; the logo in the app
+    assets/brand/poses/NN.png     each pose, the fighter alone, cut out, all
+                                  the same apparent size and centred, the
                                   logo's last (splash_intro.dart)
-    assets/brand/icon.png         launcher icon: the fighter on navy
+    assets/brand/icon.png         launcher icon: the badge on navy
     assets/brand/icon_foreground.png
-                                  Android adaptive icon layer, over plain
-                                  navy (pubspec.yaml)
+                                  Android adaptive icon layer, the badge
+                                  over plain navy (pubspec.yaml)
     android .../splash_logo.png, iOS LaunchImage*.png
                                   native splash, 144dp/pt, which must match
                                   splashLogoSize in splash_intro.dart: the
                                   logo's pose exactly as the splash starts
 """
 
+import math
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 BRAND = ROOT / "assets/brand"
@@ -182,13 +184,78 @@ def fit(img: Image.Image, canvas: int, share: float) -> Image.Image:
     return out
 
 
+NEON = (255, 59, 78)   # AppColors.splashNeon
+
+
+def badge(fighter: Image.Image, disc: bool) -> Image.Image:
+    """The app's mark, 1024 square: the fighter breaking out of a glowing
+    shockwave ring, a burst of sparks and red light behind him, the splash's
+    hit in one picture. With [disc], on a navy disc (transparent outside
+    it); without, on nothing, for a layer over navy."""
+    n = 1024
+    c = n / 2
+    out = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    if disc:
+        ImageDraw.Draw(out).ellipse((0, 0, n - 1, n - 1), fill=NAVY)
+
+    # Red light behind him, brightest in the middle.
+    yy, xx = np.mgrid[0:n, 0:n]
+    d = np.hypot(xx - c, yy - c) / (n * 0.46)
+    light = np.clip(1 - d, 0, 1) ** 1.6 * 150
+    glow = np.zeros((n, n, 4), np.uint8)
+    glow[..., :3] = NEON
+    glow[..., 3] = light.astype(np.uint8)
+    out.alpha_composite(Image.fromarray(glow, "RGBA"))
+
+    # The ring and the sparks, drawn sharp, then laid over a blurred copy
+    # of themselves for the neon glow.
+    neon = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(neon)
+    r = n * 0.405
+    w = round(n * 0.024)
+    draw.ellipse((c - r, c - r, c + r, c + r), outline=NEON + (255,), width=w)
+    for i in range(16):
+        a = i / 16 * 2 * math.pi + 0.18 * math.sin(i * 7.3)
+        inner = n * (0.25 + 0.04 * ((i * 37) % 5) / 4)
+        outer = n * (0.36 + 0.07 * ((i * 53) % 7) / 6)
+        for k in range(6):   # thick at the root, tapering to a point
+            t0, t1 = k / 6, (k + 1) / 6
+            p0 = (c + math.cos(a) * (inner + (outer - inner) * t0),
+                  c + math.sin(a) * (inner + (outer - inner) * t0))
+            p1 = (c + math.cos(a) * (inner + (outer - inner) * t1),
+                  c + math.sin(a) * (inner + (outer - inner) * t1))
+            draw.line((p0, p1), fill=(255, 190, 195, round(230 * (1 - t0))),
+                      width=max(1, round(n * 0.011 * (1 - t0))))
+    halo = neon.filter(ImageFilter.GaussianBlur(n * 0.018))
+    out.alpha_composite(halo)
+    out.alpha_composite(halo)
+    out.alpha_composite(neon)
+
+    # Ground glow under his feet.
+    ground = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    ImageDraw.Draw(ground).ellipse(
+        (c - n * 0.26, n * 0.74, c + n * 0.26, n * 0.80), fill=NEON + (170,))
+    out.alpha_composite(ground.filter(ImageFilter.GaussianBlur(n * 0.025)))
+
+    # The fighter, big enough to break out over the ring.
+    out.alpha_composite(fit(fighter, n, 0.8))
+
+    if disc:   # keep everything inside the disc
+        mask = Image.new("L", (n * 4, n * 4), 0)
+        ImageDraw.Draw(mask).ellipse((0, 0, n * 4 - 1, n * 4 - 1), fill=255)
+        mask = mask.resize((n, n), Image.LANCZOS)
+        out.putalpha(ImageChops.multiply(out.getchannel("A"), mask))
+    return out
+
+
 def main():
     logo_src = SOURCE / "logo.jpg"
     fighter = fighter_cutout(logo_src)
-
-    # In the app: the fighter alone, transparent around it, cropped close.
+    # The fighter alone, cropped close.
     logo = fighter.crop(fighter.getchannel("A").getbbox())
-    fit(logo, 1024, 1.0).save(BRAND / "logo.png", optimize=True)
+
+    # In the app: the badge on its navy disc.
+    badge(logo, disc=True).save(BRAND / "logo.png", optimize=True)
 
     # The splash's poses: the extra ones in name order, the logo's last.
     # The logo's pose fills POSE_FILL of the frame; every other pose gets
@@ -211,14 +278,16 @@ def main():
         frame.resize((POSE_PX, POSE_PX), Image.LANCZOS).save(
             out / f"{i:02d}.png", optimize=True)
 
-    # Launcher icons must be solid: the fighter on the splash navy. Adaptive
-    # Android masks to a circle or squircle, so there the fighter is its own
+    # Launcher icons must be solid: the badge on the splash navy. Adaptive
+    # Android masks to a circle or squircle, so there the badge is its own
     # layer inside the safe zone, over plain navy (pubspec.yaml).
+    mark = badge(logo, disc=False)
     icon = Image.new("RGBA", (1024, 1024), NAVY)
-    icon.alpha_composite(fit(logo, 1024, 0.78))
+    icon.alpha_composite(fit(mark, 1024, 0.98))
     icon.convert("RGB").save(BRAND / "icon.png", optimize=True)
-    # 66%: the part of an adaptive icon no launcher mask cuts into.
-    fit(logo, 1024, 0.66).save(BRAND / "icon_foreground.png", optimize=True)
+    # 75%: the ring stays inside the part of an adaptive icon no launcher
+    # mask cuts into; only the outer glow may be trimmed.
+    fit(mark, 1024, 0.75).save(BRAND / "icon_foreground.png", optimize=True)
 
     # Native splash: exactly the splash's first frame, the logo's pose.
     splash = frames[-1]
