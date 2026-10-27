@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,9 +16,15 @@ import 'brand.dart';
 /// native splash can't be seen.
 const splashLogoSize = 144.0;
 
+/// The fighter's poses, built by tool/brand_assets.py: any extra poses in
+/// order, then the logo itself.
+const _posesFolder = 'assets/brand/poses/';
+
 /// Plays once per launch over [child], which builds and loads underneath
-/// the whole time. Quiet on purpose: the logo settles a little higher, the
-/// name fades in beneath it, then everything fades into the app.
+/// the whole time. On the logo's dark navy, the fighter throws a quick
+/// combo: each pose snaps in with a red flash and a jolt, then it lands on
+/// the logo, which settles a little higher as the name fades in beneath.
+/// With only the logo to show, it strikes twice in the same pose.
 ///
 /// It leaves after the intro has played and sign-in state is known, or after
 /// [_maxWait] whatever happens, or at once on a tap. With reduce motion on
@@ -31,14 +38,14 @@ class SplashIntro extends ConsumerStatefulWidget {
   ConsumerState<SplashIntro> createState() => _SplashIntroState();
 }
 
-const _introLength = Duration(milliseconds: 1400);
 const _exitLength = Duration(milliseconds: 450);
 const _maxWait = Duration(seconds: 4);
 
 class _SplashIntroState extends ConsumerState<SplashIntro>
     with TickerProviderStateMixin {
-  late final _intro = AnimationController(vsync: this, duration: _introLength);
+  late final _intro = AnimationController(vsync: this);
   late final _exit = AnimationController(vsync: this, duration: _exitLength);
+  _Combo _combo = const _Combo([logoAsset]);
   Timer? _cap;
   bool _started = false;
   bool _firstFrameHeld = false;
@@ -48,8 +55,8 @@ class _SplashIntroState extends ConsumerState<SplashIntro>
   @override
   void initState() {
     super.initState();
-    // Keep the native splash up until the logo is decoded (see below), so
-    // Flutter's first frame already has it.
+    // Keep the native splash up until the poses are decoded (see below), so
+    // Flutter's first frame already has the logo.
     WidgetsBinding.instance.deferFirstFrame();
     _firstFrameHeld = true;
   }
@@ -67,9 +74,10 @@ class _SplashIntroState extends ConsumerState<SplashIntro>
     _started = true;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     _cap = Timer(_maxWait, _leave);
-    precacheImage(const AssetImage(logoAsset), context).whenComplete(() {
+    _loadPoses().whenComplete(() {
       _releaseFirstFrame();
       if (!mounted) return;
+      _intro.duration = _combo.length;
       if (reduceMotion) {
         _intro.value = 1;
         Future.delayed(const Duration(milliseconds: 700), _onIntroDone);
@@ -77,6 +85,28 @@ class _SplashIntroState extends ConsumerState<SplashIntro>
         _intro.forward().whenComplete(_onIntroDone);
       }
     });
+  }
+
+  /// Finds the pose images in the bundle and decodes them all, so no pose
+  /// arrives late in the combo. Falls back to the logo alone.
+  Future<void> _loadPoses() async {
+    final bundle = DefaultAssetBundle.of(context);
+    try {
+      final manifest = await AssetManifest.loadFromAssetBundle(bundle);
+      final poses = manifest
+          .listAssets()
+          .where((a) => a.startsWith(_posesFolder) && a.endsWith('.png'))
+          .toList()
+        ..sort();
+      if (poses.isNotEmpty) _combo = _Combo(poses);
+    } catch (_) {
+      // No manifest: play with the logo alone.
+    }
+    if (!mounted) return;
+    await Future.wait([
+      for (final pose in {logoAsset, ..._combo.poses})
+        precacheImage(AssetImage(pose), context),
+    ]);
   }
 
   void _onIntroDone() {
@@ -127,10 +157,10 @@ class _SplashIntroState extends ConsumerState<SplashIntro>
             behavior: HitTestBehavior.opaque,
             onTap: _leave,
             child: AnnotatedRegion<SystemUiOverlayStyle>(
-              value: SystemUiOverlayStyle.dark,
+              value: SystemUiOverlayStyle.light,
               child: Semantics(
                 label: appName,
-                child: _IntroFrame(intro: _intro),
+                child: _IntroFrame(intro: _intro, combo: _combo),
               ),
             ),
           ),
@@ -140,10 +170,44 @@ class _SplashIntroState extends ConsumerState<SplashIntro>
   }
 }
 
-class _IntroFrame extends StatelessWidget {
-  const _IntroFrame({required this.intro});
+/// The intro's timeline: a short hold on the logo (what the native splash
+/// showed), one beat per pose, then the settle.
+class _Combo {
+  const _Combo(this.poses);
 
-  final Animation<double> intro;
+  /// Ends with the logo.
+  final List<String> poses;
+
+  static const _hold = 150;
+  static const _settle = 600;
+
+  /// With extra poses, one beat each; with the logo alone, two strikes.
+  int get beats => poses.length > 1 ? poses.length : 2;
+
+  /// Snappier the more poses there are, so the whole intro stays under
+  /// about 1.9 s.
+  int get beatMs => ((1900 - _hold - _settle) ~/ beats).clamp(120, 280);
+
+  int get comboMs => _hold + beats * beatMs;
+
+  Duration get length => Duration(milliseconds: comboMs + _settle);
+
+  /// Where the combo is at [ms] into the intro: which pose shows, and how
+  /// far through its beat (0 at the hit, 1 at its end; 1 outside beats).
+  (String pose, double beat) at(int ms) {
+    if (ms < _hold) return (poses.last, 1);
+    final i = (ms - _hold) ~/ beatMs;
+    if (i >= beats) return (poses.last, 1);
+    final pose = poses.length > 1 ? poses[i] : poses.last;
+    return (pose, ((ms - _hold) % beatMs) / beatMs);
+  }
+}
+
+class _IntroFrame extends StatelessWidget {
+  const _IntroFrame({required this.intro, required this.combo});
+
+  final AnimationController intro;
+  final _Combo combo;
 
   // Below the logo: a gap and the name. Fixed heights so the group's centre
   // is known, which is what lets the logo start at screen centre.
@@ -153,52 +217,87 @@ class _IntroFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lift = CurvedAnimation(
-        parent: intro,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeInOutCubic));
-    final name = CurvedAnimation(
-        parent: intro,
-        curve: const Interval(0.35, 0.9, curve: Curves.easeOutCubic));
-
     return Material(
       // Material, not a bare colour: text outside one gets Flutter's yellow
       // "missing Material" underline.
-      color: AppColors.surface,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedBuilder(
-              animation: lift,
-              builder: (context, child) => Transform.translate(
-                // Starts _below/2 lower: exactly the screen centre.
-                offset: Offset(0, (1 - lift.value) * _below / 2),
-                child: child,
-              ),
-              child: Image.asset(
-                logoAsset,
-                width: splashLogoSize,
-                height: splashLogoSize,
-                excludeFromSemantics: true,
-              ),
-            ),
-            const SizedBox(height: _gap),
-            SizedBox(
-              height: _nameHeight,
-              child: AnimatedBuilder(
-                animation: name,
-                builder: (context, child) => Opacity(
-                  opacity: name.value,
-                  child: Transform.translate(
-                    offset: Offset(0, 6 * (1 - name.value)),
-                    child: child,
+      color: AppColors.splash,
+      child: AnimatedBuilder(
+        animation: intro,
+        builder: (context, _) {
+          final total = intro.duration?.inMilliseconds ?? 1;
+          final ms = (intro.value * total).round();
+          final (pose, beat) = combo.at(ms);
+          // After the combo: lift into place, then the name.
+          final settle = ((ms - combo.comboMs) / _Combo._settle).clamp(0.0, 1.0);
+          final lift = Curves.easeInOutCubic.transform(settle);
+          final name =
+              Curves.easeOutCubic.transform(((settle - 0.3) / 0.7).clamp(0, 1));
+
+          // Each hit: a red flash that fades, a punch in size, and a jolt
+          // sideways that dies away.
+          final hit = 1 - beat;
+          final flash = hit * hit;
+          final punch = 1 + 0.09 * math.sin(math.pi * beat.clamp(0, 0.5) * 2);
+          final jolt = math.sin(beat * math.pi * 5) * 6 * hit;
+
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Transform.translate(
+                  // Starts _below/2 lower: exactly the screen centre.
+                  offset: Offset(jolt, (1 - lift) * _below / 2),
+                  child: SizedBox.square(
+                    dimension: splashLogoSize,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.center,
+                      children: [
+                        if (flash > 0.01)
+                          Transform.scale(
+                            scale: 1.6 + 0.5 * beat,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(colors: [
+                                  AppColors.splashNeon
+                                      .withOpacity(0.75 * flash),
+                                  AppColors.splashNeon.withOpacity(0),
+                                ]),
+                              ),
+                              child: const SizedBox.square(
+                                  dimension: splashLogoSize),
+                            ),
+                          ),
+                        Transform.scale(
+                          scale: punch,
+                          child: Image.asset(
+                            pose,
+                            width: splashLogoSize,
+                            height: splashLogoSize,
+                            gaplessPlayback: true,
+                            excludeFromSemantics: true,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                child: const Wordmark(size: 13),
-              ),
+                const SizedBox(height: _gap),
+                SizedBox(
+                  height: _nameHeight,
+                  child: Opacity(
+                    opacity: name,
+                    child: Transform.translate(
+                      offset: Offset(0, 6 * (1 - name)),
+                      child: const Wordmark(size: 13, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

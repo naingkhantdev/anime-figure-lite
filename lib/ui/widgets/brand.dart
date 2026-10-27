@@ -4,8 +4,9 @@ import '../../config.dart';
 import '../theme.dart';
 import 'effects.dart';
 
-/// The shop's logo, from the transparent `assets/brand/logo.png`. Replace
-/// that one file to change it everywhere in the app.
+/// The shop's logo: the fighter's glass tile, `assets/brand/logo.png`,
+/// built from assets/brand/source by tool/brand_assets.py (README
+/// "Changing the logo").
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.size = 40});
 
