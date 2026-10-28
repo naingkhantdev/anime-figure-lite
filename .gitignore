@@ -42,5 +42,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Impeccable design-review notes (local only)
-.impeccable/
+# Rules tests
+/rules_test/node_modules/
+*-debug.log
+
+# Seed script: dependencies, and NEVER the admin key
+/tool/seed/node_modules/
+service-account*.json

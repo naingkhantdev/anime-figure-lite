@@ -1,5 +1,5 @@
 name: anime_figure_shop_lite
-description: "A new Flutter project."
+description: "Anime figure shop, plus stock in/out for many small shops."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -30,7 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  # Translations: the app's text lives in lib/l10n/app_*.arb (see l10n.yaml).
+  flutter_localizations:
+    sdk: flutter
+  intl: any
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -39,6 +42,10 @@ dependencies:
   firebase_auth: ^6.4.0
   cloud_firestore: ^6.3.0
   flutter_riverpod: ^2.6.1
+  firebase_crashlytics: ^5.2.0
+  image_picker: ^1.1.2
+  # Call and Viber buttons on orders.
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
@@ -50,56 +57,47 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^3.0.0
-  flutter_launcher_icons: ^0.14.4
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter packages.
-flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
-  uses-material-design: true
-
-  assets:
-    - assets/brand/icon.png
-
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/assets-and-images/#resolution-aware
-
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/assets-and-images/#from-packages
-
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/custom-fonts/#from-packages
-
-# App icon. Source art is assets/brand/*.svg; re-render the PNGs from it, then
-# run `dart run flutter_launcher_icons`.
+# Launcher icon. The PNGs are built from assets/brand/source/logo.jpg by
+# tool/brand_assets.py; then run:
+#   dart pub global activate flutter_launcher_icons
+#   dart pub global run flutter_launcher_icons
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/brand/icon.png
-  adaptive_icon_background: "#FF2E7E"
-  adaptive_icon_foreground: assets/brand/icon_foreground.png
+  remove_alpha_ios: true
+  image_path: "assets/brand/icon.png"
+  adaptive_icon_background: "#12182C"
+  adaptive_icon_foreground: "assets/brand/icon_foreground.png"
   # The art already keeps to the adaptive-icon safe zone; no extra padding.
   adaptive_icon_foreground_inset: 0
-  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+  # Builds lib/l10n/app_localizations*.dart from the .arb files.
+  generate: true
+
+  # The logo and the splash's fighting poses, built from assets/brand/source
+  # by tool/brand_assets.py (the source art itself is not bundled); see
+  # README "Changing the logo".
+  assets:
+    - assets/brand/logo.png
+    - assets/brand/poses/
+    # Product photos from the old shop; products.image_url points here
+    # (tool/seed/seed_products.js).
+    - assets/products/
+
+  # DM Sans, SIL OFL (licence in assets/fonts). Static instances cut from
+  # the Google Fonts variable file, because Flutter 3.22 can't pick a weight
+  # from a variable font.
+  fonts:
+    - family: DMSans
+      fonts:
+        - asset: assets/fonts/DMSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/DMSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/DMSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/DMSans-Bold.ttf
+          weight: 700

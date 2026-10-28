@@ -1,13 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/auth_repository.dart';
+import '../data/blacklist_repository.dart';
+import '../data/inventory_repository.dart';
 import '../data/order_repository.dart';
+import '../data/photo_repository.dart';
 import '../data/product_repository.dart';
+import '../data/shop_repository.dart';
+import '../data/user_repository.dart';
+import '../logic/catalog.dart';
+import '../models/app_user.dart';
+import '../models/blacklist_entry.dart';
 import '../models/cart_item.dart';
+import '../models/customer.dart';
+import '../models/item.dart';
 import '../models/product.dart';
+import '../models/shop.dart';
 import '../models/shop_order.dart';
+import '../models/shop_public.dart';
+import '../models/stock_move.dart';
 
 final authRepositoryProvider =
     Provider((ref) => AuthRepository(FirebaseAuth.instance));
@@ -15,8 +29,22 @@ final authRepositoryProvider =
 final productRepositoryProvider =
     Provider((ref) => ProductRepository(FirebaseFirestore.instance));
 
+final photoRepositoryProvider =
+    Provider((ref) => PhotoRepository(FirebaseFirestore.instance));
+
+/// A photo's JPEG bytes, by `photos/{id}`. Kept for the session once
+/// loaded, so scrolling back doesn't fetch it again.
+final photoBytesProvider = FutureProvider.family<Uint8List?, String>(
+  (ref, id) => ref.watch(photoRepositoryProvider).load(id),
+);
+
 final orderRepositoryProvider =
     Provider((ref) => OrderRepository(FirebaseFirestore.instance));
+
+/// A payment screenshot's JPEG bytes, by `payment_proofs/{id}`.
+final paymentProofProvider = FutureProvider.family<Uint8List?, String>(
+  (ref, id) => ref.watch(orderRepositoryProvider).loadPaymentProof(id),
+);
 
 final authStateProvider = StreamProvider<User?>(
   (ref) => ref.watch(authRepositoryProvider).authStateChanges(),
@@ -84,3 +112,125 @@ final cartProvider =
 final cartCountProvider = Provider<int>(
   (ref) => ref.watch(cartProvider).fold(0, (total, i) => total + i.quantity),
 );
+
+// ------------------------------------------------------------------ roles
+// Who someone is decides what they see; see ui/pages/role_gate.dart.
+
+final shopRepositoryProvider =
+    Provider((ref) => ShopRepository(FirebaseFirestore.instance));
+
+final isSuperAdminProvider = StreamProvider<bool>((ref) {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user == null) return Stream.value(false);
+  return ref.watch(shopRepositoryProvider).watchIsSuperAdmin(user.uid);
+});
+
+final userRepositoryProvider =
+    Provider((ref) => UserRepository(FirebaseFirestore.instance));
+
+/// Records each account that signs in or opens the app in `users`, once per
+/// run, so the super admin can list it. Watched by RoleGate. Failures are
+/// only logged: the list is a convenience, never a reason to stop the app.
+final userRecorderProvider = Provider<void>((ref) {
+  ref.listen(
+      authStateProvider
+          .select((s) => (s.valueOrNull?.uid, s.valueOrNull?.email)),
+      (_, account) {
+    final (uid, email) = account;
+    if (uid == null || email == null || email.isEmpty) return;
+    ref
+        .read(userRepositoryProvider)
+        .record(uid, email)
+        .catchError((Object e) => debugPrint('Could not record user: $e'));
+  }, fireImmediately: true);
+});
+
+/// Super admin only.
+final allUsersProvider = StreamProvider<List<AppUser>>(
+  (ref) => ref.watch(userRepositoryProvider).watchAll(),
+);
+
+final blacklistRepositoryProvider =
+    Provider((ref) => BlacklistRepository(FirebaseFirestore.instance));
+
+/// Whether the super admin has blocked the signed-in account.
+final isBlockedProvider = StreamProvider<bool>((ref) {
+  final email = ref.watch(authStateProvider).valueOrNull?.email;
+  if (email == null || email.isEmpty) return Stream.value(false);
+  return ref.watch(blacklistRepositoryProvider).watchIsBlocked(email);
+});
+
+/// Super admin only.
+final blacklistProvider = StreamProvider<List<BlacklistEntry>>(
+  (ref) => ref.watch(blacklistRepositoryProvider).watchAll(),
+);
+
+/// The signed-in owner's shop, or null before they have created it.
+final myShopProvider = StreamProvider<Shop?>((ref) {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user == null) return Stream.value(null);
+  return ref.watch(shopRepositoryProvider).watchShop(user.uid);
+});
+
+/// A shop's phone, delivery fee and ways to pay, readable by anyone; null
+/// until the shop has saved its settings.
+final shopPublicProvider = StreamProvider.family<ShopPublic?, String>(
+  (ref, shopId) => ref.watch(shopRepositoryProvider).watchPublic(shopId),
+);
+
+/// Super admin only.
+final allShopsProvider = StreamProvider<List<Shop>>(
+  (ref) => ref.watch(shopRepositoryProvider).watchAllShops(),
+);
+
+/// Whether the signed-in owner's shop may be changed right now. Pages use it
+/// to disable buttons; firestore.rules are what actually enforce it.
+final canWriteProvider = Provider<bool>((ref) {
+  final shop = ref.watch(myShopProvider).valueOrNull;
+  return shop?.statusAt(DateTime.now()).canWrite ?? false;
+});
+
+/// Only read inside a shop, where somebody is always signed in.
+final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user == null) throw StateError('No shop without a signed-in owner.');
+  return InventoryRepository(
+    FirebaseFirestore.instance,
+    shopId: user.uid,
+    // Read when writing, not watched: a change to the shop shouldn't
+    // restart every stock stream.
+    shop: () => ref.read(myShopProvider).valueOrNull,
+  );
+});
+
+final itemsProvider = StreamProvider<List<Item>>(
+  (ref) => ref.watch(inventoryRepositoryProvider).watchItems(),
+);
+
+final itemProvider = StreamProvider.family<Item?, String>(
+  (ref, itemId) => ref.watch(inventoryRepositoryProvider).watchItem(itemId),
+);
+
+final recentMovesProvider = StreamProvider<List<StockMove>>(
+  (ref) => ref.watch(inventoryRepositoryProvider).watchRecentMoves(),
+);
+
+final itemMovesProvider = StreamProvider.family<List<StockMove>, String>(
+  (ref, itemId) =>
+      ref.watch(inventoryRepositoryProvider).watchItemMoves(itemId),
+);
+
+final customersProvider = StreamProvider<List<Customer>>(
+  (ref) => ref.watch(inventoryRepositoryProvider).watchCustomers(),
+);
+
+/// Customers' orders for the signed-in owner's shop, newest first.
+final shopOrdersProvider = StreamProvider<List<ShopOrder>>((ref) {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user == null) return Stream.value(const []);
+  return ref.watch(orderRepositoryProvider).watchShopOrders(user.uid);
+});
+
+/// What the customer has asked the catalog to show: search, sort, filters.
+final catalogFilterProvider =
+    StateProvider<CatalogFilter>((ref) => const CatalogFilter());

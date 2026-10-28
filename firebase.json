@@ -1,1 +1,40 @@
-{"firestore":{"rules":"firestore.rules"},"flutter":{"platforms":{"android":{"default":{"projectId":"anime-figure-shop-lite","appId":"1:453445152676:android:783af824cecef024b59b31","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"anime-figure-shop-lite","configurations":{"android":"1:453445152676:android:783af824cecef024b59b31","ios":"1:453445152676:ios:f001d25aedc23cd7b59b31"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": "public",
+    "cleanUrls": false
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "anime-figure-shop-lite",
+          "appId": "1:453445152676:android:8706585c953598a4b59b31",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "anime-figure-shop-lite",
+          "configurations": {
+            "android": "1:453445152676:android:8706585c953598a4b59b31",
+            "ios": "1:453445152676:ios:f001d25aedc23cd7b59b31"
+          }
+        }
+      }
+    }
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "ui": {
+      "enabled": false
+    }
+  }
+}

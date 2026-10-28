@@ -2,19 +2,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// How the customer gets the order. Stored as its [name] in `delivery_method`.
 enum DeliveryMethod {
-  delivery('Delivery'),
-  pickup('Pick up at shop');
-
-  const DeliveryMethod(this.label);
-  final String label;
+  delivery,
+  pickup;
 
   static DeliveryMethod fromName(String? name) => DeliveryMethod.values
       .firstWhere((m) => m.name == name, orElse: () => DeliveryMethod.delivery);
 }
 
 /// Firestore: `orders/{id}`
-/// Fields: user_id, status, items (list of maps), total (int, whole kyats),
-/// phone, delivery_method, address, note, created_at.
+/// Fields: user_id, status, items (list of maps), total (int, whole kyats,
+/// delivery included), delivery_fee (int; absent on old orders), phone,
+/// delivery_method, address, note, created_at, shop_id (the shop whose
+/// figures these are; empty for the house's own, absent on old orders),
+/// and once the customer has sent a payment screenshot, payment_proof_id
+/// and payment_sent_at. Checkout makes one order per shop.
 class ShopOrder {
   const ShopOrder({
     required this.id,
@@ -25,18 +26,36 @@ class ShopOrder {
     required this.deliveryMethod,
     required this.address,
     required this.note,
+    this.deliveryFee = 0,
     this.createdAt,
+    this.shopId = '',
+    this.paymentProofId = '',
+    this.paymentSentAt,
   });
+
+  /// `payment_proofs/{id}` of the customer's payment screenshot; empty
+  /// until they send one.
+  final String paymentProofId;
+  final DateTime? paymentSentAt;
+
+  bool get paymentSent => paymentProofId.isNotEmpty;
 
   final String id;
   final String status;
+
+  /// What the customer pays: the figures plus [deliveryFee].
   final int total;
+  final int deliveryFee;
+
+  /// The figures alone.
+  int get subtotal => total - deliveryFee;
   final List<OrderLine> items;
   final String phone;
   final DeliveryMethod deliveryMethod;
   final String address;
   final String note;
   final DateTime? createdAt;
+  final String shopId;
 
   bool get canCancel => status == 'pending';
 
@@ -47,15 +66,20 @@ class ShopOrder {
       id: doc.id,
       status: data['status'] as String? ?? 'pending',
       total: (data['total'] as num?)?.toInt() ?? 0,
+      deliveryFee: (data['delivery_fee'] as num?)?.toInt() ?? 0,
       items: rawItems
           .whereType<Map>()
           .map((m) => OrderLine.fromMap(Map<String, dynamic>.from(m)))
           .toList(),
       phone: data['phone'] as String? ?? '',
-      deliveryMethod: DeliveryMethod.fromName(data['delivery_method'] as String?),
+      deliveryMethod:
+          DeliveryMethod.fromName(data['delivery_method'] as String?),
       address: data['address'] as String? ?? '',
       note: data['note'] as String? ?? '',
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
+      shopId: data['shop_id'] as String? ?? '',
+      paymentProofId: data['payment_proof_id'] as String? ?? '',
+      paymentSentAt: (data['payment_sent_at'] as Timestamp?)?.toDate(),
     );
   }
 }

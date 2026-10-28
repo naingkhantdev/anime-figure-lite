@@ -1,0 +1,915 @@
+{
+  "@@locale": "en",
+  "errQuantityNegative": "Quantity cannot be negative.",
+  "errQuantityAtLeastOne": "Enter a quantity of at least 1.",
+  "errOnlyInStock": "Only {count} in stock.",
+  "@errOnlyInStock": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errQuantityTooLarge": "Quantity is too large.",
+  "errCartEmpty": "Your cart is empty.",
+  "errTooManyOrderLines": "An order can have at most {max} products.",
+  "@errTooManyOrderLines": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errPhoneFormat": "Enter a phone number like 09xxxxxxxxx.",
+  "errAddressEmpty": "Enter a delivery address.",
+  "errProductUnavailable": "{name} is no longer available.",
+  "@errProductUnavailable": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errOnlyLeftOf": "Only {count} of {name} left in stock.",
+  "@errOnlyLeftOf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errShopNameEmpty": "Enter the shop name.",
+  "errShopNameTooLong": "Keep the shop name under {max} letters.",
+  "@errShopNameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errPhotoTooBig": "That photo is still too big after shrinking. Try another one.",
+  "errItemNameEmpty": "Enter the item name.",
+  "errNameTooLong": "Keep the name under {max} letters.",
+  "@errNameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errCodeTooLong": "Keep the code under {max} letters.",
+  "@errCodeTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errUnitTooLong": "Keep the unit under {max} letters.",
+  "@errUnitTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errPriceTooLarge": "That price is too large.",
+  "errLowStockTooLarge": "The low stock level is too large.",
+  "errPickCategory": "Pick a category from the list.",
+  "errAnimeTooLong": "Keep the anime name under {max} letters.",
+  "@errAnimeTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errTextTooLong": "Keep it under {max} letters.",
+  "@errTextTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errPhotoAddressUnknown": "That photo address is not one the app knows.",
+  "errListedNeedsPrice": "Set a selling price to sell this item in the app.",
+  "errShopLoading": "Your shop is still loading.",
+  "errItemGone": "This item no longer exists.",
+  "errNoteTooLong": "Keep the note under {max} letters.",
+  "@errNoteTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errNameEmpty": "Enter the name.",
+  "errNotAllowed": "Not allowed. If your shop has expired, contact the owner to renew.",
+  "errOffline": "No internet connection. Try again when online.",
+  "moveIn": "Stock in",
+  "moveOut": "Stock out",
+  "moveCount": "Count",
+  "sortFeatured": "Recommended",
+  "sortPriceLow": "Lowest price",
+  "sortPriceHigh": "Highest price",
+  "sortName": "Name A to Z",
+  "deliveryMethodDelivery": "Delivery",
+  "deliveryMethodPickup": "Pick up at shop",
+  "categoryScaleFigure": "Scale figure",
+  "categoryNendoroid": "Nendoroid",
+  "categoryGarageKit": "Garage kit",
+  "categoryPrizeFigure": "Prize figure",
+  "categoryActionFigure": "Action figure",
+  "categoryAcrylicStand": "Acrylic stand",
+  "categoryOther": "Other",
+  "cancel": "Cancel",
+  "signIn": "Sign in",
+  "signOut": "Sign out",
+  "signOutQuestion": "Sign out?",
+  "couldNotLoad": "Could not load this",
+  "shopStatusWaiting": "Waiting",
+  "shopStatusActive": "Active",
+  "shopStatusExpired": "Expired",
+  "shopDaysLeftShort": "{days}d left",
+  "@shopDaysLeftShort": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "shopExpiredBanner": "Your shop expired on {date}. You can still look at everything, but not change it. Contact the owner to renew.",
+  "@shopExpiredBanner": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "shopExpiresBanner": "Your shop expires in {days, plural, =1{1 day} other{{days} days}} ({date}). Contact the owner to renew.",
+  "@shopExpiresBanner": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "typeEmailFirst": "Type your email first, then tap this again.",
+  "passwordResetSent": "Password reset email sent to {email}.",
+  "@passwordResetSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "createAnAccount": "Create an account",
+  "welcomeBack": "Welcome back",
+  "signUpSubtitle": "One account to shop, track orders and run a shop.",
+  "signInSubtitle": "Sign in to check out and see your orders.",
+  "email": "Email",
+  "password": "Password",
+  "errEmailEmpty": "Enter your email.",
+  "errPasswordEmpty": "Enter your password.",
+  "hidePassword": "Hide password",
+  "showPassword": "Show password",
+  "createAccount": "Create account",
+  "forgotPassword": "Forgot password?",
+  "deleteMyAccount": "Delete my account",
+  "deleteMyAccountQuestion": "Delete my account?",
+  "closeShopBody": "Your account holds your shop and its stock history, so we close it for you. Contact us to close your shop and delete your account.",
+  "closeShopBodyContact": "Your account holds your shop and its stock history, so we close it for you. Contact us to close your shop and delete your account: {contact}",
+  "@closeShopBodyContact": {
+    "placeholders": {
+      "contact": {
+        "type": "String"
+      }
+    }
+  },
+  "ok": "OK",
+  "accountDeleted": "Your account has been deleted.",
+  "wrongPassword": "Wrong password.",
+  "deleteAccountBody": "This cannot be undone. Pending orders are cancelled. Past orders stay with the shop, without your phone number or address.",
+  "yourPassword": "Your password",
+  "delete": "Delete",
+  "oneLastStep": "One last step",
+  "nameYourShop": "Name your shop",
+  "nameYourShopHelp": "You can change these later. The shop opens once the owner approves it.",
+  "shopName": "Shop name",
+  "phoneOptional": "Phone (optional)",
+  "createShop": "Create shop",
+  "shopWaitingForApproval": "{shop} is waiting for approval",
+  "@shopWaitingForApproval": {
+    "placeholders": {
+      "shop": {
+        "type": "String"
+      }
+    }
+  },
+  "shopWaitingBody": "The owner of {appName} will turn your shop on. This page opens your shop by itself as soon as they do.",
+  "@shopWaitingBody": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "contactLine": "Contact: {contact}",
+  "@contactLine": {
+    "placeholders": {
+      "contact": {
+        "type": "String"
+      }
+    }
+  },
+  "accountLine": "Account: {email}",
+  "@accountLine": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "tabShop": "Shop",
+  "tabCart": "Cart",
+  "tabOrders": "Orders",
+  "tabAccount": "Account",
+  "myOrders": "My orders",
+  "signInToSeeOrders": "Sign in to see your orders",
+  "signInToSeeOrdersBody": "Orders you place show up here, with what the shop is doing with them.",
+  "goToAccount": "Go to Account",
+  "browseFigures": "Browse figures",
+  "signedInAs": "Signed in as",
+  "signedIn": "Signed in",
+  "openAShop": "Open a shop",
+  "openAShopSubtitle": "Sell and track your own stock",
+  "browsingAsGuest": "You are browsing as a guest",
+  "guestIntro": "Look around as much as you like. An account lets you:",
+  "benefitCheckout": "Check out in a few taps",
+  "benefitCheckoutLine": "Your phone and address are remembered.",
+  "benefitFollow": "Follow every order",
+  "benefitFollowLine": "See when the shop confirms and sends it.",
+  "benefitShop": "Open your own shop",
+  "benefitShopLine": "Track stock and sell your figures here.",
+  "keepBrowsing": "Keep browsing",
+  "ordersPlaced": "{count, plural, =1{Order placed. The shop will confirm it soon.} other{Placed {count} orders, one for each shop. Each shop confirms its own.}}",
+  "@ordersPlaced": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "couldNotPlaceOrder": "Could not place order: {error}",
+  "@couldNotPlaceOrder": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "checkout": "Checkout",
+  "phone": "Phone",
+  "deliveryAddress": "Delivery address",
+  "deliveryAddressHint": "Township, street, landmark",
+  "noteOptional": "Note (optional)",
+  "estimatedTotal": "Estimated total",
+  "payShopDirectly": "Pay the shop after you order: how to pay is on your order. Cash on delivery works too.",
+  "placeOrder": "Place order",
+  "cartEmpty": "Your cart is empty",
+  "cartEmptyBody": "Figures you add show up here.",
+  "itemCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@itemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "continueShopping": "Continue shopping",
+  "orderSummary": "Order summary",
+  "figuresCount": "Figures ({count})",
+  "@figuresCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "setByShop": "Added at checkout",
+  "cartManyShops": "These come from {shops} shops, so you will get one order from each, and each shop charges its own delivery.",
+  "@cartManyShops": {
+    "placeholders": {
+      "shops": {
+        "type": "int"
+      }
+    }
+  },
+  "cartOneShop": "Pick delivery or pickup at checkout.",
+  "priceEach": "{price} each",
+  "@priceEach": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "remove": "Remove",
+  "decrease": "Decrease",
+  "increase": "Increase",
+  "noOrdersYet": "No orders yet",
+  "noOrdersYetBody": "When you check out, your order shows up here.",
+  "couldNotLoadOrders": "Could not load your orders",
+  "statusWaitingForShop": "Waiting for shop",
+  "statusConfirmed": "Confirmed",
+  "statusPickedUp": "Picked up",
+  "statusOnItsWay": "On its way",
+  "statusCancelled": "Cancelled",
+  "cancelOrderQuestion": "Cancel this order?",
+  "keepOrder": "Keep order",
+  "cancelOrder": "Cancel order",
+  "orderCancelled": "Order cancelled.",
+  "couldNotCancelOrder": "Could not cancel this order: {error}",
+  "@couldNotCancelOrder": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noteLine": "Note: {note}",
+  "@noteLine": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "figureGone": "This figure is no longer available",
+  "onlyLeft": "Only {count} left",
+  "@onlyLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inStockCount": "{count} in stock",
+  "@inStockCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "soldOut": "Sold out",
+  "moreFrom": "More from {anime}",
+  "@moreFrom": {
+    "placeholders": {
+      "anime": {
+        "type": "String"
+      }
+    }
+  },
+  "moreOfCategory": "More: {category}",
+  "@moreOfCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "seeEverythingFromShop": "See everything from this shop",
+  "inYourCart": "{count} in your cart",
+  "@inYourCart": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addToCart": "Add to cart",
+  "addedToCart": "Added {name}",
+  "@addedToCart": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "viewCart": "View cart",
+  "noFiguresYet": "No figures yet",
+  "noFiguresYetBody": "New figures appear here as soon as a shop adds them.",
+  "figuresShownOf": "{shown} of {total} figures",
+  "@figuresShownOf": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "figuresCountPlain": "{count, plural, =1{1 figure} other{{count} figures}}",
+  "@figuresCountPlain": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearAll": "Clear all",
+  "noFiguresMatch": "No figures match",
+  "noFiguresMatchBody": "Try another word, or fewer filters.",
+  "showAllFigures": "Show all figures",
+  "couldNotLoadFigures": "Could not load the figures",
+  "priceFrom": "From {price}",
+  "@priceFrom": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "priceUpTo": "Up to {price}",
+  "@priceUpTo": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "anyPrice": "Any price",
+  "searchHint": "Search figures or anime",
+  "clearSearch": "Clear search",
+  "filters": "Filters",
+  "all": "All",
+  "inStock": "In stock",
+  "sortAndFilter": "Sort & filter",
+  "reset": "Reset",
+  "sortBy": "Sort by",
+  "inStockOnly": "In stock only",
+  "inStockOnlyHelp": "Hide figures that are sold out",
+  "price": "Price",
+  "min": "Min",
+  "max": "Max",
+  "minMoreThanMax": "Min is more than max.",
+  "priceUnder": "Under {amount}",
+  "@priceUnder": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "priceOver": "Over {amount}",
+  "@priceOver": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "category": "Category",
+  "anime": "Anime",
+  "checkPriceRange": "Check the price range",
+  "showFigures": "{count, plural, =1{Show 1 figure} other{Show {count} figures}}",
+  "@showFigures": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newItem": "New item",
+  "newCustomer": "New customer",
+  "tabStock": "Stock",
+  "tabHistory": "History",
+  "tabCustomers": "Customers",
+  "shopReadOnly": "Your shop is read-only until the owner renews it.",
+  "edit": "Edit",
+  "activeUntil": "Active until {date}",
+  "@activeUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "expiredOn": "Expired on {date}",
+  "@expiredOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "daysLeftRenew": "{days, plural, =1{1 day left.} other{{days} days left.}} Contact the owner to renew.",
+  "@daysLeftRenew": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "readOnlyRenew": "Read-only. Contact the owner to renew.",
+  "save": "Save",
+  "statItems": "Items",
+  "statLow": "Low",
+  "statOut": "Out",
+  "stockWorthAtCost": "Stock worth {value} at cost",
+  "@stockWorthAtCost": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNameOrCode": "Search name or code",
+  "lowStock": "Low stock",
+  "outOfStock": "Out of stock",
+  "hidden": "Hidden",
+  "noItemsYet": "No items yet",
+  "noItemsYetBody": "Tap \"New item\" to add the first thing you sell.",
+  "nothingMatches": "Nothing matches",
+  "inTheApp": "In the app",
+  "itemHidden": "{name} is hidden.",
+  "@itemHidden": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "itemBack": "{name} is back.",
+  "@itemBack": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "hideFromStockList": "Hide from stock list",
+  "showInStockListAgain": "Show in stock list again",
+  "itemIsGone": "This item is gone",
+  "moveInShort": "In",
+  "noMovesYet": "No stock movements yet.",
+  "sellingPrice": "Selling price",
+  "costPrice": "Cost price",
+  "profitEach": "Profit each",
+  "lowStockAt": "Low stock at",
+  "code": "Code",
+  "errMustBeWholeNumber": "{field} must be a whole number.",
+  "@errMustBeWholeNumber": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "lowStockLevel": "Low stock level",
+  "startingQuantity": "Starting quantity",
+  "editItem": "Edit item",
+  "name": "Name",
+  "codeOptional": "Code (optional)",
+  "codeHint": "SKU / barcode",
+  "unit": "Unit",
+  "unitHint": "pcs, box, kg",
+  "warnAtOrBelow": "Warn when at or below",
+  "changeQuantityHelp": "To change the quantity, use In, Out or Count on the item page, so the history stays right.",
+  "addItem": "Add item",
+  "addAPhoto": "Add a photo",
+  "photo": "Photo",
+  "photoHelp": "Customers see it in the shop. It is made smaller before it is saved.",
+  "camera": "Camera",
+  "gallery": "Gallery",
+  "sellInApp": "Sell in the app",
+  "sellInAppOn": "Customers see it in the shop, with your shop name. Its stock follows this item.",
+  "sellInAppOff": "Turn on to show it to customers in the app.",
+  "descriptionOptional": "Description (optional)",
+  "descriptionHint": "Size, maker, condition, what is in the box",
+  "errQuantityWhole": "Quantity must be a whole number.",
+  "errPriceWhole": "Price must be a whole number of kyats.",
+  "moveSaved": "{move} saved for {name}.",
+  "@moveSaved": {
+    "placeholders": {
+      "move": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errEnterWholeNumber": "Enter a whole number.",
+  "moveInHelp": "New stock arrived.",
+  "moveOutHelp": "Sold or taken out.",
+  "moveCountHelp": "You counted the shelf. Enter how many are really there.",
+  "counted": "Counted",
+  "quantity": "Quantity",
+  "costEach": "Cost each",
+  "sellingPriceEach": "Selling price each",
+  "totalLine": "Total {amount}",
+  "@totalLine": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "saveStockIn": "Save stock in",
+  "saveStockOut": "Save stock out",
+  "saveCount": "Save count",
+  "customerOptional": "Customer (optional)",
+  "walkInCustomer": "Walk-in customer",
+  "toDo": "To do",
+  "done": "Done",
+  "noOrdersToHandle": "No orders to handle",
+  "noFinishedOrders": "No finished orders yet",
+  "noOrdersToHandleBody": "When a customer orders something you sell in the app, it shows up here.",
+  "noFinishedOrdersBody": "Shipped and cancelled orders are kept here.",
+  "shopCancelOrderBody": "The customer sees it as cancelled. Stock you already took out stays out; record a Stock in to put it back.",
+  "keepIt": "Keep it",
+  "orderConfirmedDone": "Confirmed. The stock went out and is in History.",
+  "confirm": "Confirm",
+  "markedOnItsWay": "Marked as on its way.",
+  "shipped": "Shipped",
+  "today": "Today",
+  "sales": "Sales",
+  "counts": "Counts",
+  "noMovementsYet": "No movements yet",
+  "noMovementsYetBody": "Open an item and tap In, Out or Count.",
+  "showingLatest": "Showing the latest {count}. Open an item to see all of its history.",
+  "@showingLatest": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchNameOrPhone": "Search name or phone",
+  "noCustomersYet": "No customers yet",
+  "noCustomersYetBody": "Add regulars here, then pick them when you record a stock out.",
+  "deleteNameQuestion": "Delete {name}?",
+  "@deleteNameQuestion": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteCustomerBody": "Past stock outs keep their name.",
+  "addressOptional": "Address (optional)",
+  "addCustomer": "Add customer",
+  "recentPurchases": "Recent purchases",
+  "saving": "Saving…",
+  "shops": "Shops",
+  "searchShops": "Search name, email or phone",
+  "expiring": "Expiring",
+  "noShopsHere": "No shops here",
+  "noShopsHereBody": "New shops appear when someone signs up in the app.",
+  "signedUpOn": "Signed up {date}",
+  "@signedUpOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "untilDaysLeft": "Until {date} · {days, plural, =1{1 day left} other{{days} days left}}",
+  "@untilDaysLeft": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "shopWorksUntil": "Shop works until the end of",
+  "shopNowRunsUntil": "{shop} now runs until {date}.",
+  "@shopNowRunsUntil": {
+    "placeholders": {
+      "shop": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "stopShopQuestion": "Stop {shop} now?",
+  "@stopShopQuestion": {
+    "placeholders": {
+      "shop": {
+        "type": "String"
+      }
+    }
+  },
+  "stopShopBody": "The shop becomes read-only straight away. Its data is kept, and renewing turns it back on.",
+  "stopNow": "Stop now",
+  "shopStopped": "{shop} has been stopped.",
+  "@shopStopped": {
+    "placeholders": {
+      "shop": {
+        "type": "String"
+      }
+    }
+  },
+  "waitingForYou": "Waiting for you to turn it on.",
+  "runsUntil": "Runs until {date}",
+  "@runsUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "addTimeFrom": "Add time from {date}",
+  "@addTimeFrom": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "addTimeFromToday": "Add time from today",
+  "addMonths": "{count, plural, =1{+ 1 month} other{+ {count} months}}",
+  "@addMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addOneYear": "+ 1 year",
+  "pickEndDate": "Pick an end date",
+  "stopThisShopNow": "Stop this shop now",
+  "loading": "Loading",
+  "errDeliveryFeeTooLarge": "That delivery fee is too large.",
+  "errTooManyPaymentMethods": "A shop can list at most {max} ways to pay.",
+  "@errTooManyPaymentMethods": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errPaymentMethodIncomplete": "Fill in the account name and number for each way to pay, or remove it.",
+  "errPaymentMethodTooLong": "That account name or number is too long.",
+  "paymentBank": "Bank account",
+  "shopSettings": "Shop settings",
+  "shopPhoneHelp": "Customers call and Viber you on this number.",
+  "deliveryFee": "Delivery fee",
+  "deliveryFeeHelp": "Added to each delivery order. Leave empty for free delivery.",
+  "waysToPay": "Ways to pay",
+  "waysToPayHelp": "Customers see these on their order, with a copy button.",
+  "addWayToPay": "Add a way to pay",
+  "accountName": "Account name",
+  "walletPhone": "Wallet phone number",
+  "bankAccountNumber": "Bank and account number",
+  "bankAccountNumberHint": "KBZ Bank 0123 4567 8901",
+  "settingsSaved": "Settings saved.",
+  "setUpPayment": "Set up delivery and payment",
+  "setUpPaymentBody": "Add your phone, delivery fee and how customers pay you.",
+  "deliveryAndPayment": "Delivery and payment",
+  "freeDelivery": "Free delivery",
+  "deliveryFeeLine": "Delivery {fee}",
+  "@deliveryFeeLine": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "noWaysToPay": "No ways to pay yet",
+  "call": "Call",
+  "cannotCall": "This phone can't make calls. The number is {phone}.",
+  "@cannotCall": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "viberNotInstalled": "Viber isn't on this phone.",
+  "contactTheShop": "Contact the shop",
+  "total": "Total",
+  "pickupNoFee": "None, you pick up",
+  "copy": "Copy",
+  "copied": "Copied {number}",
+  "@copied": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "screenshotGone": "This screenshot is no longer here.",
+  "screenshotSent": "Screenshot sent. The shop will check it.",
+  "screenshotSentLine": "Payment screenshot sent",
+  "view": "View",
+  "howToPay": "Pay {total} to the shop",
+  "@howToPay": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "sendPaymentScreenshot": "Send payment screenshot",
+  "replaceScreenshot": "Send a different screenshot",
+  "customerSentPayment": "Customer sent a payment screenshot",
+  "blacklist": "Blacklist",
+  "blockSomeone": "Block someone",
+  "blockThisOwner": "Block this owner",
+  "block": "Block",
+  "unblock": "Unblock",
+  "remark": "Remark",
+  "remarkHint": "Why are you blocking them? Only you see this.",
+  "blockExplain": "A blocked account can sign in but can't order, open a shop or change anything. Nothing is deleted.",
+  "searchBlacklist": "Search email or remark",
+  "nobodyBlocked": "Nobody is blocked",
+  "nobodyBlockedBody": "Accounts you block show here, with your remark.",
+  "blockedOn": "Blocked on {date}",
+  "@blockedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "emailBlocked": "{email} is blocked.",
+  "@emailBlocked": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "emailUnblocked": "{email} is unblocked.",
+  "@emailUnblocked": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "remarkSaved": "Remark saved.",
+  "unblockQuestion": "Unblock {email}?",
+  "@unblockQuestion": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "unblockBody": "They can use the app again straight away, including their shop if it is still open.",
+  "accountBlocked": "Your account is blocked",
+  "accountBlockedBody": "This account can no longer use {appName}. If you think this is a mistake, contact us.",
+  "@accountBlockedBody": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "errEmailInvalid": "Enter a valid email address.",
+  "errRemarkEmpty": "Write a remark: why you are blocking them.",
+  "errCannotBlockYourself": "You can't block your own account.",
+  "users": "Users",
+  "searchUsers": "Search email or shop name",
+  "customers": "Customers",
+  "shopAdmins": "Shop admins",
+  "blockedFilter": "Blocked",
+  "blockedTag": "Blocked",
+  "you": "You",
+  "roleCustomer": "Customer",
+  "roleShopAdmin": "Shop admin of {shop}",
+  "@roleShopAdmin": {
+    "placeholders": {
+      "shop": {
+        "type": "String"
+      }
+    }
+  },
+  "lastSeenOn": "last seen {date}",
+  "@lastSeenOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noUsersHere": "No accounts here",
+  "usersFootnote": "An account shows up here once it opens this version of the app."
+}

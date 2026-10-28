@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/order_repository.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../models/shop_order.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
-import 'orders_page.dart';
+import '../../utils/phone.dart';
+import '../theme.dart';
+import '../widgets/glass.dart';
+import 'customer_home_page.dart';
 
 /// Contact and delivery details, then place the order. Fields are pre-filled
 /// from the customer's most recent order, so no separate profile is stored.
@@ -60,8 +65,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     setState(() => _placing = true);
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final l = context.l10n;
     try {
-      await ref.read(orderRepositoryProvider).placeOrder(
+      final orders = await ref.read(orderRepositoryProvider).placeOrder(
             userId: user.uid,
             cart: ref.read(cartProvider),
             phone: _phone.text,
@@ -71,15 +77,17 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           );
       ref.read(cartProvider.notifier).clear();
       messenger.showSnackBar(
-        const SnackBar(content: Text('Order placed — awaiting confirmation.')),
+        SnackBar(
+          content: Text(l.ordersPlaced(orders)),
+        ),
       );
-      navigator.popUntil((route) => route.isFirst);
-      navigator.push(MaterialPageRoute(builder: (_) => const OrdersPage()));
+      showCustomerTab(navigator, ref.read(customerTabProvider.notifier),
+          CustomerTab.orders);
     } on OrderException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      messenger.showSnackBar(SnackBar(content: Text(e.message(l))));
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not place order: $e')),
+        SnackBar(content: Text(l.couldNotPlaceOrder('$e'))),
       );
     } finally {
       if (mounted) setState(() => _placing = false);
@@ -90,33 +98,73 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   Widget build(BuildContext context) {
     ref.listen(myOrdersProvider, (_, next) => _prefill(next.valueOrNull));
     final cart = ref.watch(cartProvider);
-    final total = cart.fold<int>(0, (sum, i) => sum + i.subtotal);
+    final figures = cart.fold<int>(0, (sum, i) => sum + i.subtotal);
     final isDelivery = _method == DeliveryMethod.delivery;
+    // One order, and one delivery fee, per shop; the house delivers free.
+    // OrderRepository re-reads the fees when it places the orders.
+    final shopIds = {for (final i in cart) i.product.shopId}..remove('');
+    final delivery = !isDelivery
+        ? 0
+        : shopIds.fold<int>(
+            0,
+            (sum, id) =>
+                sum +
+                (ref.watch(shopPublicProvider(id)).valueOrNull?.deliveryFee ??
+                    0));
+    final total = figures + delivery;
+    final l = context.l10n;
+
+    Widget row(String label, String value, {bool strong = false}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(
+                child: Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: strong ? AppColors.ink : AppColors.inkMuted,
+                        fontWeight:
+                            strong ? FontWeight.w700 : FontWeight.w400)),
+              ),
+              const SizedBox(width: 12),
+              Text(value,
+                  style: strong
+                      ? const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3)
+                      : const TextStyle(fontWeight: FontWeight.w500)),
+            ],
+          ),
+        );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Checkout')),
+      appBar: AppBar(title: Text(context.l10n.checkout)),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: pagePadding(context, top: 4, bottom: 24),
           children: [
             TextFormField(
               controller: _phone,
               keyboardType: TextInputType.phone,
               autofillHints: const [AutofillHints.telephoneNumber],
-              decoration: const InputDecoration(
-                labelText: 'Phone',
+              decoration: InputDecoration(
+                labelText: context.l10n.phone,
                 hintText: '09xxxxxxxxx',
               ),
               validator: (v) => normalizePhone(v ?? '') == null
-                  ? 'Enter a phone number like 09xxxxxxxxx.'
+                  ? context.l10n.errPhoneFormat
                   : null,
             ),
             const SizedBox(height: 16),
             SegmentedButton<DeliveryMethod>(
               segments: [
                 for (final m in DeliveryMethod.values)
-                  ButtonSegment(value: m, label: Text(m.label)),
+                  ButtonSegment(value: m, label: Text(m.label(context.l10n))),
               ],
               selected: {_method},
               onSelectionChanged: (s) => setState(() => _method = s.first),
@@ -129,12 +177,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 maxLines: 4,
                 maxLength: maxTextLength,
                 autofillHints: const [AutofillHints.fullStreetAddress],
-                decoration: const InputDecoration(
-                  labelText: 'Delivery address',
-                  hintText: 'Township, street, landmark',
+                decoration: InputDecoration(
+                  labelText: context.l10n.deliveryAddress,
+                  hintText: context.l10n.deliveryAddressHint,
                 ),
                 validator: (v) => (v ?? '').trim().isEmpty
-                    ? 'Enter a delivery address.'
+                    ? context.l10n.errAddressEmpty
                     : null,
               ),
             ],
@@ -143,40 +191,48 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               controller: _note,
               maxLines: 3,
               maxLength: maxTextLength,
-              decoration: const InputDecoration(labelText: 'Note (optional)'),
+              decoration: InputDecoration(labelText: context.l10n.noteOptional),
+            ),
+            const SizedBox(height: 8),
+            Glass(
+              radius: AppRadius.xl,
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  row(l.figuresCount(cart.fold(0, (n, i) => n + i.quantity)),
+                      formatMmk(figures)),
+                  row(
+                      l.deliveryMethodDelivery,
+                      !isDelivery
+                          ? l.pickupNoFee
+                          : delivery == 0
+                              ? l.freeDelivery
+                              : formatMmk(delivery)),
+                  const Divider(height: 18),
+                  row(l.total, formatMmk(total), strong: true),
+                  const SizedBox(height: 4),
+                  Text(
+                    l.payShopDirectly,
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.inkSubtle),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: _placing || cart.isEmpty ? null : _placeOrder,
+                    child: _placing
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(context.l10n.placeOrder),
+                  ),
+                ],
+              ),
             ),
           ],
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Estimated total: ${formatMmk(total)}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const Text(
-                'Pay the shop directly. The shop confirms the final price '
-                'and any delivery fee.',
-                style: TextStyle(fontSize: 12),
-              ),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: _placing || cart.isEmpty ? null : _placeOrder,
-                child: _placing
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Place order'),
-              ),
-            ],
-          ),
         ),
       ),
     );

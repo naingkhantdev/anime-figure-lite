@@ -1,33 +1,436 @@
 rules_version = '2';
 
-// Paste into Firebase console → Firestore Database → Rules, then Publish.
-// The Firebase console itself bypasses these rules, so staff manage
-// products and order status there.
+// Paste into Firebase console → Firestore Database → Rules, then Publish
+// (or `firebase deploy --only firestore:rules`).
+//
+// ---- Stock for many shops: super_admins, shops/** ----
+//
+// Who is who:
+// - Super admin: any account with a document at super_admins/{uid}. Create it
+//   by hand in the Firebase console; the app can never create one.
+// - Shop admin: an account that has opened a shop. Their shop is
+//   shops/{their uid}, so each account has at most one shop and can only
+//   ever reach its own.
+// - Customer: any other account. Uses products and orders below.
+//
+// A shop can also sell in the app: an item with listed == true has a copy
+// in products/{shop id}_{item id}, written by the owner's app together with
+// the item. Customers' orders carry the shop's id, and the shop handles
+// them.
+//
+// A shop can change its data only while shops/{id}.expires_at is in the
+// future. A new shop has expires_at == null (pending) until the super admin
+// sets a date. Expired shops can still read everything.
+//
+// The super admin can block an account by email (blacklist, blocked). A
+// blocked account can still read, but writes nothing: no orders, no shop.
+//
+// Numbers here must match lib/logic/stock.dart and lib/data/*.dart.
+//
+// Roles: see lib/ui/pages/role_gate.dart.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
+    }
+
+    function isOwner(shopId) {
+      return signedIn() && request.auth.uid == shopId;
+    }
+
+    function shopIsActive(shopId) {
+      let shop = get(/databases/$(database)/documents/shops/$(shopId)).data;
+      return shop.expires_at != null && shop.expires_at > request.time;
+    }
+
+    function canWrite(shopId) {
+      return isOwner(shopId) && shopIsActive(shopId) && !isBlocked();
+    }
+
+    // The signed-in account's email, as blocked/{email} spells it.
+    function myEmail() {
+      return request.auth.token.get('email', '').lower();
+    }
+
+    // Blocked by the super admin: see blacklist below.
+    function isBlocked() {
+      return signedIn() && myEmail() != ''
+        && exists(/databases/$(database)/documents/blocked/$(myEmail()));
+    }
+
+    function text(value, min, max) {
+      return value is string && value.size() >= min && value.size() <= max;
+    }
+
+    function wholeNumber(value, max) {
+      return value is int && value >= 0 && value <= max;
+    }
+
+    match /super_admins/{uid} {
+      // Lets the app ask "am I the super admin?" and nothing more.
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ---- Every account that has opened the app ----
+    // Each account's own app writes its email here, so the super admin can
+    // find customers and shop admins (lib/data/user_repository.dart).
+    match /users/{uid} {
+      allow read: if isSuperAdmin() || (signedIn() && request.auth.uid == uid);
+
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(
+             ['email', 'created_at', 'last_seen_at'])
+        && request.resource.data.keys().hasAll(
+             ['email', 'created_at', 'last_seen_at'])
+        && request.resource.data.email == request.auth.token.get('email', '')
+        && request.resource.data.created_at == request.time
+        && request.resource.data.last_seen_at == request.time;
+
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['email', 'last_seen_at'])
+        && request.resource.data.email == request.auth.token.get('email', '')
+        && request.resource.data.last_seen_at == request.time;
+
+      // Before deleting the account itself.
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ---- Blocked accounts, by lowercased email ----
+    // blacklist/{email} holds the super admin's private remark; blocked/
+    // {email} is an empty twin the blocked account may read, so the app can
+    // tell it it is blocked. The two are created and deleted together.
+    // Lengths must match lib/data/blacklist_repository.dart.
+    match /blacklist/{email} {
+      allow read: if isSuperAdmin();
+
+      allow create: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly(['email', 'remark', 'created_at'])
+        && request.resource.data.keys().hasAll(['email', 'remark', 'created_at'])
+        && request.resource.data.email == email
+        && email == email.lower()
+        && email.matches('[^@ ]+@[^@ ]+')
+        && text(email, 3, 254)
+        && email != myEmail()
+        && text(request.resource.data.remark, 1, 500)
+        && request.resource.data.created_at == request.time
+        && existsAfter(/databases/$(database)/documents/blocked/$(email));
+
+      allow update: if isSuperAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['remark'])
+        && text(request.resource.data.remark, 1, 500);
+
+      allow delete: if isSuperAdmin()
+        && !existsAfter(/databases/$(database)/documents/blocked/$(email));
+    }
+
+    match /blocked/{email} {
+      allow read: if isSuperAdmin() || (signedIn() && email == myEmail());
+
+      allow create: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly(['created_at'])
+        && request.resource.data.created_at == request.time
+        && existsAfter(/databases/$(database)/documents/blacklist/$(email));
+
+      allow update: if false;
+
+      allow delete: if isSuperAdmin()
+        && !existsAfter(/databases/$(database)/documents/blacklist/$(email));
+    }
+
+    match /shops/{shopId} {
+      allow read: if isOwner(shopId) || isSuperAdmin();
+
+      // A new shop always starts pending.
+      allow create: if isOwner(shopId)
+        && !isBlocked()
+        && request.resource.data.keys().hasOnly(
+             ['name', 'phone', 'owner_email', 'expires_at', 'created_at'])
+        && request.resource.data.keys().hasAll(
+             ['name', 'phone', 'owner_email', 'expires_at', 'created_at'])
+        && text(request.resource.data.name, 1, 80)
+        && text(request.resource.data.phone, 1, 20)
+        && request.resource.data.owner_email == request.auth.token.email
+        && request.resource.data.expires_at == null
+        && request.resource.data.created_at == request.time;
+
+      // The owner may rename their shop and change its phone, even when
+      // expired. Only the super admin may touch expires_at. Customers call
+      // the shop on its phone, so it can't be blank (older shops are asked
+      // for one the next time they save).
+      allow update: if (
+          isOwner(shopId)
+          && !isBlocked()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['name', 'phone'])
+          && text(request.resource.data.name, 1, 80)
+          && text(request.resource.data.phone, 1, 20)
+        ) || (
+          isSuperAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['expires_at'])
+          && (request.resource.data.expires_at == null
+              || request.resource.data.expires_at is timestamp)
+        );
+
+      allow delete: if false; // console only
+
+      match /items/{itemId} {
+        allow read: if isOwner(shopId) || isSuperAdmin();
+
+        // Any change to `quantity` must come with a new movement in the same
+        // write (see the moves rule), so history always explains the count.
+        allow create: if canWrite(shopId)
+          && validItem(request.resource.data)
+          && request.resource.data.created_at == request.time
+          && (request.resource.data.quantity == 0
+              || newMoveSets(shopId, itemId, request.resource.data));
+
+        allow update: if canWrite(shopId)
+          && validItem(request.resource.data)
+          && request.resource.data.created_at == resource.data.created_at
+          && (request.resource.data.quantity == resource.data.quantity
+              || newMoveSets(shopId, itemId, request.resource.data));
+
+        // Items are hidden with is_active = false instead, so old movements
+        // still point at something.
+        allow delete: if false;
+
+        // listed, category, anime, description and image_url are for
+        // selling in the app; older items don't have them.
+        function validItem(d) {
+          return d.keys().hasOnly(
+                   ['name', 'code', 'unit', 'price', 'cost', 'quantity',
+                    'low_stock_at', 'is_active', 'last_move_id',
+                    'created_at', 'updated_at',
+                    'listed', 'category', 'anime', 'description', 'image_url'])
+            && d.keys().hasAll(
+                   ['name', 'code', 'unit', 'price', 'cost', 'quantity',
+                    'low_stock_at', 'is_active', 'last_move_id',
+                    'created_at', 'updated_at'])
+            && text(d.name, 1, 100)
+            && text(d.code, 0, 40)
+            && text(d.unit, 0, 20)
+            && wholeNumber(d.price, 1000000000)
+            && wholeNumber(d.cost, 1000000000)
+            && wholeNumber(d.quantity, 1000000)
+            && wholeNumber(d.low_stock_at, 1000000)
+            && d.is_active is bool
+            && d.last_move_id is string
+            && d.updated_at == request.time
+            && d.get('listed', false) is bool
+            && text(d.get('category', ''), 0, 40)
+            && text(d.get('anime', ''), 0, 60)
+            && text(d.get('description', ''), 0, 500)
+            && text(d.get('image_url', ''), 0, 500);
+        }
+
+        // The movement named by last_move_id is being created in this very
+        // write and ends at the item's new quantity.
+        function newMoveSets(shopId, itemId, d) {
+          let path = /databases/$(database)/documents/shops/$(shopId)/moves/$(d.last_move_id);
+          return d.last_move_id.size() > 0
+            && !exists(path)
+            && getAfter(path).data.item_id == itemId
+            && getAfter(path).data.quantity_after == d.quantity;
+        }
+      }
+
+      match /moves/{moveId} {
+        allow read: if isOwner(shopId) || isSuperAdmin();
+
+        // Written together with the item it changes. quantity_before is the
+        // item's real stored quantity (0 for a brand-new item), and the
+        // arithmetic matches lib/logic/stock.dart quantityAfter().
+        allow create: if canWrite(shopId)
+          && request.resource.data.keys().hasOnly(
+               ['type', 'item_id', 'item_name', 'quantity', 'quantity_before',
+                'quantity_after', 'unit_price', 'customer_id', 'customer_name',
+                'note', 'created_by', 'created_at'])
+          && request.resource.data.keys().hasAll(
+               ['type', 'item_id', 'item_name', 'quantity', 'quantity_before',
+                'quantity_after', 'unit_price', 'customer_id', 'customer_name',
+                'note', 'created_by', 'created_at'])
+          && request.resource.data.type in ['in', 'out', 'adjust']
+          && text(request.resource.data.item_id, 1, 100)
+          && text(request.resource.data.item_name, 1, 100)
+          && wholeNumber(request.resource.data.quantity, 1000000)
+          && wholeNumber(request.resource.data.quantity_before, 1000000)
+          && wholeNumber(request.resource.data.quantity_after, 1000000)
+          && wholeNumber(request.resource.data.unit_price, 1000000000)
+          && text(request.resource.data.customer_id, 0, 100)
+          && text(request.resource.data.customer_name, 0, 100)
+          && text(request.resource.data.note, 0, 500)
+          && request.resource.data.created_by == request.auth.uid
+          && request.resource.data.created_at == request.time
+          && quantityBeforeIsReal(shopId, request.resource.data)
+          && arithmeticAddsUp(request.resource.data)
+          && itemPointsHere(shopId, moveId, request.resource.data);
+
+        // History is permanent. Fix mistakes with a new movement.
+        allow update, delete: if false;
+
+        function itemPath(shopId, d) {
+          return /databases/$(database)/documents/shops/$(shopId)/items/$(d.item_id);
+        }
+
+        function quantityBeforeIsReal(shopId, d) {
+          return exists(itemPath(shopId, d))
+            ? get(itemPath(shopId, d)).data.quantity == d.quantity_before
+            : d.quantity_before == 0;
+        }
+
+        function arithmeticAddsUp(d) {
+          return (d.type == 'in'
+                  && d.quantity > 0
+                  && d.quantity_after == d.quantity_before + d.quantity)
+            || (d.type == 'out'
+                  && d.quantity > 0
+                  && d.quantity_after == d.quantity_before - d.quantity)
+            || (d.type == 'adjust'
+                  && d.quantity_after == d.quantity);
+        }
+
+        function itemPointsHere(shopId, moveId, d) {
+          let item = getAfter(itemPath(shopId, d)).data;
+          return item.last_move_id == moveId
+            && item.quantity == d.quantity_after;
+        }
+      }
+
+      match /customers/{customerId} {
+        allow read: if isOwner(shopId) || isSuperAdmin();
+        allow create, update: if canWrite(shopId)
+          && request.resource.data.keys().hasOnly(
+               ['name', 'phone', 'address', 'note', 'created_at', 'updated_at'])
+          && request.resource.data.keys().hasAll(
+               ['name', 'phone', 'address', 'note', 'created_at', 'updated_at'])
+          && text(request.resource.data.name, 1, 100)
+          && text(request.resource.data.phone, 0, 20)
+          && text(request.resource.data.address, 0, 500)
+          && text(request.resource.data.note, 0, 500)
+          && request.resource.data.created_at is timestamp
+          && request.resource.data.updated_at == request.time;
+        // Movements keep a copy of the customer's name, so deleting is safe.
+        allow delete: if canWrite(shopId);
+      }
+    }
+
+    // ---- What customers may know about a shop ----
+    // shops/{id} holds the owner's email and expiry, so it stays private;
+    // this copy holds only what a customer needs to order and pay: the
+    // shop's phone, its delivery fee and how to pay it. Written by the
+    // owner's app together with shops/{id}, while the shop is open.
+    // Numbers must match lib/data/shop_repository.dart.
+    match /shop_public/{shopId} {
+      allow read: if true;
+
+      allow create, update: if canWrite(shopId)
+        && request.resource.data.keys().hasOnly(
+             ['phone', 'delivery_fee', 'payment_methods', 'updated_at'])
+        && request.resource.data.keys().hasAll(
+             ['phone', 'delivery_fee', 'payment_methods', 'updated_at'])
+        && request.resource.data.phone == getAfter(
+             /databases/$(database)/documents/shops/$(shopId)).data.phone
+        && wholeNumber(request.resource.data.delivery_fee, 1000000)
+        && request.resource.data.payment_methods is list
+        && request.resource.data.payment_methods.size() <= 6
+        && request.resource.data.updated_at == request.time;
+
+      allow delete: if false;
+    }
+
+    // ---- The figure shop: products, orders ----
+    // The Firebase console bypasses these rules, so staff manage the
+    // house's own products and order status there.
 
     // Anyone may browse, signed in or not.
     match /products/{productId} {
       allow read: if true;
-      allow write: if false; // console only
+
+      // A shop's copy of one of its items. Every value must equal the item
+      // as it stands after this write, and the shop as it is now, so the
+      // catalog can't say anything the stock doesn't.
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(listingKeys())
+        && request.resource.data.keys().hasAll(listingKeys())
+        && request.resource.data.shop_id == request.auth.uid
+        && canWrite(request.auth.uid)
+        && productId == request.auth.uid + '_' + request.resource.data.item_id
+        && (resource == null
+            || resource.data.get('shop_id', '') == request.auth.uid)
+        && listingMatches(request.resource.data);
+
+      // Renewing or ending a shop moves its figures' end date with it.
+      allow update: if isSuperAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['shop_open_until'])
+        && request.resource.data.shop_open_until == getAfter(
+             /databases/$(database)/documents/shops/$(resource.data.shop_id)
+           ).data.expires_at;
+
+      allow delete: if false; // unlisting sets is_active = false
+
+      function listingKeys() {
+        return ['name', 'description', 'price', 'stock_quantity',
+                'image_url', 'category', 'anime', 'is_active', 'shop_id',
+                'shop_name', 'shop_open_until', 'item_id', 'updated_at'];
+      }
+
+      function listingMatches(d) {
+        let item = getAfter(/databases/$(database)/documents/shops/$(d.shop_id)/items/$(d.item_id)).data;
+        let shop = get(/databases/$(database)/documents/shops/$(d.shop_id)).data;
+        return d.name == item.name
+          && d.price == item.price
+          && d.stock_quantity == item.quantity
+          && d.description == item.get('description', '')
+          && d.image_url == item.get('image_url', '')
+          && d.category == item.get('category', '')
+          && d.anime == item.get('anime', '')
+          && d.is_active == (item.get('listed', false) && item.is_active)
+          && d.shop_name == shop.name
+          && d.shop_open_until == shop.expires_at
+          && d.updated_at == request.time;
+      }
     }
 
     match /orders/{orderId} {
+      // The customer who placed it, and the shop it was placed with.
       allow read: if request.auth != null
-        && resource.data.user_id == request.auth.uid;
+        && (resource.data.user_id == request.auth.uid
+            || resource.data.shop_id == request.auth.uid);
 
       // Customers can only create their own pending order. Prices/total in
       // the order are written by the client, so staff MUST re-check them
       // against the product prices before confirming. See README.
       // Lengths must match lib/data/order_repository.dart.
+      // The delivery fee, unlike the prices, is checked here: it must be
+      // the shop's own fee (shop_public) for delivery, and 0 for pickup or
+      // the house's figures. total includes it.
       allow create: if request.auth != null
+        && !isBlocked()
         && request.resource.data.keys().hasOnly(
-             ['user_id', 'status', 'items', 'total', 'phone',
-              'delivery_method', 'address', 'note', 'created_at'])
+             ['user_id', 'shop_id', 'status', 'items', 'total', 'phone',
+              'delivery_method', 'address', 'note', 'created_at',
+              'delivery_fee'])
         && request.resource.data.keys().hasAll(
-             ['user_id', 'status', 'items', 'total', 'phone',
-              'delivery_method', 'address', 'note', 'created_at'])
+             ['user_id', 'shop_id', 'status', 'items', 'total', 'phone',
+              'delivery_method', 'address', 'note', 'created_at',
+              'delivery_fee'])
+        && wholeNumber(request.resource.data.delivery_fee, 1000000)
+        && request.resource.data.delivery_fee
+             == deliveryFeeFor(request.resource.data)
+        && request.resource.data.total >= request.resource.data.delivery_fee
         && request.resource.data.user_id == request.auth.uid
+        && text(request.resource.data.shop_id, 0, 128)
         && request.resource.data.status == 'pending'
         && request.resource.data.items is list
         && request.resource.data.items.size() > 0
@@ -49,13 +452,125 @@ service cloud.firestore {
       // A customer may cancel their own order while it is still pending,
       // and change nothing else.
       allow update: if request.auth != null
+        && !isBlocked()
         && resource.data.user_id == request.auth.uid
         && resource.data.status == 'pending'
         && request.resource.data.status == 'cancelled'
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['status']);
 
+      // While the order waits, the customer may attach a screenshot of
+      // their payment, or replace it: payment_proof_id names a proof
+      // created in this same write, for this order (see payment_proofs).
+      allow update: if request.auth != null
+        && !isBlocked()
+        && resource.data.user_id == request.auth.uid
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['payment_proof_id', 'payment_sent_at'])
+        && request.resource.data.payment_sent_at == request.time
+        && proofIsFor(request.resource.data.payment_proof_id, orderId);
+
+      function proofIsFor(proofId, orderId) {
+        let proof = getAfter(
+          /databases/$(database)/documents/payment_proofs/$(proofId)).data;
+        return proofId is string
+          && proof.order_id == orderId
+          && proof.user_id == request.auth.uid;
+      }
+
+      // Before deleting their account, a customer blanks their phone,
+      // address and note on their orders. The orders stay for the shop's
+      // records. See OrderRepository.forgetContactDetails.
+      allow update: if request.auth != null
+        && resource.data.user_id == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['phone', 'address', 'note'])
+        && request.resource.data.phone == ''
+        && request.resource.data.address == ''
+        && request.resource.data.note == '';
+
+      // The shop moves its own order on, one step at a time, while open:
+      // pending → confirmed or cancelled, confirmed → shipped or cancelled.
+      allow update: if signedIn()
+        && resource.data.get('shop_id', '') == request.auth.uid
+        && canWrite(request.auth.uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status'])
+        && ((resource.data.status == 'pending'
+             && request.resource.data.status in ['confirmed', 'cancelled'])
+            || (resource.data.status == 'confirmed'
+             && request.resource.data.status in ['shipped', 'cancelled']));
+
       allow delete: if false; // console only
+
+      // What the shop charges to deliver order [d]; a shop that hasn't
+      // saved its settings delivers free.
+      function deliveryFeeFor(d) {
+        let path = /databases/$(database)/documents/shop_public/$(d.shop_id);
+        return d.delivery_method == 'pickup' || d.shop_id == ''
+          ? 0
+          : (exists(path) ? get(path).data.delivery_fee : 0);
+      }
+    }
+
+    // ---- Photos of shops' items ----
+    // Kept in Firestore because Storage needs the paid plan. The app
+    // shrinks each photo to 800px, JPEG quality 70 (about 60–150 KB); the
+    // cap matches lib/data/photo_repository.dart maxPhotoBytes.
+    match /photos/{photoId} {
+      allow read: if true; // the catalog is public
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['shop_id', 'data', 'created_at'])
+        && request.resource.data.keys().hasAll(['shop_id', 'data', 'created_at'])
+        && request.resource.data.shop_id == request.auth.uid
+        && canWrite(request.auth.uid)
+        && request.resource.data.data is bytes
+        && request.resource.data.data.size() <= 400 * 1024
+        && request.resource.data.created_at == request.time;
+
+      allow update: if false; // a new photo is a new document
+      allow delete: if signedIn() && resource.data.shop_id == request.auth.uid;
+    }
+
+    // ---- Payment screenshots ----
+    // A customer's proof of paying a shop for one order. Private, unlike
+    // product photos: only the customer, that shop and the super admin see
+    // it. Write-once; a replacement is a new document. The size cap matches
+    // lib/data/order_repository.dart maxProofBytes.
+    match /payment_proofs/{proofId} {
+      allow read: if signedIn()
+        && (resource.data.user_id == request.auth.uid
+            || resource.data.shop_id == request.auth.uid
+            || isSuperAdmin());
+
+      allow create: if signedIn()
+        && !isBlocked()
+        && request.resource.data.keys().hasOnly(
+             ['order_id', 'user_id', 'shop_id', 'data', 'created_at'])
+        && request.resource.data.keys().hasAll(
+             ['order_id', 'user_id', 'shop_id', 'data', 'created_at'])
+        && request.resource.data.user_id == request.auth.uid
+        && proofMatchesOrder(request.resource.data)
+        && request.resource.data.data is bytes
+        && request.resource.data.data.size() <= 400 * 1024
+        && request.resource.data.created_at == request.time;
+
+      allow update: if false;
+
+      // When replaced, and when the customer deletes their account.
+      allow delete: if signedIn() && resource.data.user_id == request.auth.uid;
+
+      // The customer's own waiting order, with that order's shop.
+      function proofMatchesOrder(d) {
+        let order = get(
+          /databases/$(database)/documents/orders/$(d.order_id)).data;
+        return order.user_id == request.auth.uid
+          && order.status == 'pending'
+          && order.get('shop_id', '') != ''
+          && order.get('shop_id', '') == d.shop_id;
+      }
     }
 
     match /{document=**} {

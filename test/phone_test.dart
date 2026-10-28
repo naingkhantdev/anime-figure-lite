@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:anime_figure_shop_lite/data/order_repository.dart';
+import 'package:anime_figure_shop_lite/utils/phone.dart';
 
 void main() {
   group('normalizePhone', () {
@@ -27,5 +27,11 @@ void main() {
       expect(normalizePhone('09abc456789'), isNull);
       expect(normalizePhone('959123456789'), isNull);
     });
+  });
+
+  test('internationalPhone gives Viber the +95 form', () {
+    expect(internationalPhone('09123456789'), '+959123456789');
+    expect(internationalPhone('09 123-456-789'), '+959123456789');
+    expect(internationalPhone('+959123456789'), '+959123456789');
   });
 }
