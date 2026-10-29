@@ -117,12 +117,16 @@ fade in (~1.4 s) while the app loads underneath. A tap skips it.
 
 ### Languages
 
-Every word the app shows lives in `lib/l10n/app_en.arb` (English). The app
-follows the phone's language when it has a file for it, else English.
+Every word the app shows lives in `lib/l10n/`: `app_en.arb` (English) and
+`app_my.arb` (Burmese, မြန်မာ). Anyone can pick the language under
+**Language**: on the Account tab, on a shop admin's Shop tab, or from the
+super admin's top bar. The choice is kept on the phone. Until they pick
+one, the app follows the phone's language when it has it, else English.
 
-- **Add a language** (Burmese is `my`): copy `app_en.arb` to `app_my.arb`,
-  set `"@@locale": "my"`, translate the values (not the keys, and keep
-  `{placeholders}` as they are), then run `flutter gen-l10n`.
+- **Add a language**: copy `app_en.arb` to `app_<code>.arb`, set
+  `"@@locale"`, translate the values (not the keys, and keep
+  `{placeholders}` as they are), run `flutter gen-l10n`, then add it to
+  `_languages` in `lib/ui/widgets/language.dart` under its own name.
 - **New text in code:** add a key to `app_en.arb`, run `flutter gen-l10n`,
   and use `context.l10n.yourKey`. Errors from `lib/data` and `lib/logic`
   carry `(l) => l.yourKey`, so they need no `BuildContext`.
@@ -131,14 +135,15 @@ follows the phone's language when it has a file for it, else English.
 
 ### Changing the logo
 
-The logo is a badge: the red neon fighter breaking out of a glowing
-shockwave ring, with sparks and red light behind him, on navy, the
-splash's hit in one picture. It is the launcher icon and the logo in the
-app; the splash itself uses the fighter alone and draws the effects live.
+The logo is a hooded figure with glowing eyes in teal flames of code, on
+black (`assets/brand/source/icon.jpg`, made with Gemini; square, no text).
+It is the launcher icon, and the logo in the app on a round black disc.
+The splash keeps the red neon fighter, drawn with its effects live.
 Everything is built from the source art in `assets/brand/source/`:
 
-- `logo.jpg`: the logo, square, the fighter on its glass tile on dark
-  navy (as the artist made it).
+- `icon.jpg`: the logo, as above.
+- `logo.jpg`: the pose the splash lands on, square, the fighter on its
+  glass tile on dark navy (as the artist made it).
 - `poses/1.jpg`, `2.jpg`, ...: more fighting poses in the same red neon
   style, on any dark background, with or without a tile (now: stance,
   high kick, ground smash, jump, made with Gemini). The script cuts out

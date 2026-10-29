@@ -46,6 +46,7 @@ dependencies:
   image_picker: ^1.1.2
   # Call and Viber buttons on orders.
   url_launcher: ^6.3.0
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:
@@ -67,7 +68,8 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   image_path: "assets/brand/icon.png"
-  adaptive_icon_background: "#12182C"
+  # The black the icon art is drawn on (ICON_GROUND in tool/brand_assets.py).
+  adaptive_icon_background: "#000000"
   adaptive_icon_foreground: "assets/brand/icon_foreground.png"
   # The art already keeps to the adaptive-icon safe zone; no extra padding.
   adaptive_icon_foreground_inset: 0
@@ -82,6 +84,7 @@ flutter:
   # README "Changing the logo".
   assets:
     - assets/brand/logo.png
+    - assets/brand/icon.png
     - assets/brand/poses/
     # Product photos from the old shop; products.image_url points here
     # (tool/seed/seed_products.js).

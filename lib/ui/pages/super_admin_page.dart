@@ -11,6 +11,7 @@ import '../widgets/effects.dart';
 import '../widgets/glass.dart';
 import '../widgets/brand.dart';
 import '../widgets/common.dart';
+import '../widgets/language.dart';
 import 'blacklist_page.dart';
 import 'users_page.dart';
 
@@ -46,6 +47,7 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
             onPressed: () => Navigator.push(context,
                 MaterialPageRoute<void>(builder: (_) => const BlacklistPage())),
           ),
+          const LanguageButton(),
           IconButton(
             tooltip: l.signOut,
             icon: const Icon(Icons.logout),

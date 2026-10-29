@@ -4,5 +4,5 @@
          window behind Flutter, so nothing flashes between the splash and
          the first frame of splash_intro.dart. -->
     <color name="splash_background">#12182C</color>
-	<color name="ic_launcher_background">#12182C</color>
+	<color name="ic_launcher_background">#000000</color>
 </resources>

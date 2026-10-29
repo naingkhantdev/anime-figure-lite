@@ -169,6 +169,70 @@ class _Halo extends StatelessWidget {
   }
 }
 
+/// The top of a tab that has nothing of the shopper's to show yet: a plain
+/// headline and one line under it, left-aligned with the page title. No
+/// picture; the words say it. What to do next follows in the page.
+class PageIntro extends StatelessWidget {
+  const PageIntro({super.key, required this.title, required this.message});
+
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(title, style: Theme.of(context).textTheme.headlineSmall),
+        ),
+        const SizedBox(height: 8),
+        Text(message,
+            style: const TextStyle(
+                color: AppColors.inkMuted, fontSize: 15, height: 1.45)),
+      ],
+    );
+  }
+}
+
+/// A heading over a group further down a page, like "In stock now".
+class SectionHeading extends StatelessWidget {
+  const SectionHeading(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Text(text,
+          style: const TextStyle(
+              fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -0.2)),
+    );
+  }
+}
+
+/// Keeps a page's own content to a readable column on tablets, against
+/// the start edge like the page title. Full width on phones.
+class StartColumn extends StatelessWidget {
+  const StartColumn({super.key, required this.child, this.maxWidth = 480});
+
+  final Widget child;
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: child,
+      ),
+    );
+  }
+}
+
 /// A small coloured pill: a tint background, its border, and readable ink.
 class Pill extends StatelessWidget {
   const Pill({

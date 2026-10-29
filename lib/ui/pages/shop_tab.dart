@@ -15,6 +15,7 @@ import '../widgets/glass.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/brand.dart';
 import '../widgets/common.dart';
+import '../widgets/language.dart';
 import 'delete_account_dialog.dart';
 import 'shop_settings_page.dart';
 
@@ -105,6 +106,8 @@ class ShopTab extends ConsumerWidget {
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: AppColors.inkMuted)),
             ],
+            const SizedBox(height: 12),
+            const LanguageTile(),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => confirmSignOut(

@@ -392,6 +392,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keepBrowsing => 'Keep browsing';
 
   @override
+  String get guestSubtitle => 'Sign in to check out and follow your orders.';
+
+  @override
+  String get withAnAccount => 'With an account';
+
+  @override
+  String get inStockNow => 'In stock now';
+
+  @override
   String ordersPlaced(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1367,4 +1376,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get usersFootnote => 'An account shows up here once it opens this version of the app.';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languagePhone => 'Phone\'s language';
 }

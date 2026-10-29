@@ -4,10 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../theme.dart';
-import '../widgets/brand.dart';
 import '../widgets/common.dart';
-import '../widgets/effects.dart';
 import '../widgets/glass.dart';
+import '../widgets/language.dart';
 import 'cart_page.dart';
 import 'create_shop_page.dart';
 import 'delete_account_dialog.dart';
@@ -41,8 +40,8 @@ void showCustomerTab(NavigatorState navigator,
 /// A guest's or customer's home: Shop, Cart, Orders, Account. Bottom bar on
 /// phones, side rail on tablets, like the shop owner's home.
 ///
-/// Account is the one place to sign in from; Orders sends guests there.
-/// Checkout still asks for sign-in on the spot so a cart is never lost.
+/// Guests can sign in from Account or Orders. Checkout still asks for
+/// sign-in on the spot so a cart is never lost.
 class CustomerHomePage extends ConsumerWidget {
   const CustomerHomePage({super.key});
 
@@ -65,11 +64,11 @@ class CustomerHomePage extends ConsumerWidget {
 
     final content = IndexedStack(
       index: tab,
-      children: [
-        const ProductListPage(),
-        const CartPage(),
-        _OrdersTab(onSignIn: () => select(CustomerTab.account.index)),
-        const _AccountTab(),
+      children: const [
+        ProductListPage(),
+        CartPage(),
+        _OrdersTab(),
+        _AccountTab(),
       ],
     );
 
@@ -131,30 +130,69 @@ List<(IconData, IconData, String)> _sections(AppLocalizations l) => [
     ];
 
 class _OrdersTab extends ConsumerWidget {
-  const _OrdersTab({required this.onSignIn});
-
-  final VoidCallback onSignIn;
+  const _OrdersTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final signedIn = ref.watch(authStateProvider).valueOrNull != null;
     if (signedIn) return const OrdersPage();
+    final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.myOrders)),
-      body: EmptyState(
-        icon: Icons.receipt_long_outlined,
-        title: context.l10n.signInToSeeOrders,
-        message: context.l10n.signInToSeeOrdersBody,
-        action: FilledButton(
-          onPressed: onSignIn,
-          child: Text(context.l10n.goToAccount),
-        ),
-        secondary: TextButton(
-          onPressed: () =>
-              ref.read(customerTabProvider.notifier).state = CustomerTab.shop,
-          child: Text(context.l10n.browseFigures),
-        ),
+      appBar: AppBar(title: Text(l.myOrders)),
+      body: ListView(
+        padding: pagePadding(context, top: 16),
+        children: [
+          StartColumn(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                PageIntro(
+                    title: l.signInToSeeOrders,
+                    message: l.signInToSeeOrdersBody),
+                const SizedBox(height: 16),
+                const _StatusFlow(),
+                const SizedBox(height: 32),
+                FilledButton(
+                  onPressed: () => ensureSignedIn(context, ref),
+                  child: Text(l.signIn),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton(
+                  onPressed: () => ensureSignedIn(context, ref, signUp: true),
+                  child: Text(l.createAnAccount),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+/// The statuses an order moves through, as the very pills a placed order
+/// wears on the Orders page, so the shopper recognises them later. Wraps
+/// onto a second line on a narrow phone.
+class _StatusFlow extends StatelessWidget {
+  const _StatusFlow();
+
+  @override
+  Widget build(BuildContext context) {
+    const arrow = ExcludeSemantics(
+      child: Icon(Icons.arrow_forward_rounded,
+          size: 14, color: AppColors.inkSubtle),
+    );
+    return const Wrap(
+      spacing: 6,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        OrderStatusPill(status: 'pending'),
+        arrow,
+        OrderStatusPill(status: 'confirmed'),
+        arrow,
+        OrderStatusPill(status: 'shipped'),
+      ],
     );
   }
 }
@@ -171,7 +209,7 @@ class _AccountTab extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.tabAccount)),
       body: user == null
-          ? const _GuestWelcome()
+          ? const _GuestAccount()
           : ListView(
               padding: pagePadding(context, top: 8),
               children: [
@@ -243,6 +281,8 @@ class _AccountTab extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
+                const LanguageTile(),
+                const SizedBox(height: 12),
                 Card(
                   clipBehavior: Clip.antiAlias,
                   child: ListTile(
@@ -259,86 +299,51 @@ class _AccountTab extends ConsumerWidget {
   }
 }
 
-/// The Account tab for someone not signed in: what an account gives them,
-/// and the two ways in.
-class _GuestWelcome extends ConsumerWidget {
-  const _GuestWelcome();
+/// The Account tab for someone not signed in. The ways in come first; what
+/// an account gives sits below, plain text rather than tappable-looking
+/// rows, for whoever wants a reason before they sign up.
+class _GuestAccount extends ConsumerWidget {
+  const _GuestAccount();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+    final l = context.l10n;
     return ListView(
-      padding: pagePadding(context, top: 8),
+      padding: pagePadding(context, top: 16),
       children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Glass(
-                  radius: AppRadius.xxl,
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Center(child: AppLogo(size: 64)),
-                      const SizedBox(height: 16),
-                      Text(context.l10n.browsingAsGuest,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 6),
-                      Text(
-                        context.l10n.guestIntro,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.inkMuted),
-                      ),
-                      const SizedBox(height: 20),
-                      for (final (i, (icon, title, line)) in [
-                        (
-                          Icons.shopping_bag_outlined,
-                          context.l10n.benefitCheckout,
-                          context.l10n.benefitCheckoutLine
-                        ),
-                        (
-                          Icons.local_shipping_outlined,
-                          context.l10n.benefitFollow,
-                          context.l10n.benefitFollowLine
-                        ),
-                        (
-                          Icons.storefront_outlined,
-                          context.l10n.benefitShop,
-                          context.l10n.benefitShopLine
-                        ),
-                      ].indexed)
-                        Reveal(
-                          index: i,
-                          child: _Benefit(icon: icon, title: title, line: line),
-                        ),
-                      const SizedBox(height: 20),
-                      FilledButton(
-                        onPressed: () => ensureSignedIn(context, ref),
-                        child: Text(context.l10n.signIn),
-                      ),
-                      const SizedBox(height: 10),
-                      OutlinedButton(
-                        onPressed: () =>
-                            ensureSignedIn(context, ref, signUp: true),
-                        child: Text(context.l10n.createAnAccount),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => ref
-                      .read(customerTabProvider.notifier)
-                      .state = CustomerTab.shop,
-                  child: Text(context.l10n.keepBrowsing),
-                ),
-              ],
-            ),
+        StartColumn(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PageIntro(title: l.browsingAsGuest, message: l.guestSubtitle),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: () => ensureSignedIn(context, ref),
+                child: Text(l.signIn),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton(
+                onPressed: () => ensureSignedIn(context, ref, signUp: true),
+                child: Text(l.createAnAccount),
+              ),
+              const SizedBox(height: 40),
+              SectionHeading(l.withAnAccount),
+              const SizedBox(height: 4),
+              _Benefit(
+                  icon: Icons.shopping_bag_outlined,
+                  title: l.benefitCheckout,
+                  line: l.benefitCheckoutLine),
+              _Benefit(
+                  icon: Icons.local_shipping_outlined,
+                  title: l.benefitFollow,
+                  line: l.benefitFollowLine),
+              _Benefit(
+                  icon: Icons.storefront_outlined,
+                  title: l.benefitShop,
+                  line: l.benefitShopLine),
+              const SizedBox(height: 32),
+              const LanguageTile(),
+            ],
           ),
         ),
       ],
@@ -346,6 +351,7 @@ class _GuestWelcome extends ConsumerWidget {
   }
 }
 
+/// One thing an account gives: a line icon, what it is, and a line more.
 class _Benefit extends StatelessWidget {
   const _Benefit({required this.icon, required this.title, required this.line});
 
@@ -355,33 +361,33 @@ class _Benefit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.accentSoft,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(icon, size: 22, color: AppColors.inkMuted),
             ),
-            child: Icon(icon, color: AppColors.accent, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                Text(line,
-                    style: const TextStyle(
-                        color: AppColors.inkMuted, fontSize: 13)),
-              ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(line,
+                      style: const TextStyle(
+                          color: AppColors.inkMuted, fontSize: 14, height: 1.4)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

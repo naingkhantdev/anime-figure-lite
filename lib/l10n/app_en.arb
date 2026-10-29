@@ -259,6 +259,9 @@
   "benefitShop": "Open your own shop",
   "benefitShopLine": "Track stock and sell your figures here.",
   "keepBrowsing": "Keep browsing",
+  "guestSubtitle": "Sign in to check out and follow your orders.",
+  "withAnAccount": "With an account",
+  "inStockNow": "In stock now",
   "ordersPlaced": "{count, plural, =1{Order placed. The shop will confirm it soon.} other{Placed {count} orders, one for each shop. Each shop confirms its own.}}",
   "@ordersPlaced": {
     "placeholders": {
@@ -911,5 +914,7 @@
     }
   },
   "noUsersHere": "No accounts here",
-  "usersFootnote": "An account shows up here once it opens this version of the app."
+  "usersFootnote": "An account shows up here once it opens this version of the app.",
+  "language": "Language",
+  "languagePhone": "Phone's language"
 }

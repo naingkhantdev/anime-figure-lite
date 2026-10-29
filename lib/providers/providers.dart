@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/auth_repository.dart';
 import '../data/blacklist_repository.dart';
@@ -234,3 +236,33 @@ final shopOrdersProvider = StreamProvider<List<ShopOrder>>((ref) {
 /// What the customer has asked the catalog to show: search, sort, filters.
 final catalogFilterProvider =
     StateProvider<CatalogFilter>((ref) => const CatalogFilter());
+
+/// Where the picked language is kept on the phone.
+const languageKey = 'language';
+
+/// The language code saved on the phone ('en', 'my'), read once in
+/// main.dart before the app starts; null when none was picked.
+final savedLanguageProvider = Provider<String?>((ref) => null);
+
+/// The language picked in the app, or null to follow the phone's.
+final localeProvider =
+    NotifierProvider<LocaleNotifier, Locale?>(LocaleNotifier.new);
+
+class LocaleNotifier extends Notifier<Locale?> {
+  @override
+  Locale? build() {
+    final code = ref.watch(savedLanguageProvider);
+    return code == null ? null : Locale(code);
+  }
+
+  /// Shows the app in [locale] (null: the phone's language) from now on.
+  Future<void> pick(Locale? locale) async {
+    state = locale;
+    final prefs = await SharedPreferences.getInstance();
+    if (locale == null) {
+      await prefs.remove(languageKey);
+    } else {
+      await prefs.setString(languageKey, locale.languageCode);
+    }
+  }
+}

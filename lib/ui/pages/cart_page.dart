@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
 import '../../models/cart_item.dart';
+import '../../models/product.dart';
 import '../../providers/providers.dart';
 import '../../utils/money.dart';
 import '../theme.dart';
@@ -11,6 +12,7 @@ import '../widgets/effects.dart';
 import '../widgets/glass.dart';
 import 'checkout_page.dart';
 import 'customer_home_page.dart';
+import 'product_detail_page.dart';
 import 'product_list_page.dart';
 import 'sign_in_page.dart';
 
@@ -32,16 +34,7 @@ class CartPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.tabCart)),
       body: cart.isEmpty
-          ? EmptyState(
-              icon: Icons.shopping_cart_outlined,
-              title: context.l10n.cartEmpty,
-              message: context.l10n.cartEmptyBody,
-              action: OutlinedButton(
-                onPressed: () => ref.read(customerTabProvider.notifier).state =
-                    CustomerTab.shop,
-                child: Text(context.l10n.browseFigures),
-              ),
-            )
+          ? const _EmptyCart()
           : RevealScope(
               child: ListView(
                 padding: pagePadding(context, top: 4),
@@ -84,6 +77,145 @@ class CartPage extends ConsumerWidget {
                 ],
               ),
             ),
+    );
+  }
+}
+
+/// Nothing in the cart: say so in a line, give the one way back to the shop,
+/// then a shelf of figures in stock, so the next step can be a tap away
+/// rather than a tab away.
+class _EmptyCart extends ConsumerWidget {
+  const _EmptyCart();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final inStock = (ref.watch(productsProvider).valueOrNull ?? const [])
+        .where((p) => p.inStock)
+        .take(8)
+        .toList();
+
+    return ListView(
+      padding: pagePadding(context, top: 16, side: 0),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: StartColumn(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                PageIntro(title: l.cartEmpty, message: l.cartEmptyBody),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: () => ref
+                      .read(customerTabProvider.notifier)
+                      .state = CustomerTab.shop,
+                  child: Text(l.browseFigures),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (inStock.isNotEmpty) ...[
+          const SizedBox(height: 40),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SectionHeading(l.inStockNow),
+          ),
+          const SizedBox(height: 12),
+          _Shelf(products: inStock),
+        ],
+      ],
+    );
+  }
+}
+
+/// A row of figures that scrolls sideways, edge to edge, starting in line
+/// with the page's text.
+class _Shelf extends StatelessWidget {
+  const _Shelf({required this.products});
+
+  final List<Product> products;
+
+  @override
+  Widget build(BuildContext context) {
+    // Tall enough for the photo, two lines of name and the price at any
+    // text size, so a large font never clips the price.
+    final scale = MediaQuery.textScalerOf(context);
+    final height = _Suggestion.width +
+        10 +
+        scale.scale(_Suggestion.nameLine) * 2 +
+        4 +
+        scale.scale(_Suggestion.priceLine) +
+        8;
+    return SizedBox(
+      height: height,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: products.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, i) => _Suggestion(product: products[i]),
+      ),
+    );
+  }
+}
+
+/// A figure on the empty cart's shelf: photo, name, price, as on the Shop
+/// tab but without the card; opens its page.
+class _Suggestion extends StatelessWidget {
+  const _Suggestion({required this.product});
+
+  final Product product;
+
+  static const width = 144.0;
+
+  // Line heights of the name and price at 1x text (font size x 1.3).
+  static const nameLine = 13 * 1.3;
+  static const priceLine = 15 * 1.3;
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = MediaQuery.textScalerOf(context);
+    return SizedBox(
+      width: width,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ProductDetailPage(productId: product.id),
+        )),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox.square(
+              dimension: width,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: ProductImage(url: product.imageUrl),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Two lines' room, so prices line up along the shelf.
+            SizedBox(
+              height: scale.scale(nameLine) * 2,
+              child: Text(product.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w500, height: 1.3)),
+            ),
+            const SizedBox(height: 4),
+            // Ink, not the pink of a card's price: on the bare ground, under
+            // the aurora, pink text falls short of AA.
+            Text(formatMmk(product.price),
+                maxLines: 1,
+                style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3)),
+          ],
+        ),
+      ),
     );
   }
 }
