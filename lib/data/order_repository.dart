@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../logic/order_prices.dart';
 import '../logic/stock.dart';
 import '../models/cart_item.dart';
 import '../models/shop_order.dart';
@@ -126,13 +127,33 @@ class OrderRepository {
         ..sort((a, b) => (b.createdAt ?? DateTime.now())
             .compareTo(a.createdAt ?? DateTime.now())));
 
+  /// The lines of [order] whose price is not the shop's item price now.
+  /// The customer's phone writes the prices, so the shop checks them before
+  /// confirming; firestore.rules can't (see README).
+  Future<List<PriceChange>> checkShopOrderPrices(
+      ShopOrder order, InventoryRepository inventory) async {
+    final prefix = '${inventory.shopId}_';
+    final current = <String, int>{};
+    for (final line in order.items) {
+      if (!line.productId.startsWith(prefix)) continue;
+      final price = await inventory
+          .currentPrice(line.productId.substring(prefix.length));
+      if (price != null) current[line.productId] = price;
+    }
+    return priceChanges(order.items, current);
+  }
+
   /// The shop accepts an order. Each figure leaves its stock as a "Stock
   /// out" at the order's price, so stock and history stay true; then the
   /// order is marked confirmed. Stops at the first figure short of stock.
-  Future<void> confirmShopOrder(
-      ShopOrder order, InventoryRepository inventory) async {
+  /// With [changes], from [checkShopOrderPrices], the order is confirmed at
+  /// the current prices instead, and its lines and total are rewritten so
+  /// the customer sees what they now pay.
+  Future<void> confirmShopOrder(ShopOrder order, InventoryRepository inventory,
+      {List<PriceChange> changes = const []}) async {
+    final lines = repricedLines(order, changes);
     final prefix = '${inventory.shopId}_';
-    for (final line in order.items) {
+    for (final line in lines) {
       if (!line.productId.startsWith(prefix)) continue;
       await inventory.recordMove(
         itemId: line.productId.substring(prefix.length),
@@ -142,7 +163,15 @@ class OrderRepository {
         note: 'App order ${order.id.substring(0, 6).toUpperCase()}',
       );
     }
-    await setShopOrderStatus(order.id, 'confirmed');
+    if (changes.isEmpty) {
+      await setShopOrderStatus(order.id, 'confirmed');
+      return;
+    }
+    await _orders.doc(order.id).update({
+      'status': 'confirmed',
+      'items': lines.map((l) => l.toMap()).toList(),
+      'total': orderTotal(lines, order.deliveryFee),
+    });
   }
 
   /// The shop moves its order on: confirmed, shipped, or cancelled.

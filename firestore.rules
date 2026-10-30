@@ -502,6 +502,26 @@ service cloud.firestore {
             || (resource.data.status == 'confirmed'
              && request.resource.data.status in ['shipped', 'cancelled']));
 
+      // When its prices changed after the customer ordered, the shop may
+      // confirm at its current prices: the same number of lines, rewritten
+      // with the total, in the confirming write. Rules can't loop over the
+      // lines to re-add them; the shop's own app does (OrderRepository
+      // .confirmShopOrder), and the customer sees the new total.
+      allow update: if signedIn()
+        && resource.data.get('shop_id', '') == request.auth.uid
+        && canWrite(request.auth.uid)
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'confirmed'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasAll(['status', 'items'])
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'items', 'total'])
+        && request.resource.data.items is list
+        && request.resource.data.items.size() == resource.data.items.size()
+        && request.resource.data.total is int
+        && request.resource.data.total
+             >= resource.data.get('delivery_fee', 0);
+
       allow delete: if false; // console only
 
       // What the shop charges to deliver order [d]; a shop that hasn't

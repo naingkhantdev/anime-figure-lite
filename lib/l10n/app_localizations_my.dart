@@ -994,6 +994,21 @@ class AppLocalizationsMy extends AppLocalizations {
   String get confirm => 'အတည်ပြုရန်';
 
   @override
+  String get pricesChangedTitle => 'မှာပြီးနောက် ဈေးနှုန်း ပြောင်းသွားပါပြီ';
+
+  @override
+  String get pricesChangedBody => 'ဒီအော်ဒါထဲက ဈေးနှုန်းတွေက အခု ဆိုင်ရဲ့ ဈေးနှုန်း မဟုတ်တော့ပါ။ လက်ရှိ ဈေးနှုန်းနဲ့ အတည်ပြုပါ၊ ဒါမှမဟုတ် နောက်ပြန်သွားပြီး ဖောက်သည်ကို အရင် ဖုန်းဆက်ပါ။';
+
+  @override
+  String get newTotal => 'စုစုပေါင်း အသစ်';
+
+  @override
+  String get confirmAtCurrentPrices => 'လက်ရှိ ဈေးနှုန်းနဲ့ အတည်ပြုရန်';
+
+  @override
+  String get goBack => 'နောက်သို့';
+
+  @override
   String get markedOnItsWay => 'ပို့နေပြီလို့ မှတ်လိုက်ပါပြီ။';
 
   @override

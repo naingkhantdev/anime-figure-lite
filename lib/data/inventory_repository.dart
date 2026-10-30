@@ -178,6 +178,12 @@ class InventoryRepository {
       .snapshots()
       .map((snap) => snap.exists ? Item.fromDoc(snap) : null);
 
+  /// The item's selling price now, or null if it is gone.
+  Future<int?> currentPrice(String itemId) async {
+    final snap = await _items.doc(itemId).get();
+    return snap.exists ? Item.fromDoc(snap).price : null;
+  }
+
   /// Creates an item. A starting quantity is recorded as a "Stock in"
   /// movement in the same write, so the history explains it.
   Future<String> createItem(ItemDraft draft, {int initialQuantity = 0}) async {

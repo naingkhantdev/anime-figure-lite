@@ -1000,6 +1000,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirm => 'Confirm';
 
   @override
+  String get pricesChangedTitle => 'Prices changed since the order';
+
+  @override
+  String get pricesChangedBody => 'This order has prices that are not yours now. Confirm at your current prices, or go back and call the customer first.';
+
+  @override
+  String get newTotal => 'New total';
+
+  @override
+  String get confirmAtCurrentPrices => 'Confirm at current prices';
+
+  @override
+  String get goBack => 'Go back';
+
+  @override
   String get markedOnItsWay => 'Marked as on its way.';
 
   @override

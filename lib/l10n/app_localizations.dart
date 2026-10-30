@@ -1791,6 +1791,36 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get confirm;
 
+  /// No description provided for @pricesChangedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prices changed since the order'**
+  String get pricesChangedTitle;
+
+  /// No description provided for @pricesChangedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This order has prices that are not yours now. Confirm at your current prices, or go back and call the customer first.'**
+  String get pricesChangedBody;
+
+  /// No description provided for @newTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'New total'**
+  String get newTotal;
+
+  /// No description provided for @confirmAtCurrentPrices.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm at current prices'**
+  String get confirmAtCurrentPrices;
+
+  /// No description provided for @goBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back'**
+  String get goBack;
+
   /// No description provided for @markedOnItsWay.
   ///
   /// In en, this message translates to:

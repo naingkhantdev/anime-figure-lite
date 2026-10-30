@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:anime_figure_shop_lite/logic/order_prices.dart';
 import 'package:anime_figure_shop_lite/logic/stock.dart';
 import 'package:anime_figure_shop_lite/logic/subscription.dart';
+import 'package:anime_figure_shop_lite/models/shop_order.dart';
 import 'package:anime_figure_shop_lite/utils/dates.dart';
 import 'package:anime_figure_shop_lite/utils/money.dart';
 import 'package:anime_figure_shop_lite/utils/phone.dart';
@@ -159,6 +161,39 @@ void main() {
     test('rejects other input', () {
       expect(normalizePhone(''), isNull);
       expect(normalizePhone('12345'), isNull);
+    });
+  });
+
+  group('order prices', () {
+    const a = OrderLine(productId: 's_a', name: 'A', price: 1000, quantity: 2);
+    const b = OrderLine(productId: 's_b', name: 'B', price: 5000, quantity: 1);
+    const order = ShopOrder(
+      id: 'o1',
+      status: 'pending',
+      total: 10000,
+      deliveryFee: 3000,
+      items: [a, b],
+      phone: '',
+      deliveryMethod: DeliveryMethod.delivery,
+      address: '',
+      note: '',
+    );
+
+    test('finds only the lines whose price changed', () {
+      final changes = priceChanges([a, b], {'s_a': 1000, 's_b': 6000});
+      expect(changes.map((c) => c.line.productId), ['s_b']);
+      expect(changes.single.currentPrice, 6000);
+    });
+
+    test('skips lines with no current price', () {
+      expect(priceChanges([a, b], {'s_a': 1000}), isEmpty);
+    });
+
+    test('reprices the changed lines and totals with delivery', () {
+      final changes = priceChanges(order.items, {'s_a': 1500, 's_b': 5000});
+      final lines = repricedLines(order, changes);
+      expect(lines.map((l) => l.price), [1500, 5000]);
+      expect(orderTotal(lines, order.deliveryFee), 3000 + 3000 + 5000);
     });
   });
 }

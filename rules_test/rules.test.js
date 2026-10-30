@@ -845,6 +845,37 @@ describe('selling in the app', () => {
         updateDoc(doc(as('carol'), 'orders/o1'), { status: 'cancelled' }),
       );
     });
+
+  test('the shop may confirm at its current prices, rewriting the lines',
+    async () => {
+      await seed(async (db) => {
+        await setDoc(doc(db, 'shops/alice'), shopDoc(future()));
+        await setDoc(doc(db, 'orders/o1'), {
+          ...order(),
+          created_at: Timestamp.now(),
+        });
+      });
+      const o = doc(as('alice'), 'orders/o1');
+      const line = { product_id: 'alice_item1', name: 'Figure', price: 30000,
+        quantity: 1 };
+      await assertFails(updateDoc(o, { status: 'confirmed', total: 30000 }),
+        'total alone');
+      await assertFails(updateDoc(o, {
+        status: 'confirmed', items: [line, line], total: 60000,
+      }), 'adds a line');
+      await assertFails(updateDoc(o, {
+        status: 'confirmed', items: [line], total: 30000, note: 'x',
+      }), 'other fields');
+      await assertFails(updateDoc(doc(as('bob'), 'orders/o1'), {
+        status: 'confirmed', items: [line], total: 30000,
+      }), 'the customer');
+      await assertSucceeds(updateDoc(o, {
+        status: 'confirmed', items: [line], total: 30000,
+      }));
+      await assertFails(updateDoc(o, {
+        status: 'shipped', items: [line], total: 1,
+      }), 'only while confirming');
+    });
 });
 
 describe('payment screenshots', () => {

@@ -407,7 +407,10 @@ That means:
 - **Order prices come from the app.** The app reads the current prices from
   Firestore when it places the order. Someone with a modified app could still
   write a fake price, because security rules can't check every line of an
-  order. **Before confirming an order, check its prices against the products.**
+  order. A shop's **Confirm** checks each line against the item's price now;
+  when they differ, it shows old → new and the new total, and the shop
+  confirms at its current prices or goes back. **The house's own orders are
+  not checked: compare their prices with the products before confirming.**
 - **Stock is not reduced automatically.** When you confirm an order, lower
   `stock_quantity` by hand in the console. The app does block orders larger
   than the current stock.

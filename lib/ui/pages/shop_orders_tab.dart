@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
 import '../../l10n/labels.dart';
+import '../../logic/order_prices.dart';
 import '../../models/shop_order.dart';
 import '../../providers/providers.dart';
 import '../../utils/dates.dart';
@@ -133,6 +134,40 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
         cancelled);
   }
 
+  /// Checks the order's prices against the shop's items first; when they
+  /// differ, the shop sees old → new and decides.
+  Future<void> _confirm() async {
+    final l = context.l10n;
+    final orders = ref.read(orderRepositoryProvider);
+    final inventory = ref.read(inventoryRepositoryProvider);
+    final o = widget.order;
+    setState(() => _busy = true);
+    List<PriceChange> changes;
+    try {
+      changes = await orders.checkShopOrderPrices(o, inventory);
+    } catch (e) {
+      if (mounted) {
+        showMessage(context, friendlyError(context, e));
+        setState(() => _busy = false);
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (changes.isNotEmpty) {
+      final total = orderTotal(repricedLines(o, changes), o.deliveryFee);
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (context) => _PricesChangedDialog(
+            changes: changes, oldTotal: o.total, newTotal: total),
+      );
+      if (ok != true || !mounted) return;
+    }
+    await _run(
+        () => orders.confirmShopOrder(o, inventory, changes: changes),
+        l.orderConfirmedDone);
+  }
+
   @override
   Widget build(BuildContext context) {
     final o = widget.order;
@@ -251,14 +286,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                   const Spacer(),
                   if (o.status == 'pending')
                     FilledButton.icon(
-                      onPressed: _busy
-                          ? null
-                          : () => _run(
-                              () => ref
-                                  .read(orderRepositoryProvider)
-                                  .confirmShopOrder(
-                                      o, ref.read(inventoryRepositoryProvider)),
-                              l.orderConfirmedDone),
+                      onPressed: _busy ? null : _confirm,
                       icon: const Icon(Icons.check),
                       label: Text(l.confirm),
                     )
@@ -281,6 +309,70 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Each changed line, old price struck through, and the new total. Pops
+/// true to confirm at the current prices.
+class _PricesChangedDialog extends StatelessWidget {
+  const _PricesChangedDialog(
+      {required this.changes, required this.oldTotal, required this.newTotal});
+
+  final List<PriceChange> changes;
+  final int oldTotal;
+  final int newTotal;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    const old = TextStyle(
+        color: AppColors.inkSubtle, decoration: TextDecoration.lineThrough);
+    const now = TextStyle(fontWeight: FontWeight.w700);
+    return AlertDialog(
+      title: Text(l.pricesChangedTitle),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.pricesChangedBody,
+                style: const TextStyle(color: AppColors.inkMuted)),
+            const SizedBox(height: 14),
+            for (final c in changes)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    Expanded(
+                        child: Text('${c.line.name} × ${c.line.quantity}')),
+                    const SizedBox(width: 8),
+                    Text(formatMmk(c.line.price), style: old),
+                    const SizedBox(width: 6),
+                    Text(formatMmk(c.currentPrice), style: now),
+                  ],
+                ),
+              ),
+            const Divider(height: 20),
+            Row(
+              children: [
+                Expanded(child: Text(l.newTotal)),
+                Text(formatMmk(oldTotal), style: old),
+                const SizedBox(width: 6),
+                Text(formatMmk(newTotal), style: now),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l.goBack)),
+        FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l.confirmAtCurrentPrices)),
+      ],
     );
   }
 }
