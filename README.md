@@ -438,8 +438,12 @@ That means:
   than the current stock.
 - **No payments.** Collect payment outside the app (cash on delivery, bank
   transfer, mobile wallet) and then confirm the order.
-- **No notifications.** Staff must check for new orders themselves (see the
-  daily routine above).
+- **No push notifications.** There is no server to send them. Instead a
+  shop admin's phone (Android) rings for new orders while the app runs, and
+  checks about every 15 minutes while it is closed (`lib/data/order_alerts.dart`,
+  one read per waiting order). Battery savers on Xiaomi, Oppo and Vivo can
+  delay or stop the closed-app check, so the app tells each shop once how to
+  allow it. Customers get no notifications; they see status in My orders.
 - **Delivery fee is one flat fee per shop**, set in Shop settings (none for
   pickup). The house's own figures deliver free in the app; tell the
   customer any fee when confirming.

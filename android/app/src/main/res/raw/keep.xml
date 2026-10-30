@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- shrinkResources can't see a resource named only from Dart: keep the
+     order notifications' icon (lib/logic/order_alerts.dart). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notification" />

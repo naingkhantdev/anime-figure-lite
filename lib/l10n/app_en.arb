@@ -959,5 +959,24 @@
   "later": "Later",
   "updateRequiredTitle": "Please update the app",
   "updateRequiredBody": "This version is too old to keep working. Download the new one, open it and tap Install. Your account, orders and stock stay as they are.",
-  "downloadUpdate": "Download the update"
+  "downloadUpdate": "Download the update",
+  "newOrdersTitle": "{count, plural, =1{New order} other{{count} new orders}}",
+  "@newOrdersTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newOrdersBody": "Tap to see it in Orders.",
+  "ordersChannel": "New orders",
+  "batteryTipTitle": "Don't miss an order",
+  "batteryTipBody": "When the app is closed, it looks for new orders about every 15 minutes. Phones like Xiaomi, Oppo and Vivo may stop that to save battery. To keep it working: Settings → Apps → {appName} → Battery → No restrictions.",
+  "@batteryTipBody": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  }
 }

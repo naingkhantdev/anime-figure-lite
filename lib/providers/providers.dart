@@ -9,6 +9,7 @@ import '../data/app_config_repository.dart';
 import '../data/auth_repository.dart';
 import '../data/blacklist_repository.dart';
 import '../data/inventory_repository.dart';
+import '../data/order_alerts.dart';
 import '../data/order_repository.dart';
 import '../data/photo_repository.dart';
 import '../data/product_repository.dart';
@@ -233,6 +234,9 @@ final customersProvider = StreamProvider<List<Customer>>(
 );
 
 /// Customers' orders for the signed-in owner's shop, newest first.
+/// New-order notifications for shop admins (Android only).
+final orderAlertsProvider = Provider((ref) => OrderAlerts());
+
 final shopOrdersProvider = StreamProvider<List<ShopOrder>>((ref) {
   final user = ref.watch(authStateProvider).valueOrNull;
   if (user == null) return Stream.value(const []);

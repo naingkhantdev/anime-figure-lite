@@ -2558,6 +2558,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download the update'**
   String get downloadUpdate;
+
+  /// No description provided for @newOrdersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{New order} other{{count} new orders}}'**
+  String newOrdersTitle(int count);
+
+  /// No description provided for @newOrdersBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see it in Orders.'**
+  String get newOrdersBody;
+
+  /// No description provided for @ordersChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'New orders'**
+  String get ordersChannel;
+
+  /// No description provided for @batteryTipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t miss an order'**
+  String get batteryTipTitle;
+
+  /// No description provided for @batteryTipBody.
+  ///
+  /// In en, this message translates to:
+  /// **'When the app is closed, it looks for new orders about every 15 minutes. Phones like Xiaomi, Oppo and Vivo may stop that to save battery. To keep it working: Settings → Apps → {appName} → Battery → No restrictions.'**
+  String batteryTipBody(String appName);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -1442,4 +1442,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadUpdate => 'Download the update';
+
+  @override
+  String newOrdersTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new orders',
+      one: 'New order',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get newOrdersBody => 'Tap to see it in Orders.';
+
+  @override
+  String get ordersChannel => 'New orders';
+
+  @override
+  String get batteryTipTitle => 'Don\'t miss an order';
+
+  @override
+  String batteryTipBody(String appName) {
+    return 'When the app is closed, it looks for new orders about every 15 minutes. Phones like Xiaomi, Oppo and Vivo may stop that to save battery. To keep it working: Settings → Apps → $appName → Battery → No restrictions.';
+  }
 }

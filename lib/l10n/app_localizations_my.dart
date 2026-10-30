@@ -1434,4 +1434,29 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get downloadUpdate => 'အပ်ဒိတ် ဒေါင်းလုဒ်လုပ်ရန်';
+
+  @override
+  String newOrdersTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'အော်ဒါအသစ် $count ခု',
+      one: 'အော်ဒါအသစ်',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get newOrdersBody => 'အော်ဒါများထဲမှာ ကြည့်ဖို့ နှိပ်ပါ။';
+
+  @override
+  String get ordersChannel => 'အော်ဒါအသစ်များ';
+
+  @override
+  String get batteryTipTitle => 'အော်ဒါ လွတ်မသွားပါစေနဲ့';
+
+  @override
+  String batteryTipBody(String appName) {
+    return 'App ပိတ်ထားချိန်မှာ ၁၅ မိနစ်လောက်တစ်ခါ အော်ဒါအသစ် ရှိမရှိ စစ်ပါတယ်။ Xiaomi၊ Oppo၊ Vivo လို ဖုန်းတွေက ဘက်ထရီချွေဖို့ အဲဒါကို ရပ်ထားတတ်ပါတယ်။ ဆက်အလုပ်လုပ်ဖို့: Settings → Apps → $appName → Battery → No restrictions ကို ရွေးပါ။';
+  }
 }

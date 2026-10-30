@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:anime_figure_shop_lite/logic/app_update.dart';
+import 'package:anime_figure_shop_lite/logic/order_alerts.dart';
 import 'package:anime_figure_shop_lite/logic/order_prices.dart';
 import 'package:anime_figure_shop_lite/logic/stock.dart';
 import 'package:anime_figure_shop_lite/logic/subscription.dart';
@@ -219,6 +220,17 @@ void main() {
     test('no download link means no update', () {
       const noUrl = AppRelease(latestBuild: 5, minBuild: 3, apkUrl: '');
       expect(noUrl.needFor(1), UpdateNeed.none);
+    });
+  });
+
+  group('newOrderIds', () {
+    test('only waiting orders not announced before', () {
+      expect(newOrderIds(['a', 'b', 'c'], {'a'}), {'b', 'c'});
+    });
+
+    test('nothing new when all were announced, or none wait', () {
+      expect(newOrderIds(['a'], {'a', 'old'}), isEmpty);
+      expect(newOrderIds([], {'a'}), isEmpty);
     });
   });
 }

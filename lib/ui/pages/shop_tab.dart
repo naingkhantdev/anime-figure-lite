@@ -110,8 +110,11 @@ class ShopTab extends ConsumerWidget {
             const LanguageTile(),
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () => confirmSignOut(
-                  context, ref.read(authRepositoryProvider).signOut),
+              onPressed: () => confirmSignOut(context, () async {
+                // No new-order alerts for a signed-out shop.
+                await ref.read(orderAlertsProvider).stop();
+                await ref.read(authRepositoryProvider).signOut();
+              }),
               icon: const Icon(Icons.logout),
               label: Text(context.l10n.signOut),
             ),

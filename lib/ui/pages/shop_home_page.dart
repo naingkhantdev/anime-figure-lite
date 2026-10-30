@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../config.dart';
 import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../widgets/glass.dart';
@@ -26,8 +27,57 @@ class ShopHomePage extends ConsumerStatefulWidget {
 class _ShopHomePageState extends ConsumerState<ShopHomePage> {
   int _tab = 0;
 
+  /// Where a new-order notification leads.
+  static const _ordersTab = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startAlerts());
+  }
+
+  /// Turns on new-order notifications, and the first time explains how to
+  /// keep the phone's battery saver from stopping them.
+  Future<void> _startAlerts() async {
+    final user = ref.read(authStateProvider).valueOrNull;
+    if (user == null) return;
+    final alerts = ref.read(orderAlertsProvider);
+    void openOrders() {
+      if (mounted) setState(() => _tab = _ordersTab);
+    }
+
+    final openedByAlert = await alerts.start(user.uid, onTap: openOrders);
+    if (openedByAlert) openOrders();
+    if (!await alerts.takeBatteryTip() || !mounted) return;
+    final l = context.l10n;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.notifications_active_outlined),
+        title: Text(l.batteryTipTitle),
+        content: Text(l.batteryTipBody(appName)),
+        actions: [
+          FilledButton(
+              onPressed: () => Navigator.pop(context), child: Text(l.ok)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Waiting orders that weren't there before ring, as long as the app
+    // runs; the first load only takes note of what is already waiting.
+    ref.listen(shopOrdersProvider, (previous, next) {
+      final orders = next.valueOrNull;
+      if (orders == null || ref.read(authStateProvider).valueOrNull == null) {
+        return;
+      }
+      ref.read(orderAlertsProvider).alertNew(
+          [for (final o in orders) if (o.status == 'pending') o.id],
+          context.l10n,
+          notify: previous?.hasValue == true);
+    });
     final shop = ref.watch(myShopProvider).valueOrNull;
     final canWrite = ref.watch(canWriteProvider);
     final waiting = ref.watch(shopOrdersProvider.select((orders) =>
