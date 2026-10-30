@@ -37,7 +37,9 @@ if (flutterVersionName == null) {
 
 android {
     namespace = "com.animefigureshop.anime_figure_shop_lite"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_local_notifications and workmanager compile against 35; this
+    // Flutter (3.22) defaults lower. Which phones it runs on is minSdk.
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
