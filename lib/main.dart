@@ -11,6 +11,7 @@ import 'firebase_options.dart';
 import 'l10n/l10n.dart';
 import 'providers/providers.dart';
 import 'ui/pages/role_gate.dart';
+import 'ui/pages/update_gate.dart';
 import 'ui/theme.dart';
 import 'ui/widgets/splash_intro.dart';
 
@@ -55,8 +56,9 @@ class ShopLiteApp extends ConsumerWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       // Browsing is open to everyone; sign-in lives on the Account tab, and
       // checkout asks for it on the spot (see ensureSignedIn). Signed-in
-      // shop admins and the super admin get their own screens instead.
-      home: const SplashIntro(child: RoleGate()),
+      // shop admins and the super admin get their own screens instead. A
+      // too-old install sees only "Please update".
+      home: const SplashIntro(child: UpdateGate(child: RoleGate())),
     );
   }
 }

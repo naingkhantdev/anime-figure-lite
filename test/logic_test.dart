@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:anime_figure_shop_lite/logic/app_update.dart';
 import 'package:anime_figure_shop_lite/logic/order_prices.dart';
 import 'package:anime_figure_shop_lite/logic/stock.dart';
 import 'package:anime_figure_shop_lite/logic/subscription.dart';
@@ -194,6 +195,30 @@ void main() {
       final lines = repricedLines(order, changes);
       expect(lines.map((l) => l.price), [1500, 5000]);
       expect(orderTotal(lines, order.deliveryFee), 3000 + 3000 + 5000);
+    });
+  });
+
+  group('AppRelease.needFor', () {
+    const release =
+        AppRelease(latestBuild: 5, minBuild: 3, apkUrl: 'https://x/app.apk');
+
+    test('older than the minimum must update', () {
+      expect(release.needFor(2), UpdateNeed.required);
+    });
+
+    test('allowed but not the newest is offered one', () {
+      expect(release.needFor(3), UpdateNeed.available);
+      expect(release.needFor(4), UpdateNeed.available);
+    });
+
+    test('the newest, or newer, needs nothing', () {
+      expect(release.needFor(5), UpdateNeed.none);
+      expect(release.needFor(6), UpdateNeed.none);
+    });
+
+    test('no download link means no update', () {
+      const noUrl = AppRelease(latestBuild: 5, minBuild: 3, apkUrl: '');
+      expect(noUrl.needFor(1), UpdateNeed.none);
     });
   });
 }

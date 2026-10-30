@@ -1416,4 +1416,22 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get languagePhone => 'ဖုန်းရဲ့ ဘာသာစကား';
+
+  @override
+  String get updateAvailable => 'App ဗားရှင်းအသစ် ထွက်ပါပြီ။';
+
+  @override
+  String get updateNow => 'အပ်ဒိတ်လုပ်ရန်';
+
+  @override
+  String get later => 'နောက်မှ';
+
+  @override
+  String get updateRequiredTitle => 'App ကို အပ်ဒိတ်လုပ်ပေးပါ';
+
+  @override
+  String get updateRequiredBody => 'ဒီဗားရှင်းက အရမ်းဟောင်းနေလို့ ဆက်သုံးလို့ မရတော့ပါ။ အသစ်ကို ဒေါင်းလုဒ်လုပ်၊ ဖွင့်ပြီး Install ကို နှိပ်ပါ။ သင့်အကောင့်၊ အော်ဒါနဲ့ စတော့တွေ ဒီအတိုင်း ရှိနေပါမယ်။';
+
+  @override
+  String get downloadUpdate => 'အပ်ဒိတ် ဒေါင်းလုဒ်လုပ်ရန်';
 }

@@ -2522,6 +2522,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Phone\'s language'**
   String get languagePhone;
+
+  /// No description provided for @updateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'A new version of the app is ready.'**
+  String get updateAvailable;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get updateNow;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @updateRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please update the app'**
+  String get updateRequiredTitle;
+
+  /// No description provided for @updateRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This version is too old to keep working. Download the new one, open it and tap Install. Your account, orders and stock stay as they are.'**
+  String get updateRequiredBody;
+
+  /// No description provided for @downloadUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the update'**
+  String get downloadUpdate;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

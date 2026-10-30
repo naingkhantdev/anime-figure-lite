@@ -998,3 +998,16 @@ describe('photos', () => {
     );
   });
 });
+
+describe('app updates', () => {
+  test('everyone reads app_config, guests too; nobody writes it', async () => {
+    await seed((db) => setDoc(doc(db, 'app_config/android'), {
+      latest_version: 2, min_version: 1, apk_url: 'https://example.com/a.apk',
+    }));
+    await assertSucceeds(getDoc(
+      doc(env.unauthenticatedContext().firestore(), 'app_config/android')));
+    await assertSucceeds(getDoc(doc(as('bob'), 'app_config/android')));
+    await assertFails(setDoc(doc(as('bob'), 'app_config/android'),
+      { latest_version: 99, min_version: 99, apk_url: 'https://evil' }));
+  });
+});

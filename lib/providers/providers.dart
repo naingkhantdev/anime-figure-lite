@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/app_config_repository.dart';
 import '../data/auth_repository.dart';
 import '../data/blacklist_repository.dart';
 import '../data/inventory_repository.dart';
@@ -38,6 +39,11 @@ final photoRepositoryProvider =
 /// loaded, so scrolling back doesn't fetch it again.
 final photoBytesProvider = FutureProvider.family<Uint8List?, String>(
   (ref, id) => ref.watch(photoRepositoryProvider).load(id),
+);
+
+/// Whether this install should be updated, checked once per start.
+final updateCheckProvider = FutureProvider(
+  (ref) => AppConfigRepository(FirebaseFirestore.instance).updateCheck(),
 );
 
 final orderRepositoryProvider =

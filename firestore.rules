@@ -593,6 +593,15 @@ service cloud.firestore {
       }
     }
 
+    // ---- App updates ----
+    // app_config/android: the newest build, the oldest still allowed and
+    // where the APK is (lib/data/app_config_repository.dart). Everyone
+    // reads it, guests too, at each start; only the console writes it.
+    match /app_config/{platform} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

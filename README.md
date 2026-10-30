@@ -211,25 +211,39 @@ To try it on the local emulators instead (needs Java): `npm run seed:emulator`.
    `platform :ios, '13.0'`.
 7. `flutter run`
 
-## Releasing (Google Play)
+## Releasing an update
 
-- **App ID:** `com.animefigureshop.app`. It can never change once on Play.
-- **Upload key:** `C:\Users\User\keys\anime-figure-shop-upload.jks`, outside
+The app is not on the Play Store. People download the APK from the
+download page and install it themselves; the app checks for updates at
+each start.
+
+| Piece | Where |
+|---|---|
+| Download page, privacy page | `public/`, served by Firebase Hosting at https://anime-figure-shop-lite.web.app after `firebase deploy --only hosting` |
+| The APK | GitHub Releases of the **public** repo `naingkhantdev/anime-figure-lite-releases` (APKs only; the code stays private). https://github.com/naingkhantdev/anime-figure-lite-releases/releases/latest/download/app.apk is always the newest. |
+| Update check | Firestore `app_config/android`: `latest_version` and `min_version` (build numbers, ints) and `apk_url` |
+
+- **App ID:** `com.animefigureshop.app`. It can never change.
+- **Signing key:** `C:\Users\User\keys\anime-figure-shop-upload.jks`, outside
   the repo. Its password is in `android/key.properties` (git-ignored).
-  **Back up both files** somewhere safe (a password manager or a USB stick).
-  Turn on **Play App Signing** when creating the app in Play Console, so
-  Google holds the final key and can reset a lost upload key.
-- **Build:** bump `version:` in `pubspec.yaml` (the number after `+` must go
-  up every upload), then `flutter build appbundle` and upload
-  `build/app/outputs/bundle/release/app-release.aab`.
+  With no Play Store, **this key is the app's only key**: lose it and no
+  update will install over the old app, so everyone would have to uninstall
+  and sign in again. **Keep both files in two places** (e.g. a password
+  manager and a USB stick).
+- **Release:** bump `version:` in `pubspec.yaml` (the number after `+` must go
+  up every release), then `tool/release.sh "what changed"`. It builds and
+  signs the APK, publishes it on GitHub and prints what to set in
+  `app_config/android`.
+- **In the app:** a build below `latest_version` shows a banner, "A new
+  version of the app is ready", with Later and Update. A build below
+  `min_version` shows only "Please update the app". Raise `min_version` when
+  old builds would break (e.g. after a rules change they don't follow).
+  Without the document, or offline, nothing is shown.
 - **Crashlytics:** release builds report crashes to Firebase console →
   Crashlytics. Debug builds don't.
-- **Privacy policy:** `public/privacy.html`, served by Firebase Hosting at
-  https://anime-figure-shop-lite.web.app/privacy.html after
-  `firebase deploy --only hosting`. Put that link in Play Console.
 - **Account deletion:** Account → Delete my account (customers). Shop owners
   are asked to contact you; delete their shop and account in the console.
-  For the Play "Data deletion" form, the web link is the privacy page.
+  The privacy page explains it.
 
 ## Data model (Firestore)
 
@@ -287,6 +301,14 @@ shows, and the phone keeps it.
 | address | string (empty for `pickup`) |
 | note | string (may be empty) |
 | created_at | timestamp (server time) |
+
+`app_config/android`: the update check (see "Releasing an update"). Anyone
+reads it; only the console writes it.
+| field | type |
+|---|---|
+| latest_version | number (int): the newest build; older ones see an update banner |
+| min_version | number (int): older builds see only "Please update the app" |
+| apk_url | string: where the newest APK downloads from |
 
 ### Stock data (one shop per account)
 

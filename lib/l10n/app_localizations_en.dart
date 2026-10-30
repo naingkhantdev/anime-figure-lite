@@ -1424,4 +1424,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languagePhone => 'Phone\'s language';
+
+  @override
+  String get updateAvailable => 'A new version of the app is ready.';
+
+  @override
+  String get updateNow => 'Update';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get updateRequiredTitle => 'Please update the app';
+
+  @override
+  String get updateRequiredBody => 'This version is too old to keep working. Download the new one, open it and tap Install. Your account, orders and stock stay as they are.';
+
+  @override
+  String get downloadUpdate => 'Download the update';
 }

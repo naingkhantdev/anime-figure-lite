@@ -953,5 +953,11 @@
   "noUsersHere": "No accounts here",
   "usersFootnote": "An account shows up here once it opens this version of the app.",
   "language": "Language",
-  "languagePhone": "Phone's language"
+  "languagePhone": "Phone's language",
+  "updateAvailable": "A new version of the app is ready.",
+  "updateNow": "Update",
+  "later": "Later",
+  "updateRequiredTitle": "Please update the app",
+  "updateRequiredBody": "This version is too old to keep working. Download the new one, open it and tap Install. Your account, orders and stock stay as they are.",
+  "downloadUpdate": "Download the update"
 }
