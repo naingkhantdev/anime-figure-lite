@@ -311,8 +311,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String shopWaitingBody(String appName) {
-    return 'The owner of $appName will turn your shop on. This page opens your shop by itself as soon as they do.';
+  String shopWaitingBody(String appName, int days) {
+    return 'The owner of $appName will turn your shop on, and your first $days days are free. This page opens your shop by itself as soon as they do.';
   }
 
   @override
@@ -401,15 +401,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inStockNow => 'In stock now';
 
   @override
-  String ordersPlaced(int count) {
+  String orderPlacedTitle(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Placed $count orders, one for each shop. Each shop confirms its own.',
-      one: 'Order placed. The shop will confirm it soon.',
+      other: '$count orders placed',
+      one: 'Order placed',
     );
     return '$_temp0';
   }
+
+  @override
+  String orderPlacedBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'One for each shop, and each shop confirms its own. How to pay is on each order.',
+      one: 'The shop will confirm it soon. How to pay is on your order.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get seeMyOrders => 'See my orders';
 
   @override
   String couldNotPlaceOrder(String error) {
@@ -1080,6 +1094,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String startFreeTrial(int days) {
+    return 'Start $days-day free trial';
+  }
+
+  @override
+  String freeTrialStarted(String shop, String date) {
+    return '$shop is on, free until $date.';
+  }
+
+  @override
   String stopShopQuestion(String shop) {
     return 'Stop $shop now?';
   }
@@ -1257,6 +1281,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get replaceScreenshot => 'Send a different screenshot';
+
+  @override
+  String get screenshotPrivate => 'Only you, the shop and the owner of the app can see it.';
 
   @override
   String get customerSentPayment => 'Customer sent a payment screenshot';

@@ -327,6 +327,11 @@ class _OrderDetailSheetState extends ConsumerState<_OrderDetailSheet> {
                       : l.sendPaymentScreenshot),
                 ),
               ),
+              const SizedBox(height: 6),
+              Text(l.screenshotPrivate,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.inkSubtle)),
             ],
             if (order.canCancel) ...[
               const SizedBox(height: 16),

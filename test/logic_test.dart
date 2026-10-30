@@ -76,6 +76,14 @@ void main() {
     });
   });
 
+  group('trialExpiry', () {
+    test('runs to the close of the 15th day, counting today', () {
+      final end = trialExpiry(now);
+      expect(end, DateTime(2026, 11, 7, 23, 59));
+      expect(daysLeft(end, now), trialDays);
+    });
+  });
+
   group('quantityAfter', () {
     test('stock in adds', () {
       expect(quantityAfter(5, MoveType.stockIn, 3), 8);

@@ -624,8 +624,8 @@ abstract class AppLocalizations {
   /// No description provided for @shopWaitingBody.
   ///
   /// In en, this message translates to:
-  /// **'The owner of {appName} will turn your shop on. This page opens your shop by itself as soon as they do.'**
-  String shopWaitingBody(String appName);
+  /// **'The owner of {appName} will turn your shop on, and your first {days} days are free. This page opens your shop by itself as soon as they do.'**
+  String shopWaitingBody(String appName, int days);
 
   /// No description provided for @contactLine.
   ///
@@ -789,11 +789,23 @@ abstract class AppLocalizations {
   /// **'In stock now'**
   String get inStockNow;
 
-  /// No description provided for @ordersPlaced.
+  /// No description provided for @orderPlacedTitle.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{Order placed. The shop will confirm it soon.} other{Placed {count} orders, one for each shop. Each shop confirms its own.}}'**
-  String ordersPlaced(int count);
+  /// **'{count, plural, =1{Order placed} other{{count} orders placed}}'**
+  String orderPlacedTitle(int count);
+
+  /// No description provided for @orderPlacedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The shop will confirm it soon. How to pay is on your order.} other{One for each shop, and each shop confirms its own. How to pay is on each order.}}'**
+  String orderPlacedBody(int count);
+
+  /// No description provided for @seeMyOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'See my orders'**
+  String get seeMyOrders;
 
   /// No description provided for @couldNotPlaceOrder.
   ///
@@ -1935,6 +1947,18 @@ abstract class AppLocalizations {
   /// **'{shop} now runs until {date}.'**
   String shopNowRunsUntil(String shop, String date);
 
+  /// No description provided for @startFreeTrial.
+  ///
+  /// In en, this message translates to:
+  /// **'Start {days}-day free trial'**
+  String startFreeTrial(int days);
+
+  /// No description provided for @freeTrialStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'{shop} is on, free until {date}.'**
+  String freeTrialStarted(String shop, String date);
+
   /// No description provided for @stopShopQuestion.
   ///
   /// In en, this message translates to:
@@ -2240,6 +2264,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send a different screenshot'**
   String get replaceScreenshot;
+
+  /// No description provided for @screenshotPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you, the shop and the owner of the app can see it.'**
+  String get screenshotPrivate;
 
   /// No description provided for @customerSentPayment.
   ///

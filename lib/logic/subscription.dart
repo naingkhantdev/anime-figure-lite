@@ -15,6 +15,16 @@ enum ShopStatus {
 
 const expiringSoonDays = 7;
 
+/// Every new shop's free start, switched on by the super admin.
+const trialDays = 15;
+
+/// When a free trial switched on at [now] ends: the close of its last day,
+/// counting today as day one, so it shows "15 days left" to begin with.
+DateTime trialExpiry(DateTime now) {
+  final last = DateTime(now.year, now.month, now.day + trialDays - 1);
+  return DateTime(last.year, last.month, last.day, 23, 59);
+}
+
 ShopStatus shopStatus(DateTime? expiresAt, DateTime now) {
   if (expiresAt == null) return ShopStatus.pending;
   if (!expiresAt.isAfter(now)) return ShopStatus.expired;

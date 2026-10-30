@@ -307,6 +307,22 @@ class _ExpirySheetState extends ConsumerState<_ExpirySheet> {
                       : l.expiredOn(formatDateTime(shop.expiresAt!)),
               style: const TextStyle(color: AppColors.inkMuted),
             ),
+            if (status == ShopStatus.pending) ...[
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: _busy
+                    ? null
+                    : () {
+                        final until = trialExpiry(DateTime.now());
+                        _set(
+                            until,
+                            l.freeTrialStarted(
+                                shop.name, formatDate(until)));
+                      },
+                icon: const Icon(Icons.card_giftcard),
+                label: Text(l.startFreeTrial(trialDays)),
+              ),
+            ],
             const SizedBox(height: 20),
             Text(
                 status.canWrite

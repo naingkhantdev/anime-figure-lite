@@ -310,8 +310,8 @@ class AppLocalizationsMy extends AppLocalizations {
   }
 
   @override
-  String shopWaitingBody(String appName) {
-    return '$appName ပိုင်ရှင်က သင့်ဆိုင်ကို ဖွင့်ပေးပါမယ်။ ဖွင့်ပေးတာနဲ့ ဒီစာမျက်နှာက ဆိုင်ကို အလိုလို ဖွင့်ပေးပါမယ်။';
+  String shopWaitingBody(String appName, int days) {
+    return '$appName ပိုင်ရှင်က သင့်ဆိုင်ကို ဖွင့်ပေးပါမယ်၊ ပထမ $days ရက် အခမဲ့ပါ။ ဖွင့်ပေးတာနဲ့ ဒီစာမျက်နှာက ဆိုင်ကို အလိုလို ဖွင့်ပေးပါမယ်။';
   }
 
   @override
@@ -400,15 +400,28 @@ class AppLocalizationsMy extends AppLocalizations {
   String get inStockNow => 'အခု ရနိုင်တာတွေ';
 
   @override
-  String ordersPlaced(int count) {
+  String orderPlacedTitle(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'အော်ဒါ $count ခု တင်ပြီးပါပြီ။ ဆိုင်တစ်ဆိုင်ချင်းစီက ကိုယ့်အော်ဒါကို အတည်ပြုပါမယ်။',
-      one: 'အော်ဒါ တင်ပြီးပါပြီ။ ဆိုင်က မကြာခင် အတည်ပြုပေးပါမယ်။',
+      other: 'အော်ဒါ တင်ပြီးပါပြီ',
     );
     return '$_temp0';
   }
+
+  @override
+  String orderPlacedBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ဆိုင်တစ်ဆိုင်ကို အော်ဒါတစ်ခုစီ ($count ခု) ဖြစ်ပြီး ဆိုင်တစ်ဆိုင်ချင်းစီက ကိုယ့်အော်ဒါကို အတည်ပြုပါမယ်။ ငွေပေးနည်းက အော်ဒါတိုင်းမှာ ပါပါတယ်။',
+      one: 'ဆိုင်က မကြာခင် အတည်ပြုပေးပါမယ်။ ငွေပေးနည်းက အော်ဒါထဲမှာ ပါပါတယ်။',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get seeMyOrders => 'ကျွန်ုပ်၏ အော်ဒါများ ကြည့်ရန်';
 
   @override
   String couldNotPlaceOrder(String error) {
@@ -1074,6 +1087,16 @@ class AppLocalizationsMy extends AppLocalizations {
   }
 
   @override
+  String startFreeTrial(int days) {
+    return 'ရက် $days ရက် အခမဲ့ စဖွင့်ရန်';
+  }
+
+  @override
+  String freeTrialStarted(String shop, String date) {
+    return '$shop ကို ဖွင့်ပြီးပါပြီ၊ $date အထိ အခမဲ့ပါ။';
+  }
+
+  @override
   String stopShopQuestion(String shop) {
     return '$shop ကို အခု ရပ်မလား။';
   }
@@ -1250,6 +1273,9 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get replaceScreenshot => 'တခြား screenshot ပို့ရန်';
+
+  @override
+  String get screenshotPrivate => 'သင်၊ ဆိုင်နဲ့ app ပိုင်ရှင်သာ မြင်ရပါမယ်။';
 
   @override
   String get customerSentPayment => 'ဖောက်သည်က ငွေလွှဲ screenshot ပို့ထားပါတယ်';

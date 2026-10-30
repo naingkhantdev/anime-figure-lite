@@ -213,11 +213,14 @@
       }
     }
   },
-  "shopWaitingBody": "The owner of {appName} will turn your shop on. This page opens your shop by itself as soon as they do.",
+  "shopWaitingBody": "The owner of {appName} will turn your shop on, and your first {days} days are free. This page opens your shop by itself as soon as they do.",
   "@shopWaitingBody": {
     "placeholders": {
       "appName": {
         "type": "String"
+      },
+      "days": {
+        "type": "int"
       }
     }
   },
@@ -262,14 +265,23 @@
   "guestSubtitle": "Sign in to check out and follow your orders.",
   "withAnAccount": "With an account",
   "inStockNow": "In stock now",
-  "ordersPlaced": "{count, plural, =1{Order placed. The shop will confirm it soon.} other{Placed {count} orders, one for each shop. Each shop confirms its own.}}",
-  "@ordersPlaced": {
+  "orderPlacedTitle": "{count, plural, =1{Order placed} other{{count} orders placed}}",
+  "@orderPlacedTitle": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
+  "orderPlacedBody": "{count, plural, =1{The shop will confirm it soon. How to pay is on your order.} other{One for each shop, and each shop confirms its own. How to pay is on each order.}}",
+  "@orderPlacedBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seeMyOrders": "See my orders",
   "couldNotPlaceOrder": "Could not place order: {error}",
   "@couldNotPlaceOrder": {
     "placeholders": {
@@ -710,6 +722,25 @@
       }
     }
   },
+  "startFreeTrial": "Start {days}-day free trial",
+  "@startFreeTrial": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "freeTrialStarted": "{shop} is on, free until {date}.",
+  "@freeTrialStarted": {
+    "placeholders": {
+      "shop": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "stopShopQuestion": "Stop {shop} now?",
   "@stopShopQuestion": {
     "placeholders": {
@@ -831,6 +862,7 @@
   },
   "sendPaymentScreenshot": "Send payment screenshot",
   "replaceScreenshot": "Send a different screenshot",
+  "screenshotPrivate": "Only you, the shop and the owner of the app can see it.",
   "customerSentPayment": "Customer sent a payment screenshot",
   "blacklist": "Blacklist",
   "blockSomeone": "Block someone",

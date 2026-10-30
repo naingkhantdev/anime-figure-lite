@@ -210,6 +210,13 @@ Future<void> pumpScreen(WidgetTester tester, Widget screen,
   await tester.pumpAndSettle();
 }
 
+/// Scrolls the page's list all the way down, clear of the glass bottom bar
+/// that sits over its last rows until then.
+Future<void> scrollToEnd(WidgetTester tester) async {
+  await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('figure shop for guests, with a bottom bar', (tester) async {
     await pumpScreen(tester, const CustomerHomePage());
@@ -220,9 +227,9 @@ void main() {
       await tester.pumpAndSettle();
     }
     expect(find.text('Sign in to see your orders'), findsOneWidget);
-    expect(find.text('Sign in'), findsNothing, reason: 'only on Account');
+    expect(find.text('Sign in'), findsOneWidget, reason: 'right on Orders');
 
-    await tester.tap(find.text('Go to Account'));
+    await tester.tap(find.text('Account').last);
     await tester.pumpAndSettle();
     expect(find.text('Sign in'), findsOneWidget);
     expect(find.text('Open a shop'), findsNothing, reason: 'signed in only');
@@ -423,6 +430,7 @@ void main() {
       await tester.tap(find.text(tab).last);
       await tester.pumpAndSettle();
     }
+    await scrollToEnd(tester);
     expect(find.text('Sign out'), findsOneWidget);
   });
 
@@ -454,8 +462,7 @@ void main() {
     await pumpScreen(tester, const ShopHomePage());
     await tester.tap(find.text('Shop').last);
     await tester.pumpAndSettle();
-    await tester.dragUntilVisible(find.text('Delete my account'),
-        find.byType(ListView).first, const Offset(0, -200));
+    await scrollToEnd(tester);
     await tester.tap(find.text('Delete my account'));
     await tester.pumpAndSettle();
     expect(

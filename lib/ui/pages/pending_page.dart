@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config.dart';
 import '../../l10n/l10n.dart';
+import '../../logic/subscription.dart';
 import '../../models/shop.dart';
 import '../../providers/providers.dart';
 import '../theme.dart';
@@ -48,7 +49,7 @@ class PendingPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        context.l10n.shopWaitingBody(appName) +
+                        context.l10n.shopWaitingBody(appName, trialDays) +
                             (supportContact.isEmpty
                                 ? ''
                                 : '\n\n${context.l10n.contactLine(supportContact)}'),

@@ -9,6 +9,7 @@ import '../../providers/providers.dart';
 import '../../utils/money.dart';
 import '../../utils/phone.dart';
 import '../theme.dart';
+import '../widgets/common.dart';
 import '../widgets/glass.dart';
 import 'customer_home_page.dart';
 
@@ -76,13 +77,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             note: _note.text,
           );
       ref.read(cartProvider.notifier).clear();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l.ordersPlaced(orders)),
-        ),
+      // Back from the confirmation lands on the new order.
+      ref.read(customerTabProvider.notifier).state = CustomerTab.orders;
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute<void>(
+            builder: (_) => OrderPlacedPage(orders: orders)),
+        (route) => route.isFirst,
       );
-      showCustomerTab(navigator, ref.read(customerTabProvider.notifier),
-          CustomerTab.orders);
     } on OrderException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message(l))));
     } catch (e) {
@@ -233,6 +234,38 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown once the orders are in: a clear "done", then on to the orders or
+/// back to the shop.
+class OrderPlacedPage extends ConsumerWidget {
+  const OrderPlacedPage({super.key, required this.orders});
+
+  /// How many orders were placed, one per shop in the cart.
+  final int orders;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    void open(CustomerTab tab) => showCustomerTab(Navigator.of(context),
+        ref.read(customerTabProvider.notifier), tab);
+    return Scaffold(
+      appBar: AppBar(automaticallyImplyLeading: false),
+      body: EmptyState(
+        icon: Icons.check_circle_outline,
+        title: l.orderPlacedTitle(orders),
+        message: l.orderPlacedBody(orders),
+        action: FilledButton(
+          onPressed: () => open(CustomerTab.orders),
+          child: Text(l.seeMyOrders),
+        ),
+        secondary: TextButton(
+          onPressed: () => open(CustomerTab.shop),
+          child: Text(l.continueShopping),
         ),
       ),
     );
