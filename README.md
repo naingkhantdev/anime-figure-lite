@@ -167,14 +167,9 @@ images. The splash's navy is `AppColors.splash`, and the same colour is in
 
 ### Demo accounts (seed)
 
-`tool/seed/seed_users.js` creates one account per role, all with password
-`Password123!` (or `SEED_PASSWORD`):
-
-| Role | Email |
-|---|---|
-| Super admin | `admin@animefigureshop.test` |
-| Shop admin ("Sakura Figures", active 1 month) | `shop@animefigureshop.test` |
-| Customer | `customer@animefigureshop.test` |
+`tool/seed/seed_users.js` creates one account per role. It is kept on the
+developer's computer and is not in git. Set a strong `SEED_PASSWORD` before
+running it.
 
 It needs an admin key for the real project:
 

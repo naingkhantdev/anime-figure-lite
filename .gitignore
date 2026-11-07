@@ -49,3 +49,5 @@ app.*.map.json
 # Seed script: dependencies, and NEVER the admin key
 /tool/seed/node_modules/
 service-account*.json
+# Demo logins: stays on the developer's computer
+/tool/seed/seed_users.js
